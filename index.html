@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeKids - Bolalar uchun IT Platforma</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- ==================== LOGIN SAHIFASI ==================== -->
+        <div class="login-screen" id="loginScreen">
+            <h1>🚀 CodeKids</h1>
+            <p class="subtitle">Bolalar uchun IT va mantiqiy fikrlash platformasi</p>
+            
+            <div class="login-box">
+                <h2 class="login-title">Xush kelibsiz!</h2>
+                <p class="login-subtitle">Boshlash uchun o'zingizga nickname tanlang</p>
+                
+                <input 
+                    type="text" 
+                    class="nickname-input" 
+                    id="nicknameInput" 
+                    placeholder="Nickname (3-20 belgi)"
+                    maxlength="20"
+                    autocomplete="off"
+                >
+                
+                <div class="error-message" id="errorMessage"></div>
+                
+                <button class="btn-primary" id="startBtn">🔑 Kirish</button>
+            </div>
+        </div>
+
+        <!-- ==================== HOME SAHIFASI ==================== -->
+        <div class="home-screen" id="homeScreen">
+            <header class="header">
+                <div class="logo">🚀 CodeKids</div>
+                <div class="user-info">
+                    <div class="user-avatar" id="userAvatar">A</div>
+                    <div class="user-nickname" id="userNickname">User</div>
+                    <button class="btn-logout" id="logoutBtn">🚪 Chiqish</button>
+                </div>
+            </header>
+
+            <section class="welcome-section">
+                <h2>Salom, <span id="welcomeName">Dost</span>! 👋</h2>
+                <p>Bugun qaysi instrument bilan mashq qilamiz?</p>
+            </section>
+
+            <!-- Statistika -->
+            <section class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">🎮</div>
+                    <div class="stat-label">O'yinlar soni</div>
+                    <div class="stat-value" id="statGames">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">⚡</div>
+                    <div class="stat-label">Eng yaxshi WPM</div>
+                    <div class="stat-value" id="statBestWpm">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🎯</div>
+                    <div class="stat-label">O'rtacha aniqlik</div>
+                    <div class="stat-value" id="statAccuracy">0%</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🏆</div>
+                    <div class="stat-label">Yutuqlar</div>
+                    <div class="stat-value" id="statBadges">0</div>
+                </div>
+            </section>
+
+            <!-- Instrumentlar -->
+            <section class="instruments-section">
+                <h2 class="section-title">🎯 Instrumentlar</h2>
+                <div class="instruments-grid" id="instrumentsGrid">
+                    <!-- Instrumentlar JS orqali qo'shiladi -->
+                </div>
+            </section>
+        </div>
+
+        <!-- ==================== GAME SAHIFASI ==================== -->
+        <div class="game-screen" id="gameScreen">
+            <div class="game-header">
+                <button class="btn-back" id="backBtn">← Orqaga</button>
+                <div class="logo">⌨️ TezYozuv</div>
+                <div class="user-nickname" id="gameUserNickname">User</div>
+            </div>
+
+            <div class="game-content">
+                <div class="controls">
+                    <div class="control-group" id="timeControls">
+                        <button class="control-btn" data-time="15">15s</button>
+                        <button class="control-btn active" data-time="30">30s</button>
+                        <button class="control-btn" data-time="60">60s</button>
+                        <button class="control-btn" data-time="120">120s</button>
+                    </div>
+                    <div class="control-group" id="langControls">
+                        <button class="control-btn active" data-lang="uz">UZ</button>
+                        <button class="control-btn" data-lang="ru">RU</button>
+                        <button class="control-btn" data-lang="en">EN</button>
+                    </div>
+              
+                </div>
+                
+                <div class="stats">
+                    <div class="stat-box">
+                        <div>⏱ Vaqt</div>
+                        <div class="stat-value" id="timer">30</div>
+                    </div>
+                    <div class="stat-box">
+                        <div>🚀 Tezlik (WPM)</div>
+                        <div class="stat-value" id="wpm">0</div>
+                    </div>
+                    <div class="stat-box">
+                        <div>🎯 Aniqlik</div>
+                        <div class="stat-value" id="accuracy">100%</div>
+                    </div>
+                </div>
+
+                <div class="text-display" id="textDisplay"></div>
+                
+                <input 
+                    type="text" 
+                    class="input-area" 
+                    id="inputArea" 
+                    placeholder="Yozishni boshlash uchun shu yerni bosing..." 
+                    autocomplete="off" 
+                    autocorrect="off" 
+                    autocapitalize="off" 
+                    spellcheck="false"
+                >
+                
+                <div class="message" id="message"></div>
+                
+                <button class="btn-restart" id="restartBtn">🔄 Qaytadan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript fayllar (tartib muhim!) -->
+    <script src="js/storage.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/navigation.js"></script>
+    <script src="js/home.js"></script>
+    <script src="js/typing-game.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
