@@ -39,13 +39,17 @@ const Navigation = {
     /**
      * Instrumentni ochish
      */
-    openInstrument: (instrumentId) => {
+     openInstrument: (instrumentId) => {
         switch (instrumentId) {
             case 'typing':
                 Navigation.showScreen('game');
                 TypingGame.init();
                 break;
             
+            case 'labirint':
+                window.location.href = 'labirint/index.html';
+                break;
+       
             // Kelajakdagi instrumentlar
             case 'logic':
             case 'scratch':

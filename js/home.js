@@ -5,12 +5,20 @@
 
 const Home = {
     // Instrumentlar ro'yxati
-    instruments: [
+      instruments: [
         {
             id: 'typing',
             icon: '⌨️',
             title: 'TezYozuv',
             description: 'Klaviaturada tez yozishni o\'rganing. IT so\'zlar bilan mashq qiling!',
+            badge: 'new',
+            locked: false
+        },
+        {
+            id: 'labirint',
+            icon: '🧩',
+            title: 'Labirint',
+            description: 'Turli shakldagi labirintlarni yeching. 8 xil shakl, 4 ta qiyinlik!',
             badge: 'new',
             locked: false
         },
