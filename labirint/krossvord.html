@@ -1,0 +1,516 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sonli krossvord topshirig'i</title>
+<meta name="description" content="Bolalar uchun sonli krossvord (matematik jumboq) generatori: qo'shish, ayirish, ko'paytirish, bo'lish, 4 ta daraja, PDF. / Генератор числового кроссворда: сложение, вычитание, умножение, деление, 4 уровня, PDF.">
+<meta name="theme-color" content="#2F6FED">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Labirint">
+<!-- Ulashish ko'rinishi (Telegram, Instagram, WhatsApp...) -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="Sonli krossvord topshiriqlari / Числовой кроссворд">
+<meta property="og:description" content="Bolalar uchun bir zumda sonli krossvord yarating va PDF qilib yuklab oling. / Создайте числовой кроссворд и скачайте PDF.">
+<meta property="og:image" content="https://umarxon7887.github.io/labirint/og-krossvord.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="uz_UZ">
+<meta property="og:locale:alternate" content="ru_RU">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://umarxon7887.github.io/labirint/og-krossvord.png">
+<style>
+  :root { --ink:#1f2a44; --line:#c9d3e3; --bg:#e9eef5; --accent:#2f6fed; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink);
+         font-family:"Trebuchet MS", system-ui, sans-serif; }
+
+  .controls { max-width:794px; margin:0 auto; padding:12px; display:grid; gap:10px; }
+  .controls label { display:grid; gap:4px; font-size:14px; font-weight:600; }
+  .controls textarea, .controls input[type=number] {
+    width:100%; font:inherit; font-weight:400; padding:8px 10px; border:1px solid var(--line);
+    border-radius:8px; background:#fff; color:var(--ink); }
+  .controls textarea { min-height:64px; resize:vertical; }
+  .controls input[type=range] { width:100%; }
+  .check { display:flex !important; align-items:center; gap:8px; font-weight:400 !important; }
+  .buttons { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  button { font:inherit; font-weight:700; padding:12px; border-radius:10px; border:2px solid var(--accent);
+           background:#fff; color:var(--accent); cursor:pointer; }
+  button.primary { background:var(--accent); color:#fff; grid-column:1 / -1; }
+  button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visible { outline:3px solid #ffb703; outline-offset:2px; }
+
+  .picker { display:grid; gap:6px; }
+  .picker .lbl { font-size:14px; font-weight:600; }
+  .levels { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+  .lvl { padding:10px 2px; font-size:13px; min-width:0; overflow-wrap:anywhere; }
+  .lvl[aria-pressed=true] { background:var(--accent); color:#fff; }
+  .hint { margin:-4px 0 0; font-size:13px; color:#5b6784; }
+
+  .tabs { display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:6px; }
+  .tabs a { text-align:center; padding:10px 2px; border-radius:10px; border:2px solid var(--accent); color:var(--accent);
+            font-weight:700; text-decoration:none; background:#fff; font-size:12.5px; }
+  .tabs a[aria-current=page] { background:var(--accent); color:#fff; }
+  .lang { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .lang button { padding:8px; font-size:14px; }
+  .lang button[aria-pressed=true] { background:var(--accent); color:#fff; }
+
+  #sheet { display:block; width:min(100%,794px); height:auto; margin:4px auto 24px; background:#fff;
+           box-shadow:0 2px 14px rgba(31,42,68,.18); }
+  .note { text-align:center; font-size:13px; color:#5b6784; margin:-12px 12px 24px; }
+</style>
+</head>
+<body>
+
+<div class="controls">
+  <nav class="tabs" aria-label="Bo'limlar / Разделы">
+    <a href="index.html" data-i18n="tabMaze"></a>
+    <a href="sudoku.html" data-i18n="tabSudoku"></a>
+    <a href="wordsearch.html" data-i18n="tabWords"></a>
+    <a href="krossvord.html" aria-current="page" data-i18n="tabCross"></a>
+  </nav>
+  <div class="lang" role="group" aria-label="Til / Язык">
+    <button type="button" data-lang="uz" aria-pressed="true">O'zbekcha</button>
+    <button type="button" data-lang="ru" aria-pressed="false">Русский</button>
+  </div>
+  <div class="picker"><span class="lbl" data-i18n="levelLbl"></span><div class="levels" id="levelPick"></div></div>
+  <p class="hint" id="gridHint"></p>
+  <label><span data-i18n="titleLabel"></span>
+    <textarea id="title"></textarea>
+  </label>
+  <label><span><span data-i18n="fsLabel"></span> <span id="fsVal">24</span> pt</span>
+    <input id="fs" type="range" min="14" max="40" value="24">
+  </label>
+  <label><span data-i18n="seedLabel"></span> <input id="seed" type="number" min="1" value="1"></label>
+  <label class="check"><input id="sol" type="checkbox"> <span data-i18n="sol"></span></label>
+  <div class="buttons">
+    <button id="newBtn" class="primary" data-i18n="newBtn"></button>
+    <button id="pdfBtn" data-i18n="pdfBtn"></button>
+    <button id="ansBtn" data-i18n="ansBtn"></button>
+  </div>
+</div>
+
+<canvas id="sheet"></canvas>
+<p class="note" data-i18n="note"></p>
+
+<script>
+const $ = id => document.getElementById(id);
+
+// ---------- Daraja sozlamalari ----------
+// ops: ruxsat etilgan amallar; span: qo'shish/ayirishda sonlar oralig'i; mulMax: ko'paytirish/bo'lishda ko'paytuvchi oralig'i (2..mulMax)
+// targetEq: qurishga harakat qilinadigan tenglamalar soni; hideFrac: nechta katakcha yashirilishi (o'yin uchun)
+const LEVELS = [
+  { ops:['+','-'],             span:30, mulMax:10, targetEq:14, hideFrac:0.40 },
+  { ops:['+','-','\u00d7'],           span:40, mulMax:10, targetEq:19, hideFrac:0.52 },
+  { ops:['+','-','\u00d7','\u00f7'],         span:60, mulMax:12, targetEq:24, hideFrac:0.62 },
+  { ops:['+','-','\u00d7','\u00f7'],         span:90, mulMax:12, targetEq:29, hideFrac:0.70 }
+];
+let levelIdx = 1;
+
+// ---------- Tillar ----------
+const I18N = {
+  uz: {
+    pageTitle: "Sonli krossvord topshirig'i", tabMaze: "Labirint", tabSudoku: "Sudoku", tabWords: "So'z qidiruv", tabCross: "Krossvord",
+    levelLbl: "Daraja", levels: ["Oson","O'rta","Qiyin","Juda qiyin"],
+    titleLabel: "Topshiriq matni (yuqorida chiqadi)", fsLabel: "Matn o'lchami:", seedLabel: "Raqami",
+    sol: "Ekranda javobni ko'rsatish",
+    newBtn: "Yangi krossvord", pdfBtn: "Topshiriqni yuklab olish (PDF)", ansBtn: "Javob varag'ini yuklab olish (PDF)",
+    note: "Ko'rib turganingiz PDF'da ham aynan shunday chiqadi.",
+    defTitle: "Bo'sh katakchalarni to'ldir!",
+    hintGrid: (eq, cells, hidden) => `Tengliklar: ${eq} | Bo'sh katakcha: ${hidden} / ${cells}`,
+    foot: (n, level) => `Sonli krossvord raqami: ${n} (${level})`,
+    file: n => `${n} raqamli sonli krossvord.pdf`,
+    fileAns: n => `${n} raqamli sonli krossvord javobi.pdf`
+  },
+  ru: {
+    pageTitle: "Задание «Числовой кроссворд»", tabMaze: "Лабиринт", tabSudoku: "Судоку", tabWords: "Найди слова", tabCross: "Кроссворд",
+    levelLbl: "Сложность", levels: ["Легко","Средне","Сложно","Очень сложно"],
+    titleLabel: "Текст задания (сверху на листе)", fsLabel: "Размер текста:", seedLabel: "Номер",
+    sol: "Показать на экране ответ",
+    newBtn: "Новый кроссворд", pdfBtn: "Скачать задание (PDF)", ansBtn: "Скачать лист с ответом (PDF)",
+    note: "Именно так это будет выглядеть в PDF.",
+    defTitle: "Заполни пустые клетки!",
+    hintGrid: (eq, cells, hidden) => `Равенств: ${eq} | Пустых клеток: ${hidden} / ${cells}`,
+    foot: (n, level) => `Числовой кроссворд № ${n} (${level})`,
+    file: n => `Числовой кроссворд № ${n}.pdf`,
+    fileAns: n => `Числовой кроссворд № ${n} - ответ.pdf`
+  }
+};
+let lang = 'uz';
+const T = () => I18N[lang];
+
+function applyLang(l, initial) {
+  const defaults = Object.values(I18N).map(x => x.defTitle);
+  const cur = $('title').value.trim();
+  lang = l;
+  document.documentElement.lang = l;
+  document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = T()[el.dataset.i18n]; });
+  if (defaults.includes(cur) || (initial && !cur)) $('title').value = T().defTitle;
+  document.querySelectorAll('.lang button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.lang === l)));
+  document.title = T().pageTitle;
+  try { localStorage.setItem('lang', l); } catch (e) {}
+  buildLevels();
+  render();
+}
+
+// ---------- Tasodifiy son generatori ----------
+function makeRng(a) {               // seed bilan ishlaydigan tasodifiy son generatori (mulberry32)
+  return () => {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+const ri = (rand, lo, hi) => lo + Math.floor(rand() * (hi - lo + 1));
+const MAXV = 999;
+const ok3 = (A, B, C) => [A, B, C].every(v => Number.isInteger(v) && v >= 1 && v <= MAXV);
+
+function applyOp(a, op, b) {
+  if (op === '+') return a + b;
+  if (op === '-') return a - b >= 1 ? a - b : null;
+  if (op === '\u00d7') return a * b;
+  return (b !== 0 && a % b === 0) ? a / b : null;      // \u00f7
+}
+
+// 0 ta katakcha oldindan ma'lum: A,B ni tanlab C ni hisoblaydi
+function genFree(op, span, mulMax, rand) {
+  if (op === '+') { const A = ri(rand,1,span), B = ri(rand,1,span); return { A, B, C: A+B }; }
+  if (op === '-') { const A = ri(rand,10,10+span), maxB = Math.min(A-1, span); if (maxB<1) return null; const B = ri(rand,1,maxB); return { A, B, C: A-B }; }
+  if (op === '\u00d7') { const A = ri(rand,2,mulMax), B = ri(rand,2,mulMax); return { A, B, C: A*B }; }
+  const B = ri(rand,2,mulMax), C = ri(rand,2,mulMax); return { A: B*C, B, C };   // \u00f7
+}
+// Faqat A ma'lum: B,C ni tanlaydi
+function genGivenA(A, op, span, mulMax, rand) {
+  if (op === '+') { const B = ri(rand,1,span); return { A, B, C: A+B }; }
+  if (op === '-') { if (A<2) return null; const B = ri(rand,1,A-1); return { A, B, C: A-B }; }
+  if (op === '\u00d7') { const B = ri(rand,2,mulMax); return { A, B, C: A*B }; }
+  const divs = []; for (let d=2; d<=mulMax; d++) if (A%d===0 && A/d>=2) divs.push(d);
+  if (!divs.length) return null; const B = divs[Math.floor(rand()*divs.length)]; return { A, B, C: A/B };
+}
+// Faqat B ma'lum: A,C ni tanlaydi
+function genGivenB(B, op, span, mulMax, rand) {
+  if (op === '+') { const A = ri(rand,1,span); return { A, B, C: A+B }; }
+  if (op === '-') { const C = ri(rand,1,span); return { A: B+C, B, C }; }
+  if (op === '\u00d7') { const A = ri(rand,2,mulMax); return { A, B, C: A*B }; }
+  const C = ri(rand,2,mulMax); return { A: B*C, B, C };
+}
+// Faqat C (natija) ma'lum: A,B ni tanlaydi
+function genGivenC(C, op, span, mulMax, rand) {
+  if (op === '+') { if (C<2) return null; const A = ri(rand,1,C-1); return { A, B: C-A, C }; }
+  if (op === '-') { const A = C + ri(rand,1,span); return { A, B: A-C, C }; }
+  if (op === '\u00d7') {
+    const divs = []; for (let d=2; d<=mulMax; d++) if (C%d===0 && C/d>=2 && C/d<=mulMax) divs.push(d);
+    if (!divs.length) return null; const A = divs[Math.floor(rand()*divs.length)]; return { A, B: C/A, C };
+  }
+  const B = ri(rand,2,mulMax); return { A: B*C, B, C };
+}
+// 2 yoki 3 tasi ma'lum: qolganini hisoblaydi (yoki to'liq mosligini tekshiradi)
+function solveThird(known, op) {
+  if (known.C === undefined) { const c = applyOp(known.A, op, known.B); return c===null ? null : { ...known, C:c }; }
+  if (known.B === undefined) {
+    let b;
+    if (op === '+') b = known.C - known.A;
+    else if (op === '-') b = known.A - known.C;
+    else if (op === '\u00d7') b = (known.A!==0 && known.C%known.A===0) ? known.C/known.A : NaN;
+    else b = (known.C!==0 && known.A%known.C===0) ? known.A/known.C : NaN;
+    return (Number.isInteger(b) && b>=1) ? { ...known, B:b } : null;
+  }
+  let a;
+  if (op === '+') a = known.C - known.B;
+  else if (op === '-') a = known.C + known.B;
+  else if (op === '\u00d7') a = (known.B!==0 && known.C%known.B===0) ? known.C/known.B : NaN;
+  else a = known.B * known.C;
+  return (Number.isInteger(a) && a>=1) ? { ...known, A:a } : null;
+}
+
+// ---------- Krossvord qurish: har bir tenglama "A op B = C" 5 ta katakchani egallaydi ----------
+function tryPlace(gridType, gridOp, gridVal, op, orient, ar, ac, role, rand, span, mulMax, LIMIT) {
+  let cells;
+  if (orient === 'H') {
+    const startC = role===0 ? ac : role===2 ? ac-2 : ac-4;
+    if (startC<1 || startC+4>=LIMIT-1 || ar<1 || ar>=LIMIT-1) return null;
+    cells = [0,1,2,3,4].map(i => ({ r:ar, c:startC+i }));
+  } else {
+    const startR = role===0 ? ar : role===2 ? ar-2 : ar-4;
+    if (startR<1 || startR+4>=LIMIT-1 || ac<1 || ac>=LIMIT-1) return null;
+    cells = [0,1,2,3,4].map(i => ({ r:startR+i, c:ac }));
+  }
+  const before = orient==='H' ? {r:cells[0].r, c:cells[0].c-1} : {r:cells[0].r-1, c:cells[0].c};
+  const after  = orient==='H' ? {r:cells[4].r, c:cells[4].c+1} : {r:cells[4].r+1, c:cells[4].c};
+  if (gridType[before.r+','+before.c] || gridType[after.r+','+after.c]) return null;
+
+  const roles = ['A','op','B','eq','C'];
+  const known = {};
+  for (let i=0; i<5; i++) {
+    const k = cells[i].r+','+cells[i].c, rl = roles[i], t = gridType[k];
+    if (rl==='op' || rl==='eq') { if (t) return null; }
+    else if (t==='num') known[rl] = gridVal[k];
+    else if (t) return null;
+  }
+  const kcount = Object.keys(known).length;
+  let vals;
+  if (kcount===0) vals = genFree(op, span, mulMax, rand);
+  else if (kcount===1) {
+    if (known.A!==undefined) vals = genGivenA(known.A, op, span, mulMax, rand);
+    else if (known.B!==undefined) vals = genGivenB(known.B, op, span, mulMax, rand);
+    else vals = genGivenC(known.C, op, span, mulMax, rand);
+  } else if (kcount===2) {
+    vals = solveThird(known, op);
+  } else {
+    // kcount===3: uchala katakcha ham boshqa tenglamalardan mavjud - faqat mosligini tekshiramiz, qayta hisoblamaymiz
+    vals = (applyOp(known.A, op, known.B) === known.C) ? known : null;
+  }
+  if (!vals || !ok3(vals.A, vals.B, vals.C)) return null;
+
+  for (let i=0; i<5; i++) {
+    const k = cells[i].r+','+cells[i].c, rl = roles[i];
+    if (rl==='op') { gridType[k]='op'; gridOp[k]=op; }
+    else if (rl==='eq') { gridType[k]='eq'; }
+    else { gridType[k]='num'; gridVal[k]=vals[rl]; }
+  }
+  return { a:cells[0], b:cells[2], c:cells[4], op };
+}
+
+function buildPuzzle(level, seed) {
+  const { ops, span, mulMax, targetEq, hideFrac } = LEVELS[level];
+  const rand = makeRng(seed);
+  const LIMIT = 65, CENTER = 32;
+  const gridType = {}, gridOp = {}, gridVal = {};
+  const equations = [];
+
+  let first = null;
+  for (let t=0; t<40 && !first; t++) {
+    first = tryPlace(gridType, gridOp, gridVal, ops[Math.floor(rand()*ops.length)], 'H', CENTER, CENTER, 0, rand, span, mulMax, LIMIT);
+  }
+  if (first) equations.push(first);
+
+  let attempts = 0;
+  while (equations.length < targetEq && attempts < 2500) {
+    attempts++;
+    const numKeys = Object.keys(gridType).filter(k => gridType[k]==='num');
+    if (!numKeys.length) break;
+    const [ar, ac] = numKeys[Math.floor(rand()*numKeys.length)].split(',').map(Number);
+    const role = [0,2,4][Math.floor(rand()*3)];
+    const orient = rand()<0.5 ? 'H' : 'V';
+    const op = ops[Math.floor(rand()*ops.length)];
+    const res = tryPlace(gridType, gridOp, gridVal, op, orient, ar, ac, role, rand, span, mulMax, LIMIT);
+    if (res) equations.push(res);
+  }
+
+  // Chegaralovchi to'rtburchak
+  let minR=1e9,maxR=-1e9,minC=1e9,maxC=-1e9;
+  Object.keys(gridType).forEach(k => { const [r,c]=k.split(',').map(Number); minR=Math.min(minR,r); maxR=Math.max(maxR,r); minC=Math.min(minC,c); maxC=Math.max(maxC,c); });
+
+  // Bo'sh qoldiriladigan katakchalarni tanlash: hammasi ko'rsatilgan holatdan boshlab,
+  // mantiq bilan (qolgan ikkitasidan uchinchisini hisoblab) hali ham yechish mumkin bo'lgancha yashiraveradi
+  const numKeysAll = Object.keys(gridType).filter(k => gridType[k]==='num');
+  const known = new Set(numKeysAll);
+  function fullyDeduced(knownSet) {
+    const kn = new Set(knownSet);
+    let progress = true;
+    while (progress) {
+      progress = false;
+      for (const eq of equations) {
+        const ka = eq.a.r+','+eq.a.c, kb = eq.b.r+','+eq.b.c, kc = eq.c.r+','+eq.c.c;
+        const ha=kn.has(ka), hb=kn.has(kb), hc=kn.has(kc), cnt=[ha,hb,hc].filter(Boolean).length;
+        if (cnt===2) { if(!ha){kn.add(ka);progress=true;} else if(!hb){kn.add(kb);progress=true;} else if(!hc){kn.add(kc);progress=true;} }
+      }
+    }
+    return kn.size === numKeysAll.length;
+  }
+  const target = Math.max(1, Math.round(numKeysAll.length * hideFrac));
+  const order = numKeysAll.slice();
+  for (let i=order.length-1; i>0; i--) { const j=Math.floor(rand()*(i+1)); [order[i],order[j]]=[order[j],order[i]]; }
+  let hidden = 0;
+  for (const k of order) {
+    if (hidden >= target) break;
+    known.delete(k);
+    if (fullyDeduced(known)) hidden++; else known.add(k);
+  }
+
+  return { gridType, gridOp, gridVal, equations, bbox:{minR,maxR,minC,maxC}, given: known, hiddenCount: hidden, totalCells: numKeysAll.length, eqCount: equations.length };
+}
+
+// ---------- Varaqni chizish (A4 = 210 x 297 mm, k = piksel/mm) ----------
+function state() {
+  return {
+    level: levelIdx,
+    seed: Math.max(1, Math.round(+$('seed').value) || 1),
+    title: $('title').value,
+    fontPt: +$('fs').value || 24
+  };
+}
+
+function wrapLines(ctx, text, maxW) {
+  if (!text.trim()) return [];
+  const out = [];
+  text.split('\n').forEach(par => {
+    if (!par.trim()) { out.push(''); return; }
+    let line = '';
+    par.trim().split(/\s+/).forEach(word => {
+      const t = line ? line + ' ' + word : word;
+      if (!line || ctx.measureText(t).width <= maxW) line = t;
+      else { out.push(line); line = word; }
+    });
+    out.push(line);
+  });
+  return out;
+}
+
+const FONT = '"Trebuchet MS","DejaVu Sans",Arial,sans-serif';
+
+let puzKey = '', puzVal = null;
+function getPuzzle(level, seed) {
+  const id = level+'|'+seed;
+  if (id === puzKey) return puzVal;
+  puzKey = id;
+  return (puzVal = buildPuzzle(level, seed));
+}
+
+function drawSheet(canvas, k, showSolution) {
+  const s = state();
+  const p = getPuzzle(s.level, s.seed);
+  const ctx = canvas.getContext('2d');
+  canvas.width = Math.round(210*k);
+  canvas.height = Math.round(297*k);
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  const M = 12, areaW = 210 - 2*M;
+
+  const fpx = s.fontPt * 0.3528 * k;
+  ctx.font = `700 ${fpx}px ${FONT}`;
+  ctx.fillStyle = '#1f2a44'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  const lines = wrapLines(ctx, s.title, areaW*k);
+  const lh = fpx * 1.25;
+  lines.forEach((ln, i) => ctx.fillText(ln, 105*k, M*k + i*lh));
+  const top = M + (lines.length * lh) / k + (lines.length ? 8 : 0);
+
+  const footH = 7;
+  ctx.font = `${8*0.3528*k}px ${FONT}`;
+  ctx.fillStyle = '#7b869c'; ctx.textAlign = 'right'; ctx.textBaseline = 'alphabetic';
+  ctx.fillText(T().foot(s.seed, T().levels[s.level]), (210-M)*k, (297-M)*k);
+
+  const bb = p.bbox, gw = bb.maxC-bb.minC+1, gh = bb.maxR-bb.minR+1;
+  const areaH = (297 - M - footH) - top;
+  const cellMm = Math.min(areaW/gw, areaH/gh, 17);
+  const gx = 105 - (gw*cellMm)/2, gy = top + Math.max(0, (areaH - gh*cellMm)/2);
+  const cx = c => (gx + (c-bb.minC)*cellMm)*k, cy = r => (gy + (r-bb.minR)*cellMm)*k;
+
+  ctx.lineWidth = 0.6*k;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  Object.keys(p.gridType).forEach(key => {
+    const [r,c] = key.split(',').map(Number), t = p.gridType[key];
+    const x = cx(c), y = cy(r), w = cellMm*k;
+    ctx.strokeStyle = '#1f2a44';
+    ctx.strokeRect(x, y, w, w);
+    if (t === 'num') {
+      const isGiven = p.given.has(key);
+      ctx.font = `700 ${cellMm*0.5*k}px ${FONT}`;
+      if (isGiven) { ctx.fillStyle = '#1f2a44'; ctx.fillText(String(p.gridVal[key]), x+w/2, y+w/2+cellMm*0.02*k); }
+      else if (showSolution) { ctx.fillStyle = '#e5484d'; ctx.fillText(String(p.gridVal[key]), x+w/2, y+w/2+cellMm*0.02*k); }
+    } else if (t === 'op') {
+      ctx.font = `700 ${cellMm*0.55*k}px ${FONT}`;
+      ctx.fillStyle = '#3d4a68'; ctx.fillText(p.gridOp[key], x+w/2, y+w/2+cellMm*0.02*k);
+    } else if (t === 'eq') {
+      ctx.font = `700 ${cellMm*0.55*k}px ${FONT}`;
+      ctx.fillStyle = '#3d4a68'; ctx.fillText('=', x+w/2, y+w/2+cellMm*0.02*k);
+    }
+  });
+
+  return p;
+}
+
+function render() {
+  $('fsVal').textContent = $('fs').value;
+  const p = drawSheet($('sheet'), 1240/210, $('sol').checked);   // ekran uchun (~150 dpi)
+  $('gridHint').textContent = T().hintGrid(p.eqCount, p.totalCells, p.hiddenCount);
+}
+
+// ---------- PDF (bitta A4 sahifa, JPEG rasm) ----------
+function makePdf(jpeg, imgW, imgH) {
+  const enc = new TextEncoder();
+  const parts = [], offsets = [];
+  let len = 0;
+  const push = d => { const b = typeof d === 'string' ? enc.encode(d) : d; parts.push(b); len += b.length; };
+  const PW = 595.28, PH = 841.89;
+  const content = `q ${PW} 0 0 ${PH} 0 0 cm /Im0 Do Q`;
+  push('%PDF-1.4\n');
+  offsets[1] = len; push('1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n');
+  offsets[2] = len; push('2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n');
+  offsets[3] = len; push(`3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${PW} ${PH}] /Resources << /XObject << /Im0 4 0 R >> >> /Contents 5 0 R >>\nendobj\n`);
+  offsets[4] = len;
+  push(`4 0 obj\n<< /Type /XObject /Subtype /Image /Width ${imgW} /Height ${imgH} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpeg.length} >>\nstream\n`);
+  push(jpeg); push('\nendstream\nendobj\n');
+  offsets[5] = len; push(`5 0 obj\n<< /Length ${content.length} >>\nstream\n${content}\nendstream\nendobj\n`);
+  const xref = len;
+  let x = 'xref\n0 6\n0000000000 65535 f \n';
+  for (let i = 1; i <= 5; i++) x += String(offsets[i]).padStart(10, '0') + ' 00000 n \n';
+  push(x + `trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`);
+  return new Blob(parts, { type: 'application/pdf' });
+}
+
+function download(blob, name) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+}
+
+function savePdf(withSolution) {
+  const seed = state().seed;
+  const c = document.createElement('canvas');
+  drawSheet(c, 300/25.4, withSolution);           // bosma uchun 300 dpi
+  c.toBlob(async blob => {
+    const jpeg = new Uint8Array(await blob.arrayBuffer());
+    download(makePdf(jpeg, c.width, c.height), withSolution ? T().fileAns(seed) : T().file(seed));
+  }, 'image/jpeg', 0.93);
+}
+
+// ---------- Boshqaruv ----------
+function buildLevels() {
+  const box = $('levelPick');
+  box.innerHTML = '';
+  T().levels.forEach((name, i) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'lvl'; b.textContent = name;
+    b.setAttribute('aria-pressed', String(levelIdx === i));
+    b.addEventListener('click', () => {
+      levelIdx = i;
+      box.querySelectorAll('.lvl').forEach((x, j) => x.setAttribute('aria-pressed', String(j === i)));
+      try { localStorage.setItem('cw_level', String(i)); } catch (e) {}
+      render();
+    });
+    box.appendChild(b);
+  });
+}
+
+try {
+  const l = +localStorage.getItem('cw_level');
+  if (l >= 0 && l <= 3 && localStorage.getItem('cw_level') !== null) levelIdx = l;
+} catch (e) {}
+
+['title','fs','seed','sol'].forEach(id => $(id).addEventListener('input', render));
+$('newBtn').addEventListener('click', () => { $('seed').value = Math.floor(Math.random()*1e9) + 1; render(); });
+$('pdfBtn').addEventListener('click', () => savePdf(false));
+$('ansBtn').addEventListener('click', () => savePdf(true));
+document.querySelectorAll('.lang button').forEach(b => b.addEventListener('click', () => applyLang(b.dataset.lang)));
+
+$('seed').value = Math.floor(Math.random()*1e9) + 1;
+let saved = 'uz';
+try { saved = localStorage.getItem('lang') || 'uz'; } catch (e) {}
+applyLang(I18N[saved] ? saved : 'uz', true);
+
+// Oflayn ishlash va telefonga o'rnatish (PWA)
+if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+</script>
+</body>
+</html>
