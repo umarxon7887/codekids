@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Labirint O'yini - CodeKids</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+body {
+  font-family:'Segoe UI',Tahoma,sans-serif;
+  background:#1e1e2e; color:#cdd6f4;
+  min-height:100vh; display:flex; flex-direction:column;
+  align-items:center; padding:10px; user-select:none;
+}
+.header {
+  width:100%; max-width:500px; display:flex;
+  justify-content:space-between; align-items:center;
+  background:#313244; padding:12px 18px;
+  border-radius:12px; margin-bottom:12px;
+}
+.btn-back {
+  padding:8px 16px; background:#45475a; color:#cdd6f4;
+  border:none; border-radius:8px; font-weight:bold; cursor:pointer;
+}
+.title { color:#89b4fa; font-weight:bold; font-size:1.2rem; }
+.stats {
+  width:100%; max-width:500px; display:flex;
+  justify-content:space-around; margin-bottom:12px; gap:8px;
+}
+.stat-box {
+  background:#313244; padding:8px 14px;
+  border-radius:10px; text-align:center; flex:1;
+}
+.stat-label { font-size:.75rem; color:#a6adc8; }
+.stat-value { font-size:1.3rem; font-weight:bold; color:#a6e3a1; }
+canvas {
+  background:#11111b; border-radius:12px;
+  touch-action:none; display:block;
+  box-shadow:0 5px 20px rgba(0,0,0,.5);
+}
+.controls {
+  margin-top:15px; display:grid;
+  grid-template-columns:repeat(3,70px);
+  grid-template-rows:repeat(3,70px); gap:8px;
+}
+.dpad {
+  background:#45475a; border:none; border-radius:12px;
+  color:#cdd6f4; font-size:1.6rem; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+}
+.dpad:active { background:#89b4fa; color:#1e1e2e; }
+.dpad.up{grid-column:2;grid-row:1} .dpad.left{grid-column:1;grid-row:2}
+.dpad.right{grid-column:3;grid-row:2} .dpad.down{grid-column:2;grid-row:3}
+.level-select {
+  display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; justify-content:center;
+}
+.lvl-btn {
+  padding:8px 16px; background:#45475a; color:#cdd6f4;
+  border:none; border-radius:8px; cursor:pointer; font-weight:500;
+}
+.lvl-btn.active { background:#89b4fa; color:#1e1e2e; font-weight:bold; }
+.overlay {
+  position:fixed; inset:0; background:rgba(0,0,0,.85);
+  display:none; align-items:center; justify-content:center; z-index:10;
+}
+.overlay.show { display:flex; }
+.win-box {
+  background:#313244; padding:40px; border-radius:20px;
+  text-align:center; max-width:90%;
+}
+.win-box h2 { color:#a6e3a1; font-size:2rem; margin-bottom:15px; }
+.win-box p { margin-bottom:8px; font-size:1.1rem; }
+.win-box button {
+  margin-top:15px; padding:12px 30px; background:#89b4fa;
+  color:#1e1e2e; border:none; border-radius:10px;
+  font-size:1.1rem; font-weight:bold; cursor:pointer; margin-right:8px;
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <button class="btn-back" onclick="location.href='../index.html'">← Orqaga</button>
+  <div class="title">🧩 Labirint</div>
+  <div id="userName" style="color:#a6e3a1;font-weight:bold;"></div>
+</div>
+
+<div class="level-select" id="levelSelect">
+  <button class="lvl-btn active" data-size="5">Oson</button>
+  <button class="lvl-btn" data-size="9">O'rta</button>
+  <button class="lvl-btn" data-size="13">Qiyin</button>
+  <button class="lvl-btn" data-size="17">Juda qiyin</button>
+</div>
+
+<div class="stats">
+  <div class="stat-box"><div class="stat-label">⏱ Vaqt</div><div class="stat-value" id="time">0</div></div>
+  <div class="stat-box"><div class="stat-label">👣 Qadam</div><div class="stat-value" id="steps">0</div></div>
+  <div class="stat-box"><div class="stat-label">🎯 Daraja</div><div class="stat-value" id="level">5×5</div></div>
+</div>
+
+<canvas id="maze"></canvas>
+
+<div class="controls">
+  <button class="dpad up" onclick="move(0,-1)">▲</button>
+  <button class="dpad left" onclick="move(-1,0)">◀</button>
+  <button class="dpad right" onclick="move(1,0)">▶</button>
+  <button class="dpad down" onclick="move(0,1)">▼</button>
+</div>
+
+<div class="overlay" id="winOverlay">
+  <div class="win-box">
+    <h2>🏆 Tabriklaymiz!</h2>
+    <p>⏱ Vaqt: <b id="winTime"></b> soniya</p>
+    <p>👣 Qadamlar: <b id="winSteps"></b></p>
+    <button onclick="nextLevel()">Keyingi daraja ➡</button>
+    <button onclick="restart()">🔄 Qayta</button>
+  </div>
+</div>
+
+<script>
+// Foydalanuvchi nomi
+const user = JSON.parse(localStorage.getItem('codekids_user') || 'null');
+document.getElementById('userName').textContent = user ? user.nickname : '';
+
+const canvas = document.getElementById('maze');
+const ctx = canvas.getContext('2d');
+let size = 5, cell, grid, player, steps = 0, seconds = 0, timer = null, playing = false;
+
+// Labirint generatsiya (Recursive Backtracker)
+function generate(n) {
+  const g = [];
+  for (let y = 0; y < n; y++) {
+    g[y] = [];
+    for (let x = 0; x < n; x++) g[y][x] = {t:1,r:1,b:1,l:1,v:0};
+  }
+  const stack = [[0,0]];
+  g[0][0].v = 1;
+  while (stack.length) {
+    const [cx,cy] = stack[stack.length-1];
+    const nb = [];
+    if (cy>0 && !g[cy-1][cx].v) nb.push([cx,cy-1,'t','b']);
+    if (cx<n-1 && !g[cy][cx+1].v) nb.push([cx+1,cy,'r','l']);
+    if (cy<n-1 && !g[cy+1][cx].v) nb.push([cx,cy+1,'b','t']);
+    if (cx>0 && !g[cy][cx-1].v) nb.push([cx-1,cy,'l','r']);
+    if (!nb.length) { stack.pop(); continue; }
+    const [nx,ny,w1,w2] = nb[Math.floor(Math.random()*nb.length)];
+    g[cy][cx][w1] = 0; g[ny][nx][w2] = 0; g[ny][nx].v = 1;
+    stack.push([nx,ny]);
+  }
+  return g;
+}
+
+function setup() {
+  clearInterval(timer);
+  steps = 0; seconds = 0; playing = true;
+  document.getElementById('steps').textContent = 0;
+  document.getElementById('time').textContent = 0;
+  document.getElementById('level').textContent = size + '×' + size;
+  document.getElementById('winOverlay').classList.remove('show');
+  
+  const maxW = Math.min(window.innerWidth - 20, 500);
+  cell = Math.floor(maxW / size);
+  canvas.width = cell * size; canvas.height = cell * size;
+  
+  grid = generate(size);
+  player = {x:0, y:0};
+  draw();
+  timer = setInterval(() => {
+    seconds++;
+    document.getElementById('time').textContent = seconds;
+  }, 1000);
+}
+
+function draw() {
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.strokeStyle = '#89b4fa'; ctx.lineWidth = 3; ctx.lineCap = 'round';
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const c = grid[y][x], px = x*cell, py = y*cell;
+      ctx.beginPath();
+      if (c.t) { ctx.moveTo(px,py); ctx.lineTo(px+cell,py); }
+      if (c.r) { ctx.moveTo(px+cell,py); ctx.lineTo(px+cell,py+cell); }
+      if (c.b) { ctx.moveTo(px,py+cell); ctx.lineTo(px+cell,py+cell); }
+      if (c.l) { ctx.moveTo(px,py); ctx.lineTo(px,py+cell); }
+      ctx.stroke();
+    }
+  }
+  // Manzil
+  ctx.font = (cell*0.6) + 'px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('🏁', (size-1)*cell + cell/2, (size-1)*cell + cell/2);
+  // O'yinchi
+  ctx.fillText('🦸', player.x*cell + cell/2, player.y*cell + cell/2);
+}
+
+function move(dx,dy) {
+  if (!playing) return;
+  const c = grid[player.y][player.x];
+  if (dx===1 && c.r) return;
+  if (dx===-1 && c.l) return;
+  if (dy===1 && c.b) return;
+  if (dy===-1 && c.t) return;
+  player.x += dx; player.y += dy;
+  steps++;
+  document.getElementById('steps').textContent = steps;
+  draw();
+  if (player.x === size-1 && player.y === size-1) win();
+}
+
+function win() {
+  playing = false;
+  clearInterval(timer);
+  document.getElementById('winTime').textContent = seconds;
+  document.getElementById('winSteps').textContent = steps;
+  document.getElementById('winOverlay').classList.add('show');
+  // CodeKids statistikasiga saqlash
+  if (user) {
+    const res = JSON.parse(localStorage.getItem('codekids_results') || '[]');
+    res.push({ type:'maze', nickname:user.nickname, time:seconds, steps:steps,
+               size:size, timestamp:new Date().toISOString() });
+    localStorage.setItem('codekids_results', JSON.stringify(res));
+  }
+}
+
+function nextLevel() {
+  size = size >= 17 ? 5 : size + 4;
+  document.querySelectorAll('.lvl-btn').forEach(b => {
+    b.classList.toggle('active', parseInt(b.dataset.size) === size);
+  });
+  setup();
+}
+
+function restart() { setup(); }
+
+// Daraja tugmalari
+document.querySelectorAll('.lvl-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.lvl-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    size = parseInt(btn.dataset.size);
+    setup();
+  });
+});
+
+// Klaviatura
+document.addEventListener('keydown', e => {
+  if (e.key==='ArrowUp') move(0,-1);
+  if (e.key==='ArrowDown') move(0,1);
+  if (e.key==='ArrowLeft') move(-1,0);
+  if (e.key==='ArrowRight') move(1,0);
+});
+
+// Swipe (barmoq bilan)
+let tx=0, ty=0;
+canvas.addEventListener('touchstart', e => {
+  tx = e.touches[0].clientX; ty = e.touches[0].clientY;
+}, {passive:true});
+canvas.addEventListener('touchend', e => {
+  const dx = e.changedTouches[0].clientX - tx;
+  const dy = e.changedTouches[0].clientY - ty;
+  if (Math.abs(dx) > Math.abs(dy)) {
+    if (Math.abs(dx) > 30) move(dx > 0 ? 1 : -1, 0);
+  } else {
+    if (Math.abs(dy) > 30) move(0, dy > 0 ? 1 : -1);
+  }
+}, {passive:true});
+
+setup();
+</script>
+</body>
+</html>

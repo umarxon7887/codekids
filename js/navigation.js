@@ -46,7 +46,7 @@ const Navigation = {
                 TypingGame.init();
                 break;
             
-            case 'labirint':
+            ase 'labirint':
                 window.location.href = 'labirint/index.html';
                 break;
        
