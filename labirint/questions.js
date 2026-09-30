@@ -206,9 +206,27 @@ const QUESTION_BANK = {
   }
 };
 
-// Mavzu + level bo'yicha tasodifiy savol olish
+// Berilgan savollar ro'yxati (takrorlanmaslik uchun)
+const askedSavollar = [];
+
+// Mavzu + level bo'yicha savol olish (TAKRORLANMAYDI)
 function getSavol(mavzuId, level) {
   const pool = (QUESTION_BANK.savollar[mavzuId] || []).filter(s => s.level === level);
   if (!pool.length) return null;
-  return pool[Math.floor(Math.random() * pool.length)];
+  
+  // Hali berilmagan savollar
+  let fresh = pool.filter(s => askedSavollar.indexOf(s.q) === -1);
+  
+  // Agar hammasi berilgan bo'lsa - shu pool belgilarini tozalab, qayta boshlaymiz
+  if (!fresh.length) {
+    pool.forEach(s => {
+      const i = askedSavollar.indexOf(s.q);
+      if (i !== -1) askedSavollar.splice(i, 1);
+    });
+    fresh = pool;
+  }
+  
+  const chosen = fresh[Math.floor(Math.random() * fresh.length)];
+  askedSavollar.push(chosen.q);
+  return chosen;
 }
