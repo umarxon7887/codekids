@@ -109,7 +109,7 @@ canvas {
 <div class="stats">
   <div class="stat-box"><div class="stat-label">⏱</div><div class="stat-value" id="time">0</div></div>
   <div class="stat-box"><div class="stat-label">👣</div><div class="stat-value" id="steps">0</div></div>
-  <div class="stat-box"><div class="stat-label">🎯</div><div class="stat-value" <div class="stat-box"><div class="stat-label">🎯</div><div class="stat-value" id="level">13×13</div></div>
+  <div class="stat-box"><div class="stat-label">🎯</div><div class="stat-value" id="level">13×13</div></div>
   <div class="stat-box"><div class="stat-label">👾 Qolgan</div><div class="stat-value" id="monsters">0</div></div>
 </div>
 
@@ -193,7 +193,7 @@ let timer=null, playing=false, autoMode=false, junctionMode=false, lastDir=null;
 let autoTimer=null, selectedTopic=null, selectedHero=HEROES[0], correctAnswers=0;
 let path=[], monsterTimer=null, monsterLeft=0, lastMonsterStep=0;
 
-// ============ QAHRAMON / MAVZU TANLASH ============
+// ============ QAHRAMON / MAVZU ============
 function showHeroSelection(thenTopic) {
   const g = document.getElementById('heroGrid');
   g.innerHTML = '';
@@ -274,15 +274,19 @@ function startGame(){
   clearInterval(timer); clearInterval(autoTimer);
   size=LEVELS[levelIdx].size; autoMode=LEVELS[levelIdx].auto;
   steps=0; seconds=0; correctAnswers=0; playing=true;
-junctionMode=false; lastDir=null; path=[];
+  junctionMode=false; lastDir=null; path=[];
+  // KVOTA: shu bosqichdagi savollar sonicha maxluq chiqadi
+  monsterLeft=(QUESTION_BANK.savollar[selectedTopic]||[]).filter(s=>s.level===levelIdx+1).length;
+  lastMonsterStep=0;
+  document.getElementById('monsters').textContent=monsterLeft;
   document.getElementById('steps').textContent=0;
   document.getElementById('time').textContent=0;
   document.getElementById('level').textContent=size+'×'+size;
   document.getElementById('winOverlay').classList.remove('show');
   hideBubble();
-  controls.style.display = 'grid';
-  const maxW = Math.min(window.innerWidth-110, 420);
-  cell = Math.floor(maxW/size);
+  controls.style.display='grid';
+  const maxW=Math.min(window.innerWidth-110,420);
+  cell=Math.floor(maxW/size);
   canvas.width=cell*size; canvas.height=cell*size;
   grid=generate(size); braid(grid,size,LEVELS[levelIdx].braid);
   player={x:0,y:0}; draw();
@@ -299,40 +303,32 @@ function openDirs(x,y){
   return l;
 }
 
-// Avtomatik yurish
 function autoTick(){
   if(!playing || junctionMode) return;
   if(player.x===size-1 && player.y===size-1){ win(); return; }
   const dirs=openDirs(player.x,player.y);
-  const back = lastDir ? [-lastDir[0],-lastDir[1]] : null;
-  const fwdOpen = lastDir && dirs.some(d=>d[0]===lastDir[0]&&d[1]===lastDir[1]);
-  const others = dirs.filter(d=>!(lastDir&&d[0]===lastDir[0]&&d[1]===lastDir[1]) && !(back&&d[0]===back[0]&&d[1]===back[1]));
-  if(fwdOpen && others.length>0){ enterJunction(); return; }
+  const back=lastDir?[-lastDir[0],-lastDir[1]]:null;
+  const fwdOpen=lastDir&&dirs.some(d=>d[0]===lastDir[0]&&d[1]===lastDir[1]);
+  const others=dirs.filter(d=>!(lastDir&&d[0]===lastDir[0]&&d[1]===lastDir[1])&&!(back&&d[0]===back[0]&&d[1]===back[1]));
+  if(fwdOpen&&others.length>0){ enterJunction(); return; }
   if(fwdOpen){ move(lastDir[0],lastDir[1]); return; }
-  const cand = dirs.filter(d=>!(back&&d[0]===back[0]&&d[1]===back[1]));
+  const cand=dirs.filter(d=>!(back&&d[0]===back[0]&&d[1]===back[1]));
   if(cand.length===1){ move(cand[0][0],cand[0][1]); return; }
   if(cand.length>1){ enterJunction(); return; }
   if(back){ move(back[0],back[1]); return; }
 }
 
-function enterJunction(){
-  junctionMode=true;
-  showBubble();
-}
+function enterJunction(){ junctionMode=true; showBubble(); }
 function exitJunction(){
   if(!junctionMode) return;
-  if(openDirs(player.x,player.y).length < 3){
-    junctionMode=false; hideBubble();
-  }
+  if(openDirs(player.x,player.y).length<3){ junctionMode=false; hideBubble(); }
 }
-function showBubble(){
-  bubble.classList.add('show');
-}
+function showBubble(){ bubble.classList.add('show'); }
 function hideBubble(){ bubble.classList.remove('show'); }
 
 // ============ HARAKAT ============
 function manualMove(dx,dy){
-  if(autoMode && !junctionMode) return;
+  if(autoMode&&!junctionMode) return;
   move(dx,dy);
 }
 function move(dx,dy){
@@ -348,17 +344,17 @@ function move(dx,dy){
   document.getElementById('steps').textContent=steps;
   draw();
   exitJunction();
-  if(!junctionMode && steps>5 && if(!junctionMode && monsterLeft>0 && steps>5 &&
-     (steps-lastMonsterStep>=10 || Math.random()<0.1)){ lastMonsterStep=steps; showMonster(); }
-  if(player.x===size-1 && player.y===size-1) win();
+  // KVOTA: maxluq faqat monsterLeft>0 bo'lsa chiqadi
+  if(!junctionMode && monsterLeft>0 && steps>5 &&
+     (steps-lastMonsterStep>=10 || Math.random()<0.1)){
+    lastMonsterStep=steps;
+    showMonster();
+  }
+  if(player.x===size-1&&player.y===size-1) win();
 }
 
-// Orqaga qaytish (yo'l tarixi bo'yicha - XAVFSIZ)
 function stepBack(n){
-  for(let i=0;i<n && path.length;i++){
-    const p=path.pop();
-    player.x=p.x; player.y=p.y;
-  }
+  for(let i=0;i<n&&path.length;i++){ const p=path.pop(); player.x=p.x; player.y=p.y; }
   lastDir=null;
   steps=Math.max(0,steps-n);
   document.getElementById('steps').textContent=steps;
@@ -491,7 +487,6 @@ canvas.addEventListener('touchend',e=>{
   else { if(Math.abs(dy)>30) manualMove(0,dy>0?1:-1); }
 },{passive:true});
 
-// ============ BOSHISH ============
 (function init(){
   const sh=localStorage.getItem('codekids_hero');
   const st=localStorage.getItem('codekids_topic');
