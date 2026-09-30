@@ -86,16 +86,16 @@ canvas {
 </div>
 
 <div class="level-select" id="levelSelect">
-  <button class="lvl-btn active" data-size="5">Oson</button>
-  <button class="lvl-btn" data-size="9">O'rta</button>
-  <button class="lvl-btn" data-size="13">Qiyin</button>
-  <button class="lvl-btn" data-size="17">Juda qiyin</button>
+  <button class="lvl-btn active" data-level="0">1-bosqich</button>
+  <button class="lvl-btn" data-level="1">2-bosqich</button>
+  <button class="lvl-btn" data-level="2">3-bosqich 🔀</button>
+  <button class="lvl-btn" data-level="3">4-bosqich 🔀</button>
 </div>
 
 <div class="stats">
   <div class="stat-box"><div class="stat-label">⏱ Vaqt</div><div class="stat-value" id="time">0</div></div>
   <div class="stat-box"><div class="stat-label">👣 Qadam</div><div class="stat-value" id="steps">0</div></div>
-  <div class="stat-box"><div class="stat-label">🎯 Daraja</div><div class="stat-value" id="level">5×5</div></div>
+  <div class="stat-box"><div class="stat-label">🎯 Maydon</div><div class="stat-value" id="level">13×13</div></div>
 </div>
 
 <canvas id="maze"></canvas>
@@ -112,7 +112,7 @@ canvas {
     <h2>🏆 Tabriklaymiz!</h2>
     <p>⏱ Vaqt: <b id="winTime"></b> soniya</p>
     <p>👣 Qadamlar: <b id="winSteps"></b></p>
-    <button onclick="nextLevel()">Keyingi daraja ➡</button>
+    <button onclick="nextLevel()">Keyingi bosqich ➡</button>
     <button onclick="restart()">🔄 Qayta</button>
   </div>
 </div>
@@ -122,11 +122,23 @@ canvas {
 const user = JSON.parse(localStorage.getItem('codekids_user') || 'null');
 document.getElementById('userName').textContent = user ? user.nickname : '';
 
+// ============================================
+// BOSQICHLAR: size = maydon, braid = chalg'ituvchi yo'llar foizi
+// ============================================
+const LEVELS = [
+  { size: 13, braid: 0 },
+  { size: 17, braid: 0 },
+  { size: 17, braid: 0.5 },
+  { size: 21, braid: 0.8 }
+];
+
 const canvas = document.getElementById('maze');
 const ctx = canvas.getContext('2d');
-let size = 5, cell, grid, player, steps = 0, seconds = 0, timer = null, playing = false;
+let levelIdx = 0, size = 13, cell, grid, player, steps = 0, seconds = 0, timer = null, playing = false;
 
-// Labirint generatsiya (Recursive Backtracker)
+// ============================================
+// LABIRINT GENERATSIYA (Recursive Backtracker)
+// ============================================
 function generate(n) {
   const g = [];
   for (let y = 0; y < n; y++) {
@@ -136,22 +148,69 @@ function generate(n) {
   const stack = [[0,0]];
   g[0][0].v = 1;
   while (stack.length) {
-    const [cx,cy] = stack[stack.length-1];
+    const cx = stack[stack.length-1][0], cy = stack[stack.length-1][1];
     const nb = [];
     if (cy>0 && !g[cy-1][cx].v) nb.push([cx,cy-1,'t','b']);
     if (cx<n-1 && !g[cy][cx+1].v) nb.push([cx+1,cy,'r','l']);
     if (cy<n-1 && !g[cy+1][cx].v) nb.push([cx,cy+1,'b','t']);
     if (cx>0 && !g[cy][cx-1].v) nb.push([cx-1,cy,'l','r']);
     if (!nb.length) { stack.pop(); continue; }
-    const [nx,ny,w1,w2] = nb[Math.floor(Math.random()*nb.length)];
-    g[cy][cx][w1] = 0; g[ny][nx][w2] = 0; g[ny][nx].v = 1;
-    stack.push([nx,ny]);
+    const pick = nb[Math.floor(Math.random()*nb.length)];
+    g[cy][cx][pick[2]] = 0;
+    g[pick[1]][pick[0]][pick[3]] = 0;
+    g[pick[1]][pick[0]].v = 1;
+    stack.push([pick[0],pick[1]]);
   }
   return g;
 }
 
+// ============================================
+// BRAIDING: berk ko'chalarni ochib, CHALG'ITUVCHI
+// YO'LLAR yaratish (loop va alternativ yo'llar)
+// ============================================
+function braid(g, n, percent) {
+  if (percent <= 0) return;
+  
+  // Barcha berk ko'chalarni topish (faqat 1 ta ochiq devorli kataklar)
+  const deadEnds = [];
+  for (let y = 0; y < n; y++) {
+    for (let x = 0; x < n; x++) {
+      const c = g[y][x];
+      const open = (c.t?0:1) + (c.r?0:1) + (c.b?0:1) + (c.l?0:1);
+      if (open === 1) deadEnds.push([x, y]);
+    }
+  }
+  
+  // Aralashtirish (Fisher-Yates)
+  for (let i = deadEnds.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const t = deadEnds[i]; deadEnds[i] = deadEnds[j]; deadEnds[j] = t;
+  }
+  
+  // Foizga qarab berk ko'chalarni ochish
+  const count = Math.floor(deadEnds.length * percent);
+  for (let i = 0; i < count; i++) {
+    const x = deadEnds[i][0], y = deadEnds[i][1];
+    const c = g[y][x];
+    const walls = [];
+    if (c.t && y > 0)   walls.push(['t','b',x,y-1]);
+    if (c.r && x < n-1) walls.push(['r','l',x+1,y]);
+    if (c.b && y < n-1) walls.push(['b','t',x,y+1]);
+    if (c.l && x > 0)   walls.push(['l','r',x-1,y]);
+    if (walls.length) {
+      const w = walls[Math.floor(Math.random()*walls.length)];
+      c[w[0]] = 0;
+      g[w[3]][w[2]][w[1]] = 0;
+    }
+  }
+}
+
+// ============================================
+// O'YINNI SOZLASH
+// ============================================
 function setup() {
   clearInterval(timer);
+  size = LEVELS[levelIdx].size;
   steps = 0; seconds = 0; playing = true;
   document.getElementById('steps').textContent = 0;
   document.getElementById('time').textContent = 0;
@@ -160,9 +219,11 @@ function setup() {
   
   const maxW = Math.min(window.innerWidth - 20, 500);
   cell = Math.floor(maxW / size);
-  canvas.width = cell * size; canvas.height = cell * size;
+  canvas.width = cell * size;
+  canvas.height = cell * size;
   
   grid = generate(size);
+  braid(grid, size, LEVELS[levelIdx].braid);
   player = {x:0, y:0};
   draw();
   timer = setInterval(() => {
@@ -171,9 +232,14 @@ function setup() {
   }, 1000);
 }
 
+// ============================================
+// CHIZISH
+// ============================================
 function draw() {
   ctx.clearRect(0,0,canvas.width,canvas.height);
-  ctx.strokeStyle = '#89b4fa'; ctx.lineWidth = 3; ctx.lineCap = 'round';
+  ctx.strokeStyle = '#89b4fa';
+  ctx.lineWidth = Math.max(2, Math.round(cell * 0.12));
+  ctx.lineCap = 'round';
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
       const c = grid[y][x], px = x*cell, py = y*cell;
@@ -185,13 +251,16 @@ function draw() {
       ctx.stroke();
     }
   }
-  // Manzil
-  ctx.font = (cell*0.6) + 'px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.font = (cell*0.7) + 'px serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
   ctx.fillText('🏁', (size-1)*cell + cell/2, (size-1)*cell + cell/2);
-  // O'yinchi
   ctx.fillText('🦸', player.x*cell + cell/2, player.y*cell + cell/2);
 }
 
+// ============================================
+// HARAKAT
+// ============================================
 function move(dx,dy) {
   if (!playing) return;
   const c = grid[player.y][player.x];
@@ -212,19 +281,19 @@ function win() {
   document.getElementById('winTime').textContent = seconds;
   document.getElementById('winSteps').textContent = steps;
   document.getElementById('winOverlay').classList.add('show');
-  // CodeKids statistikasiga saqlash
   if (user) {
     const res = JSON.parse(localStorage.getItem('codekids_results') || '[]');
     res.push({ type:'maze', nickname:user.nickname, time:seconds, steps:steps,
-               size:size, timestamp:new Date().toISOString() });
+               size:size, braided:LEVELS[levelIdx].braid > 0,
+               timestamp:new Date().toISOString() });
     localStorage.setItem('codekids_results', JSON.stringify(res));
   }
 }
 
 function nextLevel() {
-  size = size >= 17 ? 5 : size + 4;
-  document.querySelectorAll('.lvl-btn').forEach(b => {
-    b.classList.toggle('active', parseInt(b.dataset.size) === size);
+  levelIdx = (levelIdx + 1) % LEVELS.length;
+  document.querySelectorAll('.lvl-btn').forEach((b, i) => {
+    b.classList.toggle('active', i === levelIdx);
   });
   setup();
 }
@@ -232,11 +301,11 @@ function nextLevel() {
 function restart() { setup(); }
 
 // Daraja tugmalari
-document.querySelectorAll('.lvl-btn').forEach(btn => {
+document.querySelectorAll('.lvl-btn').forEach((btn, i) => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.lvl-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-    size = parseInt(btn.dataset.size);
+    levelIdx = i;
     setup();
   });
 });
