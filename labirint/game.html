@@ -109,7 +109,8 @@ canvas {
 <div class="stats">
   <div class="stat-box"><div class="stat-label">⏱</div><div class="stat-value" id="time">0</div></div>
   <div class="stat-box"><div class="stat-label">👣</div><div class="stat-value" id="steps">0</div></div>
-  <div class="stat-box"><div class="stat-label">🎯</div><div class="stat-value" id="level">13×13</div></div>
+  <div class="stat-box"><div class="stat-label">🎯</div><div class="stat-value" <div class="stat-box"><div class="stat-label">🎯</div><div class="stat-value" id="level">13×13</div></div>
+  <div class="stat-box"><div class="stat-label">👾 Qolgan</div><div class="stat-value" id="monsters">0</div></div>
 </div>
 
 <div class="game-area">
@@ -190,7 +191,7 @@ const bubble = document.getElementById('bubble');
 let levelIdx=0, size=13, cell, grid, player, steps=0, seconds=0;
 let timer=null, playing=false, autoMode=false, junctionMode=false, lastDir=null;
 let autoTimer=null, selectedTopic=null, selectedHero=HEROES[0], correctAnswers=0;
-let path=[], monsterTimer=null;
+let path=[], monsterTimer=null, monsterLeft=0, lastMonsterStep=0;
 
 // ============ QAHRAMON / MAVZU TANLASH ============
 function showHeroSelection(thenTopic) {
@@ -273,7 +274,7 @@ function startGame(){
   clearInterval(timer); clearInterval(autoTimer);
   size=LEVELS[levelIdx].size; autoMode=LEVELS[levelIdx].auto;
   steps=0; seconds=0; correctAnswers=0; playing=true;
-  junctionMode=false; lastDir=null; path=[];
+junctionMode=false; lastDir=null; path=[];
   document.getElementById('steps').textContent=0;
   document.getElementById('time').textContent=0;
   document.getElementById('level').textContent=size+'×'+size;
@@ -347,7 +348,8 @@ function move(dx,dy){
   document.getElementById('steps').textContent=steps;
   draw();
   exitJunction();
-  if(!junctionMode && steps>5 && Math.random()<0.08) showMonster();
+  if(!junctionMode && steps>5 && if(!junctionMode && monsterLeft>0 && steps>5 &&
+     (steps-lastMonsterStep>=10 || Math.random()<0.1)){ lastMonsterStep=steps; showMonster(); }
   if(player.x===size-1 && player.y===size-1) win();
 }
 
@@ -387,6 +389,8 @@ function draw(){
 // ============ MAHLUQ ============
 function showMonster(){
   playing=false;
+  monsterLeft--;
+  document.getElementById('monsters').textContent=monsterLeft;
   const savol=getSavol(selectedTopic, levelIdx+1);
   if(!savol){ playing=true; return; }
   document.getElementById('monsterQuestion').textContent=savol.q;

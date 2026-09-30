@@ -230,3 +230,7 @@ function getSavol(mavzuId, level) {
   askedSavollar.push(chosen.q);
   return chosen;
 }
+// Bosqich uchun ajratilgan savollar soni
+function getSavollarCount(mavzuId, level) {
+  return (QUESTION_BANK.savollar[mavzuId] || []).filter(s => s.level === level).length;
+}
