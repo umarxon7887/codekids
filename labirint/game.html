@@ -60,21 +60,54 @@ canvas {
 }
 .lvl-btn.active { background:#89b4fa; color:#1e1e2e; font-weight:bold; }
 .overlay {
-  position:fixed; inset:0; background:rgba(0,0,0,.85);
+  position:fixed; inset:0; background:rgba(0,0,0,.9);
   display:none; align-items:center; justify-content:center; z-index:10;
+  padding:20px;
 }
 .overlay.show { display:flex; }
-.win-box {
-  background:#313244; padding:40px; border-radius:20px;
-  text-align:center; max-width:90%;
+.popup {
+  background:#313244; padding:30px; border-radius:20px;
+  text-align:center; max-width:90%; width:500px;
 }
-.win-box h2 { color:#a6e3a1; font-size:2rem; margin-bottom:15px; }
-.win-box p { margin-bottom:8px; font-size:1.1rem; }
-.win-box button {
-  margin-top:15px; padding:12px 30px; background:#89b4fa;
+.popup h2 { color:#89b4fa; font-size:1.8rem; margin-bottom:20px; }
+.popup p { margin-bottom:15px; font-size:1.1rem; }
+.popup button {
+  margin:8px; padding:12px 24px; background:#89b4fa;
   color:#1e1e2e; border:none; border-radius:10px;
-  font-size:1.1rem; font-weight:bold; cursor:pointer; margin-right:8px;
+  font-size:1rem; font-weight:bold; cursor:pointer;
 }
+.popup button:hover { background:#b4befe; }
+.popup button.wrong { background:#f38ba8; }
+.topic-grid {
+  display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-top:20px;
+}
+.topic-btn {
+  padding:15px; background:#45475a; color:#cdd6f4;
+  border:none; border-radius:10px; cursor:pointer;
+  font-size:1.1rem; font-weight:bold;
+}
+.topic-btn:hover { background:#585b70; }
+.monster {
+  font-size:5rem; margin-bottom:15px;
+  animation: bounce 0.5s infinite alternate;
+}
+@keyframes bounce {
+  from { transform: translateY(0); }
+  to { transform: translateY(-10px); }
+}
+.timer-bar {
+  width:100%; height:8px; background:#45475a;
+  border-radius:4px; margin:15px 0; overflow:hidden;
+}
+.timer-fill {
+  height:100%; background:#a6e3a1; transition:width 1s linear;
+}
+.timer-fill.danger { background:#f38ba8; }
+.feedback {
+  font-size:1.2rem; font-weight:bold; margin-top:10px; min-height:30px;
+}
+.feedback.correct { color:#a6e3a1; }
+.feedback.wrong { color:#f38ba8; }
 </style>
 </head>
 <body>
@@ -100,44 +133,87 @@ canvas {
 
 <canvas id="maze"></canvas>
 
-<div class="controls">
+<div class="controls" id="controls">
   <button class="dpad up" onclick="move(0,-1)">▲</button>
   <button class="dpad left" onclick="move(-1,0)">◀</button>
   <button class="dpad right" onclick="move(1,0)">▶</button>
   <button class="dpad down" onclick="move(0,1)">▼</button>
 </div>
 
+<!-- Mavzu tanlash -->
+<div class="overlay" id="topicOverlay">
+  <div class="popup">
+    <h2>📚 Mavzu tanlang</h2>
+    <p>Maxluq shu mavzudan savol beradi:</p>
+    <div class="topic-grid" id="topicGrid"></div>
+  </div>
+</div>
+
+<!-- Maxluq savoli -->
+<div class="overlay" id="monsterOverlay">
+  <div class="popup">
+    <div class="monster">👾</div>
+    <h2 id="monsterQuestion">Savol?</h2>
+    <div class="timer-bar"><div class="timer-fill" id="timerFill"></div></div>
+    <div id="answerButtons"></div>
+    <div class="feedback" id="feedback"></div>
+  </div>
+</div>
+
+<!-- G'alaba -->
 <div class="overlay" id="winOverlay">
-  <div class="win-box">
+  <div class="popup">
     <h2>🏆 Tabriklaymiz!</h2>
     <p>⏱ Vaqt: <b id="winTime"></b> soniya</p>
     <p>👣 Qadamlar: <b id="winSteps"></b></p>
+    <p>🧠 To'g'ri javoblar: <b id="winCorrect"></b></p>
     <button onclick="nextLevel()">Keyingi bosqich ➡</button>
     <button onclick="restart()">🔄 Qayta</button>
   </div>
 </div>
 
+<script src="questions.js"></script>
 <script>
-// Foydalanuvchi nomi
 const user = JSON.parse(localStorage.getItem('codekids_user') || 'null');
 document.getElementById('userName').textContent = user ? user.nickname : '';
 
-// ============================================
-// BOSQICHLAR: size = maydon, braid = chalg'ituvchi yo'llar foizi
-// ============================================
 const LEVELS = [
-  { size: 13, braid: 0 },
-  { size: 17, braid: 0 },
-  { size: 17, braid: 0.5 },
-  { size: 21, braid: 0.8 }
+  { size: 13, braid: 0, auto: false },
+  { size: 17, braid: 0, auto: false },
+  { size: 17, braid: 0.5, auto: true },
+  { size: 21, braid: 0.8, auto: true }
 ];
 
 const canvas = document.getElementById('maze');
 const ctx = canvas.getContext('2d');
-let levelIdx = 0, size = 13, cell, grid, player, steps = 0, seconds = 0, timer = null, playing = false;
+const controls = document.getElementById('controls');
+
+let levelIdx = 0, size = 13, cell, grid, player, steps = 0, seconds = 0;
+let timer = null, playing = false, autoMode = false, autoTimer = null;
+let selectedTopic = null, correctAnswers = 0, monsterChance = 0.15;
 
 // ============================================
-// LABIRINT GENERATSIYA (Recursive Backtracker)
+// MAVZU TANLASH
+// ============================================
+function showTopicSelection() {
+  const grid = document.getElementById('topicGrid');
+  grid.innerHTML = '';
+  QUESTION_BANK.mavzular.forEach(m => {
+    const btn = document.createElement('button');
+    btn.className = 'topic-btn';
+    btn.textContent = m.name;
+    btn.onclick = () => {
+      selectedTopic = m.id;
+      document.getElementById('topicOverlay').classList.remove('show');
+      startGame();
+    };
+    grid.appendChild(btn);
+  });
+  document.getElementById('topicOverlay').classList.add('show');
+}
+
+// ============================================
+// LABIRINT GENERATSIYA
 // ============================================
 function generate(n) {
   const g = [];
@@ -164,14 +240,8 @@ function generate(n) {
   return g;
 }
 
-// ============================================
-// BRAIDING: berk ko'chalarni ochib, CHALG'ITUVCHI
-// YO'LLAR yaratish (loop va alternativ yo'llar)
-// ============================================
 function braid(g, n, percent) {
   if (percent <= 0) return;
-  
-  // Barcha berk ko'chalarni topish (faqat 1 ta ochiq devorli kataklar)
   const deadEnds = [];
   for (let y = 0; y < n; y++) {
     for (let x = 0; x < n; x++) {
@@ -180,14 +250,10 @@ function braid(g, n, percent) {
       if (open === 1) deadEnds.push([x, y]);
     }
   }
-  
-  // Aralashtirish (Fisher-Yates)
   for (let i = deadEnds.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     const t = deadEnds[i]; deadEnds[i] = deadEnds[j]; deadEnds[j] = t;
   }
-  
-  // Foizga qarab berk ko'chalarni ochish
   const count = Math.floor(deadEnds.length * percent);
   for (let i = 0; i < count; i++) {
     const x = deadEnds[i][0], y = deadEnds[i][1];
@@ -206,16 +272,21 @@ function braid(g, n, percent) {
 }
 
 // ============================================
-// O'YINNI SOZLASH
+// O'YINNI BOSHLASH
 // ============================================
-function setup() {
+function startGame() {
   clearInterval(timer);
+  clearInterval(autoTimer);
   size = LEVELS[levelIdx].size;
-  steps = 0; seconds = 0; playing = true;
+  autoMode = LEVELS[levelIdx].auto;
+  steps = 0; seconds = 0; correctAnswers = 0; playing = true;
   document.getElementById('steps').textContent = 0;
   document.getElementById('time').textContent = 0;
   document.getElementById('level').textContent = size + '×' + size;
   document.getElementById('winOverlay').classList.remove('show');
+  
+  // Avtomatik rejimda tugmalarni yashirish
+  controls.style.display = autoMode ? 'none' : 'grid';
   
   const maxW = Math.min(window.innerWidth - 20, 500);
   cell = Math.floor(maxW / size);
@@ -226,10 +297,59 @@ function setup() {
   braid(grid, size, LEVELS[levelIdx].braid);
   player = {x:0, y:0};
   draw();
+  
   timer = setInterval(() => {
     seconds++;
     document.getElementById('time').textContent = seconds;
   }, 1000);
+  
+  // Avtomatik yurish
+  if (autoMode) {
+    autoTimer = setInterval(autoMove, 400);
+  }
+}
+
+// ============================================
+// AVTOMATIK YURISH (3-4 bosqich)
+// ============================================
+function autoMove() {
+  if (!playing) return;
+  
+  // Hozirgi katakda nechta yo'l ochiq?
+  const c = grid[player.y][player.x];
+  const open = [];
+  if (!c.t && player.y > 0) open.push([0, -1]);
+  if (!c.r && player.x < size-1) open.push([1, 0]);
+  if (!c.b && player.y < size-1) open.push([0, 1]);
+  if (!c.l && player.x > 0) open.push([-1, 0]);
+  
+  // Chorrahada (3+ yo'l) to'xtash
+  if (open.length >= 3) {
+    clearInterval(autoTimer);
+    showJunctionChoice(open);
+    return;
+  }
+  
+  // Faqat 1-2 yo'l bo'lsa, oldinga yurish
+  if (open.length === 1) {
+    move(open[0][0], open[0][1], true);
+  } else if (open.length === 2) {
+    // Tasodifiy tanlash
+    const pick = open[Math.floor(Math.random() * open.length)];
+    move(pick[0], pick[1], true);
+  }
+}
+
+// Chorrahada yo'l tanlash
+function showJunctionChoice(options) {
+  const choice = window.confirm(`Chorraha! ${options.length} ta yo'l bor.\nDavom etish uchun OK bosing.`);
+  if (choice) {
+    // Tasodifiy yo'l tanlash (o'yinchi qaror qiladi)
+    const pick = options[Math.floor(Math.random() * options.length)];
+    move(pick[0], pick[1], true);
+    // Avtomatik yurishni davom ettirish
+    autoTimer = setInterval(autoMove, 400);
+  }
 }
 
 // ============================================
@@ -261,7 +381,7 @@ function draw() {
 // ============================================
 // HARAKAT
 // ============================================
-function move(dx,dy) {
+function move(dx, dy, isAuto = false) {
   if (!playing) return;
   const c = grid[player.y][player.x];
   if (dx===1 && c.r) return;
@@ -272,20 +392,124 @@ function move(dx,dy) {
   steps++;
   document.getElementById('steps').textContent = steps;
   draw();
+  
+  // Maxluq chiqishi (har 10 qadamda 15% ehtimollik)
+  if (steps > 0 && steps % 10 === 0 && Math.random() < monsterChance) {
+    showMonster();
+  }
+  
   if (player.x === size-1 && player.y === size-1) win();
 }
 
+// ============================================
+// MAHLUQ SAVOLI
+// ============================================
+function showMonster() {
+  playing = false;
+  clearInterval(timer);
+  clearInterval(autoTimer);
+  
+  const savol = getSavol(selectedTopic, levelIdx + 1);
+  if (!savol) {
+    playing = true;
+    if (autoMode) autoTimer = setInterval(autoMove, 400);
+    timer = setInterval(() => { seconds++; document.getElementById('time').textContent = seconds; }, 1000);
+    return;
+  }
+  
+  document.getElementById('monsterQuestion').textContent = savol.q;
+  const ansDiv = document.getElementById('answerButtons');
+  ansDiv.innerHTML = '';
+  document.getElementById('feedback').textContent = '';
+  
+  savol.options.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.textContent = opt;
+    btn.onclick = () => checkAnswer(i, savol.a, btn);
+    ansDiv.appendChild(btn);
+  });
+  
+  document.getElementById('monsterOverlay').classList.add('show');
+  
+  // Taymer (15 soniya)
+  const fill = document.getElementById('timerFill');
+  fill.style.width = '100%';
+  fill.classList.remove('danger');
+  let timeLeft = 15;
+  const monsterTimer = setInterval(() => {
+    timeLeft--;
+    fill.style.width = (timeLeft / 15 * 100) + '%';
+    if (timeLeft <= 5) fill.classList.add('danger');
+    if (timeLeft <= 0) {
+      clearInterval(monsterTimer);
+      failMonster();
+    }
+  }, 1000);
+}
+
+function checkAnswer(chosen, correct, btn) {
+  const feedback = document.getElementById('feedback');
+  const allBtns = document.querySelectorAll('#answerButtons button');
+  allBtns.forEach(b => b.disabled = true);
+  
+  if (chosen === correct) {
+    btn.style.background = '#a6e3a1';
+    feedback.textContent = '✅ To\'g\'ri!';
+    feedback.className = 'feedback correct';
+    correctAnswers++;
+    setTimeout(closeMonster, 1000);
+  } else {
+    btn.style.background = '#f38ba8';
+    allBtns[correct].style.background = '#a6e3a1';
+    feedback.textContent = '❌ Noto\'g\'ri! 3 qadam orqaga';
+    feedback.className = 'feedback wrong';
+    setTimeout(() => {
+      // 3 qadam orqaga
+      for (let i = 0; i < 3 && player.x > 0; i++) {
+        player.x--;
+      }
+      draw();
+      closeMonster();
+    }, 1500);
+  }
+}
+
+function failMonster() {
+  const feedback = document.getElementById('feedback');
+  feedback.textContent = '⏰ Vaqt tugadi! 3 qadam orqaga';
+  feedback.className = 'feedback wrong';
+  setTimeout(() => {
+    for (let i = 0; i < 3 && player.x > 0; i++) {
+      player.x--;
+    }
+    draw();
+    closeMonster();
+  }, 1500);
+}
+
+function closeMonster() {
+  document.getElementById('monsterOverlay').classList.remove('show');
+  playing = true;
+  timer = setInterval(() => { seconds++; document.getElementById('time').textContent = seconds; }, 1000);
+  if (autoMode) autoTimer = setInterval(autoMove, 400);
+}
+
+// ============================================
+// G'ALABA
+// ============================================
 function win() {
   playing = false;
   clearInterval(timer);
+  clearInterval(autoTimer);
   document.getElementById('winTime').textContent = seconds;
   document.getElementById('winSteps').textContent = steps;
+  document.getElementById('winCorrect').textContent = correctAnswers;
   document.getElementById('winOverlay').classList.add('show');
   if (user) {
     const res = JSON.parse(localStorage.getItem('codekids_results') || '[]');
     res.push({ type:'maze', nickname:user.nickname, time:seconds, steps:steps,
-               size:size, braided:LEVELS[levelIdx].braid > 0,
-               timestamp:new Date().toISOString() });
+               size:size, braided:LEVELS[levelIdx].braid > 0, correct:correctAnswers,
+               topic:selectedTopic, timestamp:new Date().toISOString() });
     localStorage.setItem('codekids_results', JSON.stringify(res));
   }
 }
@@ -295,10 +519,12 @@ function nextLevel() {
   document.querySelectorAll('.lvl-btn').forEach((b, i) => {
     b.classList.toggle('active', i === levelIdx);
   });
-  setup();
+  showTopicSelection();
 }
 
-function restart() { setup(); }
+function restart() {
+  showTopicSelection();
+}
 
 // Daraja tugmalari
 document.querySelectorAll('.lvl-btn').forEach((btn, i) => {
@@ -306,24 +532,27 @@ document.querySelectorAll('.lvl-btn').forEach((btn, i) => {
     document.querySelectorAll('.lvl-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     levelIdx = i;
-    setup();
+    showTopicSelection();
   });
 });
 
 // Klaviatura
 document.addEventListener('keydown', e => {
+  if (autoMode) return; // Avtomatik rejimda klaviatura ishlamaydi
   if (e.key==='ArrowUp') move(0,-1);
   if (e.key==='ArrowDown') move(0,1);
   if (e.key==='ArrowLeft') move(-1,0);
   if (e.key==='ArrowRight') move(1,0);
 });
 
-// Swipe (barmoq bilan)
+// Swipe
 let tx=0, ty=0;
 canvas.addEventListener('touchstart', e => {
+  if (autoMode) return;
   tx = e.touches[0].clientX; ty = e.touches[0].clientY;
 }, {passive:true});
 canvas.addEventListener('touchend', e => {
+  if (autoMode) return;
   const dx = e.changedTouches[0].clientX - tx;
   const dy = e.changedTouches[0].clientY - ty;
   if (Math.abs(dx) > Math.abs(dy)) {
@@ -333,7 +562,8 @@ canvas.addEventListener('touchend', e => {
   }
 }, {passive:true});
 
-setup();
+// Boshlash
+showTopicSelection();
 </script>
 </body>
 </html>
