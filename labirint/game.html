@@ -13,99 +13,76 @@ body {
   align-items:center; padding:10px; user-select:none;
 }
 .header {
-  width:100%; max-width:500px; display:flex;
+  width:100%; max-width:560px; display:flex;
   justify-content:space-between; align-items:center;
-  background:#313244; padding:12px 18px;
-  border-radius:12px; margin-bottom:12px;
+  background:#313244; padding:10px 14px;
+  border-radius:12px; margin-bottom:10px; gap:8px;
 }
-.btn-back {
-  padding:8px 16px; background:#45475a; color:#cdd6f4;
+.btn-back, .btn-mini {
+  padding:8px 12px; background:#45475a; color:#cdd6f4;
   border:none; border-radius:8px; font-weight:bold; cursor:pointer;
 }
-.title { color:#89b4fa; font-weight:bold; font-size:1.2rem; }
+.title { color:#89b4fa; font-weight:bold; font-size:1.1rem; }
 .stats {
-  width:100%; max-width:500px; display:flex;
-  justify-content:space-around; margin-bottom:12px; gap:8px;
+  width:100%; max-width:560px; display:flex;
+  justify-content:space-around; margin-bottom:10px; gap:8px;
 }
-.stat-box {
-  background:#313244; padding:8px 14px;
-  border-radius:10px; text-align:center; flex:1;
-}
-.stat-label { font-size:.75rem; color:#a6adc8; }
-.stat-value { font-size:1.3rem; font-weight:bold; color:#a6e3a1; }
+.stat-box { background:#313244; padding:6px 12px; border-radius:10px; text-align:center; flex:1; }
+.stat-label { font-size:.7rem; color:#a6adc8; }
+.stat-value { font-size:1.2rem; font-weight:bold; color:#a6e3a1; }
+.level-select { display:flex; gap:6px; margin-bottom:10px; flex-wrap:wrap; justify-content:center; }
+.lvl-btn { padding:7px 14px; background:#45475a; color:#cdd6f4; border:none; border-radius:8px; cursor:pointer; }
+.lvl-btn.active { background:#89b4fa; color:#1e1e2e; font-weight:bold; }
+.game-area { display:flex; gap:10px; align-items:flex-start; justify-content:center; }
+.canvas-wrap { position:relative; }
 canvas {
   background:#11111b; border-radius:12px;
   touch-action:none; display:block;
   box-shadow:0 5px 20px rgba(0,0,0,.5);
 }
-.controls {
-  margin-top:15px; display:grid;
-  grid-template-columns:repeat(3,70px);
-  grid-template-rows:repeat(3,70px); gap:8px;
+.side-panel {
+  background:#313244; border-radius:12px; padding:12px 8px;
+  display:flex; flex-direction:column; align-items:center; gap:6px;
+  min-width:80px;
 }
-.dpad {
-  background:#45475a; border:none; border-radius:12px;
-  color:#cdd6f4; font-size:1.6rem; cursor:pointer;
-  display:flex; align-items:center; justify-content:center;
+.hero-big { font-size:3.2rem; animation:heroBounce 0.8s infinite alternate; }
+@keyframes heroBounce { from{transform:translateY(0) rotate(-6deg);} to{transform:translateY(-8px) rotate(6deg);} }
+.hero-name { font-size:.8rem; color:#a6adc8; font-weight:bold; }
+.bubble {
+  position:absolute; display:none;
+  background:#fff; color:#1e1e2e; padding:8px 10px;
+  border-radius:12px; font-size:.8rem; font-weight:bold;
+  max-width:170px; z-index:5; line-height:1.3;
+  box-shadow:0 3px 12px rgba(0,0,0,.5);
 }
+.bubble.show { display:block; animation:pop .25s; }
+.bubble:after {
+  content:''; position:absolute; bottom:-8px; left:20px;
+  border:8px solid transparent; border-top-color:#fff; border-bottom:0;
+}
+@keyframes pop { from{transform:scale(.5);opacity:0;} to{transform:scale(1);opacity:1;} }
+.controls { margin-top:12px; display:grid; grid-template-columns:repeat(3,64px); grid-template-rows:repeat(3,64px); gap:8px; }
+.dpad { background:#45475a; border:none; border-radius:12px; color:#cdd6f4; font-size:1.5rem; cursor:pointer; }
 .dpad:active { background:#89b4fa; color:#1e1e2e; }
 .dpad.up{grid-column:2;grid-row:1} .dpad.left{grid-column:1;grid-row:2}
 .dpad.right{grid-column:3;grid-row:2} .dpad.down{grid-column:2;grid-row:3}
-.level-select {
-  display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; justify-content:center;
-}
-.lvl-btn {
-  padding:8px 16px; background:#45475a; color:#cdd6f4;
-  border:none; border-radius:8px; cursor:pointer; font-weight:500;
-}
-.lvl-btn.active { background:#89b4fa; color:#1e1e2e; font-weight:bold; }
-.overlay {
-  position:fixed; inset:0; background:rgba(0,0,0,.9);
-  display:none; align-items:center; justify-content:center; z-index:10;
-  padding:20px;
-}
+.overlay { position:fixed; inset:0; background:rgba(0,0,0,.9); display:none; align-items:center; justify-content:center; z-index:10; padding:20px; }
 .overlay.show { display:flex; }
-.popup {
-  background:#313244; padding:30px; border-radius:20px;
-  text-align:center; max-width:90%; width:500px;
-}
-.popup h2 { color:#89b4fa; font-size:1.8rem; margin-bottom:20px; }
-.popup p { margin-bottom:15px; font-size:1.1rem; }
-.popup button {
-  margin:8px; padding:12px 24px; background:#89b4fa;
-  color:#1e1e2e; border:none; border-radius:10px;
-  font-size:1rem; font-weight:bold; cursor:pointer;
-}
-.popup button:hover { background:#b4befe; }
-.popup button.wrong { background:#f38ba8; }
-.topic-grid {
-  display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-top:20px;
-}
-.topic-btn {
-  padding:15px; background:#45475a; color:#cdd6f4;
-  border:none; border-radius:10px; cursor:pointer;
-  font-size:1.1rem; font-weight:bold;
-}
-.topic-btn:hover { background:#585b70; }
-.monster {
-  font-size:5rem; margin-bottom:15px;
-  animation: bounce 0.5s infinite alternate;
-}
-@keyframes bounce {
-  from { transform: translateY(0); }
-  to { transform: translateY(-10px); }
-}
-.timer-bar {
-  width:100%; height:8px; background:#45475a;
-  border-radius:4px; margin:15px 0; overflow:hidden;
-}
-.timer-fill {
-  height:100%; background:#a6e3a1; transition:width 1s linear;
-}
+.popup { background:#313244; padding:26px; border-radius:20px; text-align:center; max-width:92%; width:480px; }
+.popup h2 { color:#89b4fa; font-size:1.6rem; margin-bottom:16px; }
+.popup p { margin-bottom:12px; font-size:1rem; }
+.popup button { margin:6px; padding:12px 22px; background:#89b4fa; color:#1e1e2e; border:none; border-radius:10px; font-size:1rem; font-weight:bold; cursor:pointer; }
+.topic-grid, .hero-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-top:14px; }
+.topic-btn, .hero-btn { padding:14px; background:#45475a; color:#cdd6f4; border:none; border-radius:10px; cursor:pointer; font-size:1rem; font-weight:bold; }
+.hero-btn { font-size:2rem; }
+.hero-btn .hname { display:block; font-size:.85rem; margin-top:4px; }
+.hero-btn.locked { opacity:.4; }
+.monster { font-size:4.5rem; margin-bottom:10px; animation:bounce .5s infinite alternate; }
+@keyframes bounce { from{transform:translateY(0);} to{transform:translateY(-10px);} }
+.timer-bar { width:100%; height:8px; background:#45475a; border-radius:4px; margin:12px 0; overflow:hidden; }
+.timer-fill { height:100%; background:#a6e3a1; transition:width 1s linear; }
 .timer-fill.danger { background:#f38ba8; }
-.feedback {
-  font-size:1.2rem; font-weight:bold; margin-top:10px; min-height:30px;
-}
+.feedback { font-size:1.1rem; font-weight:bold; margin-top:8px; min-height:26px; }
 .feedback.correct { color:#a6e3a1; }
 .feedback.wrong { color:#f38ba8; }
 </style>
@@ -113,34 +90,51 @@ canvas {
 <body>
 
 <div class="header">
-  <button class="btn-back" onclick="location.href='../index.html'">← Orqaga</button>
+  <button class="btn-back" onclick="location.href='../index.html'">←</button>
   <div class="title">🧩 Labirint</div>
+  <button class="btn-mini" id="btnHero" title="Qahramon">🦸</button>
+  <button class="btn-mini" id="btnTopic" title="Mavzu">📚</button>
   <div id="userName" style="color:#a6e3a1;font-weight:bold;"></div>
 </div>
 
-<div class="level-select" id="levelSelect">
-  <button class="lvl-btn active" data-level="0">1-bosqich</button>
-  <button class="lvl-btn" data-level="1">2-bosqich</button>
-  <button class="lvl-btn" data-level="2">3-bosqich 🔀</button>
-  <button class="lvl-btn" data-level="3">4-bosqich 🔀</button>
+<div class="level-select">
+  <button class="lvl-btn active" data-level="0">1</button>
+  <button class="lvl-btn" data-level="1">2</button>
+  <button class="lvl-btn" data-level="2">3 🔀</button>
+  <button class="lvl-btn" data-level="3">4 🔀</button>
 </div>
 
 <div class="stats">
-  <div class="stat-box"><div class="stat-label">⏱ Vaqt</div><div class="stat-value" id="time">0</div></div>
-  <div class="stat-box"><div class="stat-label">👣 Qadam</div><div class="stat-value" id="steps">0</div></div>
-  <div class="stat-box"><div class="stat-label">🎯 Maydon</div><div class="stat-value" id="level">13×13</div></div>
+  <div class="stat-box"><div class="stat-label">⏱</div><div class="stat-value" id="time">0</div></div>
+  <div class="stat-box"><div class="stat-label">👣</div><div class="stat-value" id="steps">0</div></div>
+  <div class="stat-box"><div class="stat-label">🎯</div><div class="stat-value" id="level">13×13</div></div>
 </div>
 
-<canvas id="maze"></canvas>
+<div class="game-area">
+  <div class="canvas-wrap">
+    <canvas id="maze"></canvas>
+    <div class="bubble" id="bubble">Men qayerga yurishimni bilmayapman... Menga yordam ber! 🥺</div>
+  </div>
+  <div class="side-panel">
+    <div class="hero-big" id="heroBig">🦸</div>
+    <div class="hero-name" id="heroName">Super</div>
+  </div>
+</div>
 
 <div class="controls" id="controls">
-  <button class="dpad up" onclick="move(0,-1)">▲</button>
-  <button class="dpad left" onclick="move(-1,0)">◀</button>
-  <button class="dpad right" onclick="move(1,0)">▶</button>
-  <button class="dpad down" onclick="move(0,1)">▼</button>
+  <button class="dpad up" onclick="manualMove(0,-1)">▲</button>
+  <button class="dpad left" onclick="manualMove(-1,0)">◀</button>
+  <button class="dpad right" onclick="manualMove(1,0)">▶</button>
+  <button class="dpad down" onclick="manualMove(0,1)">▼</button>
 </div>
 
-<!-- Mavzu tanlash -->
+<div class="overlay" id="heroOverlay">
+  <div class="popup">
+    <h2>🦸 Qahramon tanlang</h2>
+    <div class="hero-grid" id="heroGrid"></div>
+  </div>
+</div>
+
 <div class="overlay" id="topicOverlay">
   <div class="popup">
     <h2>📚 Mavzu tanlang</h2>
@@ -149,7 +143,6 @@ canvas {
   </div>
 </div>
 
-<!-- Maxluq savoli -->
 <div class="overlay" id="monsterOverlay">
   <div class="popup">
     <div class="monster">👾</div>
@@ -160,14 +153,12 @@ canvas {
   </div>
 </div>
 
-<!-- G'alaba -->
 <div class="overlay" id="winOverlay">
   <div class="popup">
     <h2>🏆 Tabriklaymiz!</h2>
-    <p>⏱ Vaqt: <b id="winTime"></b> soniya</p>
-    <p>👣 Qadamlar: <b id="winSteps"></b></p>
+    <p>⏱ Vaqt: <b id="winTime"></b> s &nbsp; 👣 Qadam: <b id="winSteps"></b></p>
     <p>🧠 To'g'ri javoblar: <b id="winCorrect"></b></p>
-    <button onclick="nextLevel()">Keyingi bosqich ➡</button>
+    <button onclick="nextLevel()">Keyingi ➡</button>
     <button onclick="restart()">🔄 Qayta</button>
   </div>
 </div>
@@ -178,394 +169,334 @@ const user = JSON.parse(localStorage.getItem('codekids_user') || 'null');
 document.getElementById('userName').textContent = user ? user.nickname : '';
 
 const LEVELS = [
-  { size: 13, braid: 0, auto: false },
-  { size: 17, braid: 0, auto: false },
-  { size: 17, braid: 0.5, auto: true },
-  { size: 21, braid: 0.8, auto: true }
+  { size:13, braid:0,   auto:false },
+  { size:17, braid:0,   auto:false },
+  { size:17, braid:0.5, auto:true },
+  { size:21, braid:0.8, auto:true }
+];
+const HEROES = [
+  { id:'super', emoji:'🦸', name:'Super', locked:false },
+  { id:'mushuk', emoji:'🐱', name:'Mushuk', locked:true },
+  { id:'robot', emoji:'🤖', name:'Robot', locked:true }
 ];
 
 const canvas = document.getElementById('maze');
 const ctx = canvas.getContext('2d');
 const controls = document.getElementById('controls');
+const bubble = document.getElementById('bubble');
 
-let levelIdx = 0, size = 13, cell, grid, player, steps = 0, seconds = 0;
-let timer = null, playing = false, autoMode = false, autoTimer = null;
-let selectedTopic = null, correctAnswers = 0, monsterChance = 0.15;
+let levelIdx=0, size=13, cell, grid, player, steps=0, seconds=0;
+let timer=null, playing=false, autoMode=false, junctionMode=false, lastDir=null;
+let autoTimer=null, selectedTopic=null, selectedHero=HEROES[0], correctAnswers=0;
+let path=[];
 
-// ============================================
-// MAVZU TANLASH
-// ============================================
-function showTopicSelection() {
-  const grid = document.getElementById('topicGrid');
-  grid.innerHTML = '';
+// ============ QAHRAMON / MAVZU TANLASH ============
+function showHeroSelection(thenTopic) {
+  const g = document.getElementById('heroGrid');
+  g.innerHTML = '';
+  HEROES.forEach(h => {
+    const b = document.createElement('button');
+    b.className = 'hero-btn' + (h.locked ? ' locked' : '');
+    b.innerHTML = h.emoji + '<span class="hname">' + h.name + (h.locked ? ' 🔒' : '') + '</span>';
+    b.onclick = () => {
+      if (h.locked) { alert('Bu qahramon tez orada qo\'shiladi! 🔜'); return; }
+      selectedHero = h;
+      localStorage.setItem('codekids_hero', h.id);
+      document.getElementById('heroBig').textContent = h.emoji;
+      document.getElementById('heroName').textContent = h.name;
+      document.getElementById('heroOverlay').classList.remove('show');
+      if (thenTopic) showTopicSelection(true); else startGame();
+    };
+    g.appendChild(b);
+  });
+  document.getElementById('heroOverlay').classList.add('show');
+}
+
+function showTopicSelection(first) {
+  const g = document.getElementById('topicGrid');
+  g.innerHTML = '';
   QUESTION_BANK.mavzular.forEach(m => {
-    const btn = document.createElement('button');
-    btn.className = 'topic-btn';
-    btn.textContent = m.name;
-    btn.onclick = () => {
+    const b = document.createElement('button');
+    b.className = 'topic-btn';
+    b.textContent = m.name;
+    b.onclick = () => {
       selectedTopic = m.id;
+      localStorage.setItem('codekids_topic', m.id);
       document.getElementById('topicOverlay').classList.remove('show');
       startGame();
     };
-    grid.appendChild(btn);
+    g.appendChild(b);
   });
   document.getElementById('topicOverlay').classList.add('show');
 }
 
-// ============================================
-// LABIRINT GENERATSIYA
-// ============================================
+// ============ GENERATSIYA ============
 function generate(n) {
   const g = [];
-  for (let y = 0; y < n; y++) {
-    g[y] = [];
-    for (let x = 0; x < n; x++) g[y][x] = {t:1,r:1,b:1,l:1,v:0};
-  }
-  const stack = [[0,0]];
-  g[0][0].v = 1;
-  while (stack.length) {
-    const cx = stack[stack.length-1][0], cy = stack[stack.length-1][1];
-    const nb = [];
-    if (cy>0 && !g[cy-1][cx].v) nb.push([cx,cy-1,'t','b']);
-    if (cx<n-1 && !g[cy][cx+1].v) nb.push([cx+1,cy,'r','l']);
-    if (cy<n-1 && !g[cy+1][cx].v) nb.push([cx,cy+1,'b','t']);
-    if (cx>0 && !g[cy][cx-1].v) nb.push([cx-1,cy,'l','r']);
-    if (!nb.length) { stack.pop(); continue; }
-    const pick = nb[Math.floor(Math.random()*nb.length)];
-    g[cy][cx][pick[2]] = 0;
-    g[pick[1]][pick[0]][pick[3]] = 0;
-    g[pick[1]][pick[0]].v = 1;
-    stack.push([pick[0],pick[1]]);
+  for (let y=0;y<n;y++){ g[y]=[]; for(let x=0;x<n;x++) g[y][x]={t:1,r:1,b:1,l:1,v:0}; }
+  const st=[[0,0]]; g[0][0].v=1;
+  while(st.length){
+    const cx=st[st.length-1][0], cy=st[st.length-1][1], nb=[];
+    if(cy>0&&!g[cy-1][cx].v) nb.push([cx,cy-1,'t','b']);
+    if(cx<n-1&&!g[cy][cx+1].v) nb.push([cx+1,cy,'r','l']);
+    if(cy<n-1&&!g[cy+1][cx].v) nb.push([cx,cy+1,'b','t']);
+    if(cx>0&&!g[cy][cx-1].v) nb.push([cx-1,cy,'l','r']);
+    if(!nb.length){ st.pop(); continue; }
+    const p=nb[Math.floor(Math.random()*nb.length)];
+    g[cy][cx][p[2]]=0; g[p[1]][p[0]][p[3]]=0; g[p[1]][p[0]].v=1; st.push([p[0],p[1]]);
   }
   return g;
 }
-
-function braid(g, n, percent) {
-  if (percent <= 0) return;
-  const deadEnds = [];
-  for (let y = 0; y < n; y++) {
-    for (let x = 0; x < n; x++) {
-      const c = g[y][x];
-      const open = (c.t?0:1) + (c.r?0:1) + (c.b?0:1) + (c.l?0:1);
-      if (open === 1) deadEnds.push([x, y]);
-    }
+function braid(g,n,percent){
+  if(percent<=0) return;
+  const de=[];
+  for(let y=0;y<n;y++)for(let x=0;x<n;x++){
+    const c=g[y][x], open=(c.t?0:1)+(c.r?0:1)+(c.b?0:1)+(c.l?0:1);
+    if(open===1) de.push([x,y]);
   }
-  for (let i = deadEnds.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    const t = deadEnds[i]; deadEnds[i] = deadEnds[j]; deadEnds[j] = t;
-  }
-  const count = Math.floor(deadEnds.length * percent);
-  for (let i = 0; i < count; i++) {
-    const x = deadEnds[i][0], y = deadEnds[i][1];
-    const c = g[y][x];
-    const walls = [];
-    if (c.t && y > 0)   walls.push(['t','b',x,y-1]);
-    if (c.r && x < n-1) walls.push(['r','l',x+1,y]);
-    if (c.b && y < n-1) walls.push(['b','t',x,y+1]);
-    if (c.l && x > 0)   walls.push(['l','r',x-1,y]);
-    if (walls.length) {
-      const w = walls[Math.floor(Math.random()*walls.length)];
-      c[w[0]] = 0;
-      g[w[3]][w[2]][w[1]] = 0;
-    }
+  for(let i=de.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); const t=de[i]; de[i]=de[j]; de[j]=t; }
+  const cnt=Math.floor(de.length*percent);
+  for(let i=0;i<cnt;i++){
+    const x=de[i][0], y=de[i][1], c=g[y][x], w=[];
+    if(c.t&&y>0) w.push(['t','b',x,y-1]);
+    if(c.r&&x<n-1) w.push(['r','l',x+1,y]);
+    if(c.b&&y<n-1) w.push(['b','t',x,y+1]);
+    if(c.l&&x>0) w.push(['l','r',x-1,y]);
+    if(w.length){ const q=w[Math.floor(Math.random()*w.length)]; c[q[0]]=0; g[q[3]][q[2]][q[1]]=0; }
   }
 }
 
-// ============================================
-// O'YINNI BOSHLASH
-// ============================================
-function startGame() {
-  clearInterval(timer);
-  clearInterval(autoTimer);
-  size = LEVELS[levelIdx].size;
-  autoMode = LEVELS[levelIdx].auto;
-  steps = 0; seconds = 0; correctAnswers = 0; playing = true;
-  document.getElementById('steps').textContent = 0;
-  document.getElementById('time').textContent = 0;
-  document.getElementById('level').textContent = size + '×' + size;
+// ============ O'YIN ============
+function startGame(){
+  clearInterval(timer); clearInterval(autoTimer);
+  size=LEVELS[levelIdx].size; autoMode=LEVELS[levelIdx].auto;
+  steps=0; seconds=0; correctAnswers=0; playing=true;
+  junctionMode=false; lastDir=null; path=[];
+  document.getElementById('steps').textContent=0;
+  document.getElementById('time').textContent=0;
+  document.getElementById('level').textContent=size+'×'+size;
   document.getElementById('winOverlay').classList.remove('show');
-  
-  // Avtomatik rejimda tugmalarni yashirish
-  controls.style.display = autoMode ? 'none' : 'grid';
-  
-  const maxW = Math.min(window.innerWidth - 20, 500);
-  cell = Math.floor(maxW / size);
-  canvas.width = cell * size;
-  canvas.height = cell * size;
-  
-  grid = generate(size);
-  braid(grid, size, LEVELS[levelIdx].braid);
-  player = {x:0, y:0};
-  draw();
-  
-  timer = setInterval(() => {
-    seconds++;
-    document.getElementById('time').textContent = seconds;
-  }, 1000);
-  
-  // Avtomatik yurish
-  if (autoMode) {
-    autoTimer = setInterval(autoMove, 400);
-  }
+  hideBubble();
+  controls.style.display = 'grid';
+  const maxW = Math.min(window.innerWidth-110, 420);
+  cell = Math.floor(maxW/size);
+  canvas.width=cell*size; canvas.height=cell*size;
+  grid=generate(size); braid(grid,size,LEVELS[levelIdx].braid);
+  player={x:0,y:0}; draw();
+  timer=setInterval(()=>{ seconds++; document.getElementById('time').textContent=seconds; },1000);
+  if(autoMode) autoTimer=setInterval(autoTick,450);
 }
 
-// ============================================
-// AVTOMATIK YURISH (3-4 bosqich)
-// ============================================
-function autoMove() {
-  if (!playing) return;
-  
-  // Hozirgi katakda nechta yo'l ochiq?
-  const c = grid[player.y][player.x];
-  const open = [];
-  if (!c.t && player.y > 0) open.push([0, -1]);
-  if (!c.r && player.x < size-1) open.push([1, 0]);
-  if (!c.b && player.y < size-1) open.push([0, 1]);
-  if (!c.l && player.x > 0) open.push([-1, 0]);
-  
-  // Chorrahada (3+ yo'l) to'xtash
-  if (open.length >= 3) {
-    clearInterval(autoTimer);
-    showJunctionChoice(open);
-    return;
-  }
-  
-  // Faqat 1-2 yo'l bo'lsa, oldinga yurish
-  if (open.length === 1) {
-    move(open[0][0], open[0][1], true);
-  } else if (open.length === 2) {
-    // Tasodifiy tanlash
-    const pick = open[Math.floor(Math.random() * open.length)];
-    move(pick[0], pick[1], true);
-  }
+function openDirs(x,y){
+  const c=grid[y][x], l=[];
+  if(!c.t) l.push([0,-1]);
+  if(!c.r) l.push([1,0]);
+  if(!c.b) l.push([0,1]);
+  if(!c.l) l.push([-1,0]);
+  return l;
 }
 
-// Chorrahada yo'l tanlash
-function showJunctionChoice(options) {
-  const choice = window.confirm(`Chorraha! ${options.length} ta yo'l bor.\nDavom etish uchun OK bosing.`);
-  if (choice) {
-    // Tasodifiy yo'l tanlash (o'yinchi qaror qiladi)
-    const pick = options[Math.floor(Math.random() * options.length)];
-    move(pick[0], pick[1], true);
-    // Avtomatik yurishni davom ettirish
-    autoTimer = setInterval(autoMove, 400);
-  }
+// Avtomatik yurish
+function autoTick(){
+  if(!playing || junctionMode) return;
+  if(player.x===size-1 && player.y===size-1){ win(); return; }
+  const dirs=openDirs(player.x,player.y);
+  const back = lastDir ? [-lastDir[0],-lastDir[1]] : null;
+  const fwdOpen = lastDir && dirs.some(d=>d[0]===lastDir[0]&&d[1]===lastDir[1]);
+  const others = dirs.filter(d=>!(lastDir&&d[0]===lastDir[0]&&d[1]===lastDir[1]) && !(back&&d[0]===back[0]&&d[1]===back[1]));
+  if(fwdOpen && others.length>0){ enterJunction(); return; }
+  if(fwdOpen){ move(lastDir[0],lastDir[1]); return; }
+  const cand = dirs.filter(d=>!(back&&d[0]===back[0]&&d[1]===back[1]));
+  if(cand.length===1){ move(cand[0][0],cand[0][1]); return; }
+  if(cand.length>1){ enterJunction(); return; }
+  if(back){ move(back[0],back[1]); return; }
 }
 
-// ============================================
-// CHIZISH
-// ============================================
-function draw() {
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  ctx.strokeStyle = '#89b4fa';
-  ctx.lineWidth = Math.max(2, Math.round(cell * 0.12));
-  ctx.lineCap = 'round';
-  for (let y = 0; y < size; y++) {
-    for (let x = 0; x < size; x++) {
-      const c = grid[y][x], px = x*cell, py = y*cell;
-      ctx.beginPath();
-      if (c.t) { ctx.moveTo(px,py); ctx.lineTo(px+cell,py); }
-      if (c.r) { ctx.moveTo(px+cell,py); ctx.lineTo(px+cell,py+cell); }
-      if (c.b) { ctx.moveTo(px,py+cell); ctx.lineTo(px+cell,py+cell); }
-      if (c.l) { ctx.moveTo(px,py); ctx.lineTo(px,py+cell); }
-      ctx.stroke();
-    }
-  }
-  ctx.font = (cell*0.7) + 'px serif';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText('🏁', (size-1)*cell + cell/2, (size-1)*cell + cell/2);
-  ctx.fillText('🦸', player.x*cell + cell/2, player.y*cell + cell/2);
+function enterJunction(){
+  junctionMode=true;
+  showBubble();
 }
+function exitJunction(){
+  if(!junctionMode) return;
+  if(openDirs(player.x,player.y).length < 3){
+    junctionMode=false; hideBubble();
+  }
+}
+function showBubble(){
+  bubble.style.left = Math.max(0, Math.min(canvas.width-175, player.x*cell-50)) + 'px';
+  bubble.style.top = Math.max(0, player.y*cell-78) + 'px';
+  bubble.classList.add('show');
+}
+function hideBubble(){ bubble.classList.remove('show'); }
 
-// ============================================
-// HARAKAT
-// ============================================
-function move(dx, dy, isAuto = false) {
-  if (!playing) return;
-  const c = grid[player.y][player.x];
-  if (dx===1 && c.r) return;
-  if (dx===-1 && c.l) return;
-  if (dy===1 && c.b) return;
-  if (dy===-1 && c.t) return;
-  player.x += dx; player.y += dy;
+// ============ HARAKAT ============
+function manualMove(dx,dy){
+  if(autoMode && !junctionMode) return;
+  move(dx,dy);
+}
+function move(dx,dy){
+  if(!playing) return;
+  const c=grid[player.y][player.x];
+  if(dx===1&&c.r) return;
+  if(dx===-1&&c.l) return;
+  if(dy===1&&c.b) return;
+  if(dy===-1&&c.t) return;
+  path.push({x:player.x,y:player.y});
+  player.x+=dx; player.y+=dy; lastDir=[dx,dy];
   steps++;
-  document.getElementById('steps').textContent = steps;
+  document.getElementById('steps').textContent=steps;
   draw();
-  
-  // Maxluq chiqishi (har 10 qadamda 15% ehtimollik)
-  if (steps > 0 && steps % 10 === 0 && Math.random() < monsterChance) {
-    showMonster();
-  }
-  
-  if (player.x === size-1 && player.y === size-1) win();
+  exitJunction();
+  if(!junctionMode && steps>5 && Math.random()<0.08) showMonster();
+  if(player.x===size-1 && player.y===size-1) win();
 }
 
-// ============================================
-// MAHLUQ SAVOLI
-// ============================================
-function showMonster() {
-  playing = false;
-  clearInterval(timer);
-  clearInterval(autoTimer);
-  
-  const savol = getSavol(selectedTopic, levelIdx + 1);
-  if (!savol) {
-    playing = true;
-    if (autoMode) autoTimer = setInterval(autoMove, 400);
-    timer = setInterval(() => { seconds++; document.getElementById('time').textContent = seconds; }, 1000);
-    return;
+// Orqaga qaytish (yo'l tarixi bo'yicha - XAVFSIZ)
+function stepBack(n){
+  for(let i=0;i<n && path.length;i++){
+    const p=path.pop();
+    player.x=p.x; player.y=p.y;
   }
-  
-  document.getElementById('monsterQuestion').textContent = savol.q;
-  const ansDiv = document.getElementById('answerButtons');
-  ansDiv.innerHTML = '';
-  document.getElementById('feedback').textContent = '';
-  
-  savol.options.forEach((opt, i) => {
-    const btn = document.createElement('button');
-    btn.textContent = opt;
-    btn.onclick = () => checkAnswer(i, savol.a, btn);
-    ansDiv.appendChild(btn);
+  lastDir=null;
+  steps=Math.max(0,steps-n);
+  document.getElementById('steps').textContent=steps;
+  draw();
+}
+
+// ============ CHIZISH ============
+function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.strokeStyle='#89b4fa';
+  ctx.lineWidth=Math.max(2,Math.round(cell*0.12));
+  ctx.lineCap='round';
+  for(let y=0;y<size;y++)for(let x=0;x<size;x++){
+    const c=grid[y][x], px=x*cell, py=y*cell;
+    ctx.beginPath();
+    if(c.t){ctx.moveTo(px,py);ctx.lineTo(px+cell,py);}
+    if(c.r){ctx.moveTo(px+cell,py);ctx.lineTo(px+cell,py+cell);}
+    if(c.b){ctx.moveTo(px,py+cell);ctx.lineTo(px+cell,py+cell);}
+    if(c.l){ctx.moveTo(px,py);ctx.lineTo(px,py+cell);}
+    ctx.stroke();
+  }
+  ctx.font=(cell*0.8)+'px serif';
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText('🏁',(size-1)*cell+cell/2,(size-1)*cell+cell/2);
+  ctx.fillText(selectedHero.emoji, player.x*cell+cell/2, player.y*cell+cell/2);
+}
+
+// ============ MAHLUQ ============
+function showMonster(){
+  playing=false;
+  const savol=getSavol(selectedTopic, levelIdx+1);
+  if(!savol){ playing=true; return; }
+  document.getElementById('monsterQuestion').textContent=savol.q;
+  const ad=document.getElementById('answerButtons'); ad.innerHTML='';
+  document.getElementById('feedback').textContent='';
+  savol.options.forEach((opt,i)=>{
+    const b=document.createElement('button');
+    b.textContent=opt;
+    b.onclick=()=>checkAnswer(i,savol.a,b);
+    ad.appendChild(b);
   });
-  
   document.getElementById('monsterOverlay').classList.add('show');
-  
-  // Taymer (15 soniya)
-  const fill = document.getElementById('timerFill');
-  fill.style.width = '100%';
-  fill.classList.remove('danger');
-  let timeLeft = 15;
-  const monsterTimer = setInterval(() => {
-    timeLeft--;
-    fill.style.width = (timeLeft / 15 * 100) + '%';
-    if (timeLeft <= 5) fill.classList.add('danger');
-    if (timeLeft <= 0) {
-      clearInterval(monsterTimer);
-      failMonster();
-    }
-  }, 1000);
+  const fill=document.getElementById('timerFill');
+  fill.style.width='100%'; fill.classList.remove('danger');
+  let tl=15;
+  const mt=setInterval(()=>{
+    tl--; fill.style.width=(tl/15*100)+'%';
+    if(tl<=5) fill.classList.add('danger');
+    if(tl<=0){ clearInterval(mt); failMonster(); }
+  },1000);
 }
-
-function checkAnswer(chosen, correct, btn) {
-  const feedback = document.getElementById('feedback');
-  const allBtns = document.querySelectorAll('#answerButtons button');
-  allBtns.forEach(b => b.disabled = true);
-  
-  if (chosen === correct) {
-    btn.style.background = '#a6e3a1';
-    feedback.textContent = '✅ To\'g\'ri!';
-    feedback.className = 'feedback correct';
+function checkAnswer(ch,cor,btn){
+  const fb=document.getElementById('feedback');
+  document.querySelectorAll('#answerButtons button').forEach(b=>b.disabled=true);
+  if(ch===cor){
+    btn.style.background='#a6e3a1';
+    fb.textContent='✅ To\'g\'ri!'; fb.className='feedback correct';
     correctAnswers++;
-    setTimeout(closeMonster, 1000);
+    setTimeout(closeMonster,900);
   } else {
-    btn.style.background = '#f38ba8';
-    allBtns[correct].style.background = '#a6e3a1';
-    feedback.textContent = '❌ Noto\'g\'ri! 3 qadam orqaga';
-    feedback.className = 'feedback wrong';
-    setTimeout(() => {
-      // 3 qadam orqaga
-      for (let i = 0; i < 3 && player.x > 0; i++) {
-        player.x--;
-      }
-      draw();
-      closeMonster();
-    }, 1500);
+    btn.style.background='#f38ba8';
+    document.querySelectorAll('#answerButtons button')[cor].style.background='#a6e3a1';
+    fb.textContent='❌ Noto\'g\'ri! 3 qadam orqaga'; fb.className='feedback wrong';
+    setTimeout(()=>{ stepBack(3); closeMonster(); },1300);
   }
 }
-
-function failMonster() {
-  const feedback = document.getElementById('feedback');
-  feedback.textContent = '⏰ Vaqt tugadi! 3 qadam orqaga';
-  feedback.className = 'feedback wrong';
-  setTimeout(() => {
-    for (let i = 0; i < 3 && player.x > 0; i++) {
-      player.x--;
-    }
-    draw();
-    closeMonster();
-  }, 1500);
+function failMonster(){
+  const fb=document.getElementById('feedback');
+  fb.textContent='⏰ Vaqt tugadi! 3 qadam orqaga'; fb.className='feedback wrong';
+  setTimeout(()=>{ stepBack(3); closeMonster(); },1300);
 }
-
-function closeMonster() {
+function closeMonster(){
   document.getElementById('monsterOverlay').classList.remove('show');
-  playing = true;
-  timer = setInterval(() => { seconds++; document.getElementById('time').textContent = seconds; }, 1000);
-  if (autoMode) autoTimer = setInterval(autoMove, 400);
+  playing=true;
 }
 
-// ============================================
-// G'ALABA
-// ============================================
-function win() {
-  playing = false;
-  clearInterval(timer);
-  clearInterval(autoTimer);
-  document.getElementById('winTime').textContent = seconds;
-  document.getElementById('winSteps').textContent = steps;
-  document.getElementById('winCorrect').textContent = correctAnswers;
+// ============ G'ALABA ============
+function win(){
+  playing=false;
+  clearInterval(timer); clearInterval(autoTimer);
+  hideBubble();
+  document.getElementById('winTime').textContent=seconds;
+  document.getElementById('winSteps').textContent=steps;
+  document.getElementById('winCorrect').textContent=correctAnswers;
   document.getElementById('winOverlay').classList.add('show');
-  if (user) {
-    const res = JSON.parse(localStorage.getItem('codekids_results') || '[]');
-    res.push({ type:'maze', nickname:user.nickname, time:seconds, steps:steps,
-               size:size, braided:LEVELS[levelIdx].braid > 0, correct:correctAnswers,
-               topic:selectedTopic, timestamp:new Date().toISOString() });
-    localStorage.setItem('codekids_results', JSON.stringify(res));
+  if(user){
+    const res=JSON.parse(localStorage.getItem('codekids_results')||'[]');
+    res.push({type:'maze',nickname:user.nickname,time:seconds,steps:steps,size:size,
+              correct:correctAnswers,topic:selectedTopic,timestamp:new Date().toISOString()});
+    localStorage.setItem('codekids_results',JSON.stringify(res));
   }
 }
-
-function nextLevel() {
+function nextLevel(){
   document.getElementById('winOverlay').classList.remove('show');
-  levelIdx = (levelIdx + 1) % LEVELS.length;
-  document.querySelectorAll('.lvl-btn').forEach((b, i) => {
-    b.classList.toggle('active', i === levelIdx);
-  });
-  showTopicSelection();
+  levelIdx=(levelIdx+1)%LEVELS.length;
+  document.querySelectorAll('.lvl-btn').forEach((b,i)=>b.classList.toggle('active',i===levelIdx));
+  startGame();
+}
+function restart(){
+  document.getElementById('winOverlay').classList.remove('show');
+  startGame();
 }
 
-function restart() {
-  document.getElementById('winOverlay').classList.remove('show');
-  showTopicSelection();
-}
-
-// Daraja tugmalari
-document.querySelectorAll('.lvl-btn').forEach((btn, i) => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.lvl-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    levelIdx = i;
-    showTopicSelection();
+document.querySelectorAll('.lvl-btn').forEach((btn,i)=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.lvl-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active'); levelIdx=i; startGame();
   });
 });
+document.getElementById('btnHero').onclick=()=>showHeroSelection(false);
+document.getElementById('btnTopic').onclick=()=>showTopicSelection(false);
 
-// Klaviatura
-document.addEventListener('keydown', e => {
-  if (autoMode) return; // Avtomatik rejimda klaviatura ishlamaydi
-  if (e.key==='ArrowUp') move(0,-1);
-  if (e.key==='ArrowDown') move(0,1);
-  if (e.key==='ArrowLeft') move(-1,0);
-  if (e.key==='ArrowRight') move(1,0);
+document.addEventListener('keydown',e=>{
+  if(autoMode&&!junctionMode) return;
+  if(e.key==='ArrowUp') manualMove(0,-1);
+  if(e.key==='ArrowDown') manualMove(0,1);
+  if(e.key==='ArrowLeft') manualMove(-1,0);
+  if(e.key==='ArrowRight') manualMove(1,0);
 });
+let tx=0,ty=0;
+canvas.addEventListener('touchstart',e=>{ tx=e.touches[0].clientX; ty=e.touches[0].clientY; },{passive:true});
+canvas.addEventListener('touchend',e=>{
+  if(autoMode&&!junctionMode) return;
+  const dx=e.changedTouches[0].clientX-tx, dy=e.changedTouches[0].clientY-ty;
+  if(Math.abs(dx)>Math.abs(dy)){ if(Math.abs(dx)>30) manualMove(dx>0?1:-1,0); }
+  else { if(Math.abs(dy)>30) manualMove(0,dy>0?1:-1); }
+},{passive:true});
 
-// Swipe
-let tx=0, ty=0;
-canvas.addEventListener('touchstart', e => {
-  if (autoMode) return;
-  tx = e.touches[0].clientX; ty = e.touches[0].clientY;
-}, {passive:true});
-canvas.addEventListener('touchend', e => {
-  if (autoMode) return;
-  const dx = e.changedTouches[0].clientX - tx;
-  const dy = e.changedTouches[0].clientY - ty;
-  if (Math.abs(dx) > Math.abs(dy)) {
-    if (Math.abs(dx) > 30) move(dx > 0 ? 1 : -1, 0);
-  } else {
-    if (Math.abs(dy) > 30) move(0, dy > 0 ? 1 : -1);
-  }
-}, {passive:true});
-
-// Boshlash
-showTopicSelection();
+// ============ BOSHISH ============
+(function init(){
+  const sh=localStorage.getItem('codekids_hero');
+  const st=localStorage.getItem('codekids_topic');
+  if(sh){ const h=HEROES.find(x=>x.id===sh); if(h){ selectedHero=h; } }
+  document.getElementById('heroBig').textContent=selectedHero.emoji;
+  document.getElementById('heroName').textContent=selectedHero.name;
+  if(st) selectedTopic=st;
+  if(!sh) showHeroSelection(true);
+  else if(!st) showTopicSelection(true);
+  else startGame();
+})();
 </script>
 </body>
 </html>
