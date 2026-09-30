@@ -41,6 +41,7 @@ canvas {
   box-shadow:0 5px 20px rgba(0,0,0,.5);
 }
 .side-panel {
+  position:relative;
   background:#313244; border-radius:12px; padding:12px 8px;
   display:flex; flex-direction:column; align-items:center; gap:6px;
   min-width:80px;
@@ -50,15 +51,16 @@ canvas {
 .hero-name { font-size:.8rem; color:#a6adc8; font-weight:bold; }
 .bubble {
   position:absolute; display:none;
+  right:calc(100% + 12px); top:6px; width:170px;
   background:#fff; color:#1e1e2e; padding:8px 10px;
   border-radius:12px; font-size:.8rem; font-weight:bold;
-  max-width:170px; z-index:5; line-height:1.3;
+  z-index:5; line-height:1.3;
   box-shadow:0 3px 12px rgba(0,0,0,.5);
 }
 .bubble.show { display:block; animation:pop .25s; }
 .bubble:after {
-  content:''; position:absolute; bottom:-8px; left:20px;
-  border:8px solid transparent; border-top-color:#fff; border-bottom:0;
+  content:''; position:absolute; top:14px; right:-8px;
+  border:8px solid transparent; border-left-color:#fff; border-right:0;
 }
 @keyframes pop { from{transform:scale(.5);opacity:0;} to{transform:scale(1);opacity:1;} }
 .controls { margin-top:12px; display:grid; grid-template-columns:repeat(3,64px); grid-template-rows:repeat(3,64px); gap:8px; }
@@ -113,9 +115,9 @@ canvas {
 <div class="game-area">
   <div class="canvas-wrap">
     <canvas id="maze"></canvas>
-    <div class="bubble" id="bubble">Men qayerga yurishimni bilmayapman... Menga yordam ber! 🥺</div>
   </div>
   <div class="side-panel">
+    <div class="bubble" id="bubble">Men qayerga yurishimni bilmayapman... Menga yordam ber! 🥺</div>
     <div class="hero-big" id="heroBig">🦸</div>
     <div class="hero-name" id="heroName">Super</div>
   </div>
@@ -188,7 +190,7 @@ const bubble = document.getElementById('bubble');
 let levelIdx=0, size=13, cell, grid, player, steps=0, seconds=0;
 let timer=null, playing=false, autoMode=false, junctionMode=false, lastDir=null;
 let autoTimer=null, selectedTopic=null, selectedHero=HEROES[0], correctAnswers=0;
-let path=[];
+let path=[], monsterTimer=null;
 
 // ============ QAHRAMON / MAVZU TANLASH ============
 function showHeroSelection(thenTopic) {
@@ -323,8 +325,6 @@ function exitJunction(){
   }
 }
 function showBubble(){
-  bubble.style.left = Math.max(0, Math.min(canvas.width-175, player.x*cell-50)) + 'px';
-  bubble.style.top = Math.max(0, player.y*cell-78) + 'px';
   bubble.classList.add('show');
 }
 function hideBubble(){ bubble.classList.remove('show'); }
@@ -401,14 +401,15 @@ function showMonster(){
   document.getElementById('monsterOverlay').classList.add('show');
   const fill=document.getElementById('timerFill');
   fill.style.width='100%'; fill.classList.remove('danger');
-  let tl=15;
-  const mt=setInterval(()=>{
-    tl--; fill.style.width=(tl/15*100)+'%';
+  let tl=25;
+  monsterTimer=setInterval(()=>{
+    tl--; fill.style.width=(tl/25*100)+'%';
     if(tl<=5) fill.classList.add('danger');
-    if(tl<=0){ clearInterval(mt); failMonster(); }
+    if(tl<=0){ clearInterval(monsterTimer); failMonster(); }
   },1000);
 }
 function checkAnswer(ch,cor,btn){
+  clearInterval(monsterTimer);
   const fb=document.getElementById('feedback');
   document.querySelectorAll('#answerButtons button').forEach(b=>b.disabled=true);
   if(ch===cor){
@@ -424,6 +425,7 @@ function checkAnswer(ch,cor,btn){
   }
 }
 function failMonster(){
+  clearInterval(monsterTimer);
   const fb=document.getElementById('feedback');
   fb.textContent='⏰ Vaqt tugadi! 3 qadam orqaga'; fb.className='feedback wrong';
   setTimeout(()=>{ stepBack(3); closeMonster(); },1300);
