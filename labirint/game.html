@@ -497,6 +497,29 @@ canvas.addEventListener('touchend',e=>{
 },{passive:true});
 
 (function init(){
+  // ============ 3D MODEL ANIMATSIYALARI ============
+(function(){
+  const mv=document.getElementById('heroModel');
+  if(!mv) return;
+  mv.addEventListener('load',()=>{
+    const hb=document.getElementById('heroBig');
+    if(hb) hb.style.display='none';
+    const list=mv.availableAnimations||[];
+    const wrap=document.getElementById('animButtons');
+    if(!wrap) return;
+    wrap.innerHTML='';
+    list.slice(0,4).forEach(name=>{
+      const b=document.createElement('button');
+      b.className='anim-btn'; b.textContent=name;
+      b.onclick=()=>{ mv.animationName=name; mv.play(); };
+      wrap.appendChild(b);
+    });
+  });
+  mv.addEventListener('error',()=>{
+    const hb=document.getElementById('heroBig');
+    if(hb) hb.style.display='block';
+  });
+})();
   const sh=localStorage.getItem('codekids_hero');
   const st=localStorage.getItem('codekids_topic');
   if(sh){ const h=HEROES.find(x=>x.id===sh); if(h){ selectedHero=h; } }
