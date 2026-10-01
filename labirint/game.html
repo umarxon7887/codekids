@@ -123,7 +123,7 @@ canvas {
   </div>
   <div class="side-panel">
     <div class="bubble" id="bubble">Men qayerga yurishimni bilmayapman... Menga yordam ber! 🥺</div>
-      <model-viewer id="heroModel" src="models/chicken_walkcycle.glb" autoplay camera-controls
+    <model-viewer id="heroModel" src="models/duck_quick_quack_animated.glb" autoplay camera-controls
       style="width:96px;height:130px;background:transparent;"
       shadow-intensity="1" loading="eager"></model-viewer>
     <div class="anim-wrap" id="animButtons"></div>
@@ -139,7 +139,7 @@ canvas {
   <button class="dpad down" onclick="manualMove(0,1)">▼</button>
 </div>
 
-<div class="footer-credit">3D modellar: Sketchfab (CC-BY) — 🦆 Duck Quick Quack: pepetrincado • 🐔🤖 mualliflar tez orada qo'shiladi</div>
+<div class="footer-credit">3D modellar: Sketchfab (CC-BY) — 🦆 Duck Quick Quack: pepetrincado • 🐔  🤖 mualliflari tez orada</div>
 
 <div class="overlay" id="heroOverlay">
   <div class="popup">
@@ -187,10 +187,9 @@ const LEVELS = [
   { size:17, braid:0.5, auto:true },
   { size:21, braid:0.8, auto:true }
 ];
-// Har bir qahramon o'z 3D modeliga ega (yangi fayl yuklaganda shu yerga qo'shing)
 const HEROES = [
+  { id:'ordek', emoji:'🦆', name:"O'rdek", model:'models/duck_quick_quack_animated.glb', img:'models/ordak_stiker.png', locked:false },
   { id:'tovuq', emoji:'🐔', name:'Tovuq',  model:'models/chicken_walkcycle.glb', locked:false },
-  { id:'ordak', emoji:'🦆', name:'O'rdak', model:'models/duck_quick_quack_animated.glb', img:'models/ordak_stiker.png', locked:false },
   { id:'zombi', emoji:'🧟', name:'Zombi',  model:'models/chicken_gun_-_zombie_hulk.glb', locked:false },
   { id:'robot', emoji:'🤖', name:'Robot',  model:'models/robot_love_death_and_robots.glb', locked:false }
 ];
@@ -204,6 +203,20 @@ let levelIdx=0, size=13, cell, grid, player, steps=0, seconds=0;
 let timer=null, playing=false, autoMode=false, junctionMode=false, lastDir=null;
 let autoTimer=null, selectedTopic=null, selectedHero=HEROES[0], correctAnswers=0;
 let path=[], monsterTimer=null, monsterLeft=0, lastMonsterStep=0;
+
+// ============ QAHRAMON RASMI (labirint ichida) ============
+const heroImgCache={};
+function getHeroImg(hero){
+  if(!hero.img) return null;
+  if(!heroImgCache[hero.id]){
+    const im=new Image();
+    im.src=hero.img;
+    im.onload=()=>{ draw(); };
+    heroImgCache[hero.id]=im;
+  }
+  const c=heroImgCache[hero.id];
+  return (c.complete&&c.naturalWidth>0)?c:null;
+}
 
 // ============ QAHRAMON / MAVZU ============
 function setHeroModel(){
@@ -378,20 +391,6 @@ function stepBack(n){
 }
 
 // ============ CHIZISH ============
-// Qahramon rasmini yuklash (labirint ichida yurish uchun)
-const heroImgCache={};
-function getHeroImg(hero){
-  if(!hero.img) return null;
-  if(!heroImgCache[hero.id]){
-    const im=new Image();
-    im.src=hero.img;
-    im.onload=()=>{ draw(); };
-    heroImgCache[hero.id]=im;
-  }
-  const c=heroImgCache[hero.id];
-  return (c.complete&&c.naturalWidth>0)?c:null;
-}
-
 function draw(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
   ctx.strokeStyle='#89b4fa';
