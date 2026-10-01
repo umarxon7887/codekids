@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="uz">
-<script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
-</head>
+<head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Labirint O'yini - CodeKids</title>
+<script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
 body {
@@ -45,15 +45,15 @@ canvas {
   position:relative;
   background:#313244; border-radius:12px; padding:12px 8px;
   display:flex; flex-direction:column; align-items:center; gap:6px;
-  min-width:80px;
+  min-width:96px;
 }
 .hero-big { font-size:3.2rem; animation:heroBounce 0.8s infinite alternate; }
 @keyframes heroBounce { from{transform:translateY(0) rotate(-6deg);} to{transform:translateY(-8px) rotate(6deg);} }
 .hero-name { font-size:.8rem; color:#a6adc8; font-weight:bold; }
- .anim-wrap { display:flex; flex-wrap:wrap; gap:4px; justify-content:center; max-width:96px; }
+.anim-wrap { display:flex; flex-wrap:wrap; gap:4px; justify-content:center; max-width:96px; }
 .anim-btn { padding:3px 6px; font-size:.6rem; background:#45475a; color:#cdd6f4; border:none; border-radius:6px; cursor:pointer; }
-.credit { font-size:.55rem; color:#6c7086; margin-top:6px; text-align:center; line-height:1.3; }
-  .bubble {
+.footer-credit { font-size:.6rem; color:#6c7086; margin-top:14px; text-align:center; }
+.bubble {
   position:absolute; display:none;
   right:calc(100% + 12px); top:6px; width:170px;
   background:#fff; color:#1e1e2e; padding:8px 10px;
@@ -123,13 +123,12 @@ canvas {
   </div>
   <div class="side-panel">
     <div class="bubble" id="bubble">Men qayerga yurishimni bilmayapman... Menga yordam ber! 🥺</div>
-        <model-viewer id="heroModel" src="models/hero.glb" autoplay camera-controls
+    <model-viewer id="heroModel" src="models/hero.glb" autoplay camera-controls
       style="width:96px;height:130px;background:transparent;"
       shadow-intensity="1" loading="eager"></model-viewer>
     <div class="anim-wrap" id="animButtons"></div>
-    <div class="hero-big" id="heroBig">🦸</div>
-    <div class="hero-name" id="heroName">Super</div>
-    <div class="credit">Duck Quick Quack by pepetrincado — CC-BY</div>
+    <div class="hero-big" id="heroBig">🦆</div>
+    <div class="hero-name" id="heroName">O'rdek</div>
   </div>
 </div>
 
@@ -139,6 +138,8 @@ canvas {
   <button class="dpad right" onclick="manualMove(1,0)">▶</button>
   <button class="dpad down" onclick="manualMove(0,1)">▼</button>
 </div>
+
+<div class="footer-credit">🦆 3D model: "Duck Quick Quack" by pepetrincado — Sketchfab (CC-BY)</div>
 
 <div class="overlay" id="heroOverlay">
   <div class="popup">
@@ -186,10 +187,11 @@ const LEVELS = [
   { size:17, braid:0.5, auto:true },
   { size:21, braid:0.8, auto:true }
 ];
+// Har bir qahramon o'z 3D modeliga ega (yangi fayl yuklaganda shu yerga qo'shing)
 const HEROES = [
-  { id:'super', emoji:'🦸', name:'Super', locked:false },
-  { id:'mushuk', emoji:'🐱', name:'Mushuk', locked:true },
-  { id:'robot', emoji:'🤖', name:'Robot', locked:true }
+  { id:'ordek',  emoji:'🦆', name:"O'rdek", model:'models/hero.glb',   locked:false },
+  { id:'mushuk', emoji:'🐱', name:'Mushuk', model:'models/mushuk.glb', locked:true },
+  { id:'robot',  emoji:'🤖', name:'Robot',  model:'models/robot.glb',  locked:true }
 ];
 
 const canvas = document.getElementById('maze');
@@ -203,6 +205,13 @@ let autoTimer=null, selectedTopic=null, selectedHero=HEROES[0], correctAnswers=0
 let path=[], monsterTimer=null, monsterLeft=0, lastMonsterStep=0;
 
 // ============ QAHRAMON / MAVZU ============
+function setHeroModel(){
+  const mv=document.getElementById('heroModel');
+  if(mv && selectedHero.model){ mv.src=selectedHero.model; }
+  document.getElementById('heroBig').textContent=selectedHero.emoji;
+  document.getElementById('heroName').textContent=selectedHero.name;
+}
+
 function showHeroSelection(thenTopic) {
   const g = document.getElementById('heroGrid');
   g.innerHTML = '';
@@ -214,8 +223,7 @@ function showHeroSelection(thenTopic) {
       if (h.locked) { alert('Bu qahramon tez orada qo\'shiladi! 🔜'); return; }
       selectedHero = h;
       localStorage.setItem('codekids_hero', h.id);
-      document.getElementById('heroBig').textContent = h.emoji;
-      document.getElementById('heroName').textContent = h.name;
+      setHeroModel();
       document.getElementById('heroOverlay').classList.remove('show');
       if (thenTopic) showTopicSelection(true); else startGame();
     };
@@ -284,7 +292,6 @@ function startGame(){
   size=LEVELS[levelIdx].size; autoMode=LEVELS[levelIdx].auto;
   steps=0; seconds=0; correctAnswers=0; playing=true;
   junctionMode=false; lastDir=null; path=[];
-  // KVOTA: shu bosqichdagi savollar sonicha maxluq chiqadi
   monsterLeft=(QUESTION_BANK.savollar[selectedTopic]||[]).filter(s=>s.level===levelIdx+1).length;
   lastMonsterStep=0;
   document.getElementById('monsters').textContent=monsterLeft;
@@ -353,7 +360,6 @@ function move(dx,dy){
   document.getElementById('steps').textContent=steps;
   draw();
   exitJunction();
-  // KVOTA: maxluq faqat monsterLeft>0 bo'lsa chiqadi
   if(!junctionMode && monsterLeft>0 && steps>5 &&
      (steps-lastMonsterStep>=10 || Math.random()<0.1)){
     lastMonsterStep=steps;
@@ -496,8 +502,7 @@ canvas.addEventListener('touchend',e=>{
   else { if(Math.abs(dy)>30) manualMove(0,dy>0?1:-1); }
 },{passive:true});
 
-(function init(){
-  // ============ 3D MODEL ANIMATSIYALARI ============
+// ============ 3D MODEL ANIMATSIYALARI ============
 (function(){
   const mv=document.getElementById('heroModel');
   if(!mv) return;
@@ -520,11 +525,12 @@ canvas.addEventListener('touchend',e=>{
     if(hb) hb.style.display='block';
   });
 })();
+
+(function init(){
   const sh=localStorage.getItem('codekids_hero');
   const st=localStorage.getItem('codekids_topic');
   if(sh){ const h=HEROES.find(x=>x.id===sh); if(h){ selectedHero=h; } }
-  document.getElementById('heroBig').textContent=selectedHero.emoji;
-  document.getElementById('heroName').textContent=selectedHero.name;
+  setHeroModel();
   if(st) selectedTopic=st;
   if(!sh) showHeroSelection(true);
   else if(!st) showTopicSelection(true);
