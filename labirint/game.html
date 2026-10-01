@@ -190,7 +190,7 @@ const LEVELS = [
 // Har bir qahramon o'z 3D modeliga ega (yangi fayl yuklaganda shu yerga qo'shing)
 const HEROES = [
   { id:'tovuq', emoji:'🐔', name:'Tovuq',  model:'models/chicken_walkcycle.glb', locked:false },
-  { id:'ordek', emoji:'🦆', name:"O'rdek", model:'models/duck_quick_quack_animated.glb', locked:false },
+  { id:'ordak', emoji:'🦆', name:'O'rdak', model:'models/duck_quick_quack_animated.glb', img:'models/ordak_stiker.png', locked:false },
   { id:'zombi', emoji:'🧟', name:'Zombi',  model:'models/chicken_gun_-_zombie_hulk.glb', locked:false },
   { id:'robot', emoji:'🤖', name:'Robot',  model:'models/robot_love_death_and_robots.glb', locked:false }
 ];
@@ -378,6 +378,20 @@ function stepBack(n){
 }
 
 // ============ CHIZISH ============
+// Qahramon rasmini yuklash (labirint ichida yurish uchun)
+const heroImgCache={};
+function getHeroImg(hero){
+  if(!hero.img) return null;
+  if(!heroImgCache[hero.id]){
+    const im=new Image();
+    im.src=hero.img;
+    im.onload=()=>{ draw(); };
+    heroImgCache[hero.id]=im;
+  }
+  const c=heroImgCache[hero.id];
+  return (c.complete&&c.naturalWidth>0)?c:null;
+}
+
 function draw(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
   ctx.strokeStyle='#89b4fa';
@@ -395,7 +409,9 @@ function draw(){
   ctx.font=(cell*0.8)+'px serif';
   ctx.textAlign='center'; ctx.textBaseline='middle';
   ctx.fillText('🏁',(size-1)*cell+cell/2,(size-1)*cell+cell/2);
-  ctx.fillText(selectedHero.emoji, player.x*cell+cell/2, player.y*cell+cell/2);
+  const himg=getHeroImg(selectedHero);
+  if(himg){ ctx.drawImage(himg, player.x*cell+cell*0.08, player.y*cell+cell*0.08, cell*0.84, cell*0.84); }
+  else { ctx.fillText(selectedHero.emoji, player.x*cell+cell/2, player.y*cell+cell/2); }
 }
 
 // ============ MAHLUQ ============
