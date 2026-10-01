@@ -123,7 +123,7 @@ canvas {
   </div>
   <div class="side-panel">
     <div class="bubble" id="bubble">Men qayerga yurishimni bilmayapman... Menga yordam ber! 🥺</div>
-    <model-viewer id="heroModel" src="models/hero.glb" autoplay camera-controls
+      <model-viewer id="heroModel" src="models/chicken_walkcycle.glb" autoplay camera-controls
       style="width:96px;height:130px;background:transparent;"
       shadow-intensity="1" loading="eager"></model-viewer>
     <div class="anim-wrap" id="animButtons"></div>
@@ -139,7 +139,7 @@ canvas {
   <button class="dpad down" onclick="manualMove(0,1)">▼</button>
 </div>
 
-<div class="footer-credit">🦆 3D model: "Duck Quick Quack" by pepetrincado — Sketchfab (CC-BY)</div>
+<div class="footer-credit">3D modellar: Sketchfab (CC-BY) — 🦆 Duck Quick Quack: pepetrincado • 🐔🤖 mualliflar tez orada qo'shiladi</div>
 
 <div class="overlay" id="heroOverlay">
   <div class="popup">
@@ -189,9 +189,10 @@ const LEVELS = [
 ];
 // Har bir qahramon o'z 3D modeliga ega (yangi fayl yuklaganda shu yerga qo'shing)
 const HEROES = [
-  { id:'ordek',  emoji:'🦆', name:"O'rdek", model:'models/hero.glb',   locked:false },
-  { id:'mushuk', emoji:'🐱', name:'Mushuk', model:'models/mushuk.glb', locked:true },
-  { id:'robot',  emoji:'🤖', name:'Robot',  model:'models/robot.glb',  locked:true }
+  { id:'tovuq', emoji:'🐔', name:'Tovuq',  model:'models/chicken_walkcycle.glb', locked:false },
+  { id:'ordek', emoji:'🦆', name:"O'rdek", model:'models/duck_quick_quack_animated.glb', locked:false },
+  { id:'zombi', emoji:'🧟', name:'Zombi',  model:'models/chicken_gun_-_zombie_hulk.glb', locked:false },
+  { id:'robot', emoji:'🤖', name:'Robot',  model:'models/robot_love_death_and_robots.glb', locked:false }
 ];
 
 const canvas = document.getElementById('maze');
