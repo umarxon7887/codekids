@@ -575,3 +575,13 @@ body {
   .stat-box { min-width:100%; }
   .race-car { font-size:1.5rem; }
 }
+
+/* ============ USTOZ AUTH ============ */
+.teacher-toggle { margin-top:14px; text-align:center; }
+.btn-teacher-toggle { background:none; border:none; color:#89b4fa; cursor:pointer; font-size:.9rem; text-decoration:underline; }
+.teacher-auth { margin-top:14px; background:#313244; padding:16px; border-radius:12px; display:flex; flex-direction:column; gap:10px; }
+.teacher-auth h3 { color:#89b4fa; text-align:center; margin-bottom:4px; }
+.teacher-auth input { padding:10px 12px; border-radius:8px; border:1px solid #45475a; background:#1e1e2e; color:#cdd6f4; font-size:.95rem; }
+.teacher-auth input:focus { outline:none; border-color:#89b4fa; }
+.btn-secondary { padding:11px; background:#45475a; color:#cdd6f4; border:none; border-radius:8px; font-weight:bold; cursor:pointer; }
+.btn-back-small { background:none; border:none; color:#a6adc8; cursor:pointer; font-size:.8rem; text-decoration:underline; }

@@ -35,6 +35,19 @@
                 <div class="error-message" id="errorMessage"></div>
                 
                 <button class="btn-primary" id="startBtn">🔑 Kirish</button>
+                <div class="teacher-toggle">
+                    <button class="btn-teacher-toggle" id="teacherToggleBtn">👨‍🏫 Ustozmisiz? Kirish</button>
+                </div>
+                <div class="teacher-auth" id="teacherAuth" style="display:none;">
+                    <h3>👨‍🏫 Ustoz kirishi</h3>
+                    <input type="text" id="teacherNickname" placeholder="Nickname (ro'yxatdan o'tish uchun)">
+                    <input type="email" id="teacherEmail" placeholder="Email">
+                    <input type="password" id="teacherPassword" placeholder="Parol (min 6 belgi)">
+                    <div class="error-message" id="teacherError"></div>
+                    <button class="btn-primary" id="teacherLoginBtn">🔑 Kirish</button>
+                    <button class="btn-secondary" id="teacherRegisterBtn">📝 Ro'yxatdan o'tish</button>
+                    <button class="btn-back-small" id="teacherBackBtn">← O'quvchi kirishiga qaytish</button>
+                </div>
             </div>
         </div>
 
@@ -136,6 +149,8 @@
             <div class="race-result" id="raceResult"></div>
         </div>
         <!-- JavaScript fayllar (tartib muhim!) -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase.js"></script>
     <script src="js/storage.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/navigation.js"></script>
