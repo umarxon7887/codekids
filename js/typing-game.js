@@ -1,356 +1,172 @@
 /**
- * TYPING GAME MODULE
- * TezYozuv o'yini uchun mas'ul
+ * TYPING RACE GAME
+ * TypeRacer uslubidagi poyga rejimi
  */
 
 const TypingGame = {
-    // ==================== CONFIG ====================
-    wordsByLang: {
-       uz: [
-            "kod", "veb", "ilova", "xato", "tuzatish", "mantiq", "oyin", "oynash",
-            "yozish", "tez", "sichqoncha", "ekran", "klaviatura", "piton", "java",
-            "html", "css", "js", "malumot", "tarmoq", "bulut", "bot", "ai", "robot",
-            "funksiya", "ozgaruvchi", "sikl", "massiv", "obyekt", "sinf", "metod",
-            "kompyuter", "dastur", "dasturchi", "internet", "sayt", "server", "algoritm"
-        ],
-        en: [
-            "code", "web", "app", "bug", "fix", "logic", "game", "play", 
-            "type", "fast", "mouse", "screen", "keyboard", "python", "java", 
-            "html", "css", "js", "data", "net", "cloud", "bot", "ai", "robot",
-            "function", "variable", "loop", "array", "object", "class", "method"
-        ],
-        ru: [
-            "код", "веб", "приложение", "ошибка", "исправить", "логика", "игра", "играть",
-            "печатать", "быстро", "мышь", "экран", "клавиатура", "питон", "джава",
-            "хтмл", "цсс", "джс", "данные", "сеть", "облако", "бот", "ии", "робот",
-            "функция", "переменная", "цикл", "массив", "объект", "класс", "метод"
-        ]
+    currentText: '',
+    userInput: '',
+    startTime: null,
+    errors: 0,
+    timer: null,
+    words: {
+        uz: ['kompyuter','dastur','algoritm','funksiya','o\'zgaruvchi','tsikl','shart','massiv','obyekt','sinflar','metod','klaviatura','monitor','protsessor','xotira','internet','brauzer','sayt','kod','server','ma\'lumot','fayl','papka','dasturchi','test','xato','tuzatish','loyiha','tashabbus','natija'],
+        ru: ['компьютер','программа','алгоритм','функция','переменная','цикл','условие','массив','объект','класс','метод','клавиатура','монитор','процессор','память','интернет','браузер','сайт','код','сервер','данные','файл','папка','программист','тест','ошибка','исправление','проект','инициатива','результат'],
+        en: ['computer','program','algorithm','function','variable','loop','condition','array','object','class','method','keyboard','monitor','processor','memory','internet','browser','website','code','server','data','file','folder','developer','test','error','debug','project','initiative','result']
     },
-
-    // ==================== STATE ====================
-    state: {
-        words: [],
-        currentWordIndex: 0,
-        currentCharIndex: 0,
-        timeLeft: 30,
-        totalTime: 30,
-        timerInterval: null,
-        isGameRunning: false,
-        correctChars: 0,
-        incorrectChars: 0,
-        totalCharsTyped: 0,
-        currentLang: 'uz',
-        charStates: []
-    },
-
-    // ==================== DOM ELEMENTS ====================
-    elements: {},
-
-    /**
-     * DOM elementlarni saqlash
-     */
-    cacheElements: () => {
-        TypingGame.elements = {
-            textDisplay: document.getElementById('textDisplay'),
-            inputArea: document.getElementById('inputArea'),
-            timerDisplay: document.getElementById('timer'),
-            wpmDisplay: document.getElementById('wpm'),
-            accuracyDisplay: document.getElementById('accuracy'),
-            messageDisplay: document.getElementById('message'),
-            restartBtn: document.getElementById('restartBtn'),
-            timeControls: document.getElementById('timeControls'),
-            langControls: document.getElementById('langControls')
-        };
-    },
-
-    /**
-     * O'yinni boshlash
-     */
+    
     init: () => {
-        TypingGame.cacheElements();
-        TypingGame.reset();
-        TypingGame.bindEvents();
-        TypingGame.generateWords();
-        TypingGame.render();
-        setTimeout(() => TypingGame.elements.inputArea.focus(), 100);
-    },
-
-    /**
-     * O'yinni to'xtatish
-     */
-    stop: () => {
-        if (TypingGame.state.timerInterval) {
-            clearInterval(TypingGame.state.timerInterval);
+        const user = JSON.parse(localStorage.getItem('codekids_user') || 'null');
+        const lang = user ? user.language : 'uz';
+        
+        // 10 ta tasodifiy so'z tanlash
+        const pool = TypingGame.words[lang] || TypingGame.words.uz;
+        const selected = [];
+        for(let i=0; i<10; i++){
+            selected.push(pool[Math.floor(Math.random()*pool.length)]);
+        }
+        TypingGame.currentText = selected.join(' ');
+        TypingGame.userInput = '';
+        TypingGame.errors = 0;
+        TypingGame.startTime = null;
+        
+        // UI ni yangilash
+        const target = document.getElementById('raceTarget');
+        const input = document.getElementById('raceInput');
+        if(target) target.textContent = TypingGame.currentText;
+        if(input){ input.value=''; input.focus(); }
+        
+        TypingGame.updateDisplay();
+        TypingGame.updateCar(0);
+        TypingGame.updateStats(0, 100, 0);
+        
+        // Input listener
+        if(input){
+            input.oninput = (e) => TypingGame.handleInput(e);
         }
     },
-
-    /**
-     * O'yinni qayta boshlash
-     */
-    reset: () => {
-        const state = TypingGame.state;
-        
-        TypingGame.stop();
-        
-        state.timeLeft = state.totalTime;
-        state.currentWordIndex = 0;
-        state.currentCharIndex = 0;
-        state.correctChars = 0;
-        state.incorrectChars = 0;
-        state.totalCharsTyped = 0;
-        state.isGameRunning = false;
-        state.charStates = [];
-        
-        const elements = TypingGame.elements;
-        elements.inputArea.value = '';
-        elements.inputArea.disabled = false;
-        elements.messageDisplay.textContent = '';
-        elements.timerDisplay.textContent = state.timeLeft;
-        elements.wpmDisplay.textContent = '0';
-        elements.accuracyDisplay.textContent = '100%';
-    },
-
-    /**
-     * Hodisalarni bog'lash
-     */
-    bindEvents: () => {
-        const elements = TypingGame.elements;
-        
-        // Vaqt tugmalari
-        elements.timeControls.querySelectorAll('.control-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                elements.timeControls.querySelectorAll('.control-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                TypingGame.state.totalTime = parseInt(btn.dataset.time);
-                TypingGame.reset();
-                TypingGame.generateWords();
-                TypingGame.render();
-            });
-        });
-        
-        // Til tugmalari
-        elements.langControls.querySelectorAll('.control-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                elements.langControls.querySelectorAll('.control-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                TypingGame.state.currentLang = btn.dataset.lang;
-                TypingGame.reset();
-                TypingGame.generateWords();
-                TypingGame.render();
-            });
-        });
-        
-        // Input hodisasi
-        elements.inputArea.addEventListener('input', TypingGame.handleInput);
-        
-        // Backspace hodisasi
-        elements.inputArea.addEventListener('keydown', TypingGame.handleBackspace);
-        
-        // Restart tugmasi
-        elements.restartBtn.addEventListener('click', () => {
-            TypingGame.reset();
-            TypingGame.generateWords();
-            TypingGame.render();
-        });
-    },
-
-    /**
-     * So'zlarni generatsiya qilish
-     */
-    generateWords: () => {
-        const state = TypingGame.state;
-        const wordList = TypingGame.wordsByLang[state.currentLang];
-        
-        state.words = [];
-        for (let i = 0; i < 30; i++) {
-            state.words.push(wordList[Math.floor(Math.random() * wordList.length)]);
-        }
-    },
-
-    /**
-     * So'zlarni render qilish
-     */
-    render: () => {
-        const state = TypingGame.state;
-        const display = TypingGame.elements.textDisplay;
-        
-        display.innerHTML = '';
-        
-        state.words.forEach((word, wordIdx) => {
-            const wordSpan = document.createElement('span');
-            wordSpan.className = 'word';
-            
-            word.split('').forEach((char, charIdx) => {
-                const charSpan = document.createElement('span');
-                charSpan.className = 'char';
-                charSpan.textContent = char;
-                
-                if (wordIdx < state.currentWordIndex) {
-                    charSpan.classList.add('correct');
-                } else if (wordIdx === state.currentWordIndex) {
-                    if (charIdx < state.currentCharIndex) {
-                        const charState = state.charStates[charIdx];
-                        if (charState && charState.correct) {
-                            charSpan.classList.add('correct');
-                        } else {
-                            charSpan.classList.add('incorrect');
-                        }
-                    } else if (charIdx === state.currentCharIndex) {
-                        charSpan.classList.add('current');
-                    }
-                }
-                
-                wordSpan.appendChild(charSpan);
-            });
-            
-            display.appendChild(wordSpan);
-        });
-    },
-
-    /**
-     * Timer ni boshlash
-     */
-    startTimer: () => {
-        const state = TypingGame.state;
-        const elements = TypingGame.elements;
-        
-        state.timerInterval = setInterval(() => {
-            state.timeLeft--;
-            elements.timerDisplay.textContent = state.timeLeft;
-            
-            // WPM hisoblash
-            const minutes = (state.totalTime - state.timeLeft) / 60;
-            if (minutes > 0) {
-                const wpm = Math.round((state.correctChars / 5) / minutes);
-                elements.wpmDisplay.textContent = wpm;
-            }
-            
-            if (state.timeLeft <= 0) {
-                TypingGame.end();
-            }
-        }, 1000);
-    },
-
-    /**
-     * Input hodisasini boshqarish
-     */
+    
     handleInput: (e) => {
-        const state = TypingGame.state;
-        const elements = TypingGame.elements;
+        const typed = e.target.value;
+        const target = TypingGame.currentText;
         
-        // Timer ni boshlash (birinchi marta yozilganda)
-        if (!state.isGameRunning && state.timeLeft === state.totalTime) {
-            state.isGameRunning = true;
-            TypingGame.startTimer();
+        // Birinchi harf bosilganda taymer boshlash
+        if(!TypingGame.startTime && typed.length > 0){
+            TypingGame.startTime = Date.now();
+            TypingGame.timer = setInterval(TypingGame.updateTimer, 100);
         }
         
-        const typedChar = e.data;
-        if (typedChar === null) return; // backspace yoki boshqa
+        // Har bir harfni tekshirish
+        let errors = 0;
+        for(let i=0; i<typed.length; i++){
+            if(typed[i] !== target[i]) errors++;
+        }
+        TypingGame.errors = errors;
+        TypingGame.userInput = typed;
         
-        const currentWord = state.words[state.currentWordIndex];
-        const expectedChar = currentWord[state.currentCharIndex];
+        TypingGame.updateDisplay();
+        TypingGame.updateCar(typed.length / target.length);
         
-        state.totalCharsTyped++;
-        
-        if (typedChar === expectedChar) {
-            state.correctChars++;
-            state.charStates.push({ char: typedChar, correct: true });
-        } else {
-            state.incorrectChars++;
-            state.charStates.push({ char: typedChar, correct: false });
+        // Xato bo'lsa - mashina titraydi
+        const car = document.getElementById('raceCar');
+        if(errors > 0 && car){
+            car.style.animation = 'shake 0.3s';
+            setTimeout(() => { if(car) car.style.animation = ''; }, 300);
         }
         
-        state.currentCharIndex++;
-        
-        // Aniqlikni yangilash
-        const accuracy = Math.round((state.correctChars / state.totalCharsTyped) * 100);
-        elements.accuracyDisplay.textContent = accuracy + '%';
-        
-        // Input ni tozalash
-        elements.inputArea.value = '';
-        
-        // So'z tugagan bo'lsa
-        if (state.currentCharIndex >= currentWord.length) {
-            state.currentWordIndex++;
-            state.currentCharIndex = 0;
-            state.charStates = [];
-            
-            if (state.currentWordIndex >= state.words.length) {
-                TypingGame.end();
-                return;
-            }
-        }
-        
-        TypingGame.render();
-    },
-
-    /**
-     * Backspace hodisasini boshqarish
-     */
-    handleBackspace: (e) => {
-        if (e.key !== 'Backspace') return;
-        
-        e.preventDefault();
-        
-        const state = TypingGame.state;
-        const elements = TypingGame.elements;
-        
-        if (state.currentCharIndex > 0) {
-            state.currentCharIndex--;
-            
-            const lastState = state.charStates.pop();
-            if (lastState) {
-                if (lastState.correct) {
-                    state.correctChars--;
-                } else {
-                    state.incorrectChars--;
-                }
-                state.totalCharsTyped--;
-                
-                const accuracy = state.totalCharsTyped > 0 
-                    ? Math.round((state.correctChars / state.totalCharsTyped) * 100) 
-                    : 100;
-                elements.accuracyDisplay.textContent = accuracy + '%';
-            }
-            
-            TypingGame.render();
+        // Finish
+        if(typed.length >= target.length){
+            TypingGame.finish();
         }
     },
-
-    /**
-     * O'yinni tugatish
-     */
-    end: () => {
-        const state = TypingGame.state;
-        const elements = TypingGame.elements;
+    
+    updateDisplay: () => {
+        const target = document.getElementById('raceTarget');
+        if(!target) return;
         
-        TypingGame.stop();
-        state.isGameRunning = false;
-        elements.inputArea.disabled = true;
+        const typed = TypingGame.userInput;
+        const text = TypingGame.currentText;
+        let html = '';
         
-        const finalWpm = parseInt(elements.wpmDisplay.textContent);
-        const finalAcc = parseInt(elements.accuracyDisplay.textContent);
+        for(let i=0; i<text.length; i++){
+            let cls = 'future';
+            if(i < typed.length){
+                cls = typed[i] === text[i] ? 'correct' : 'wrong';
+            } else if(i === typed.length){
+                cls = 'current';
+            }
+            html += `<span class="char ${cls}">${text[i] === ' ' ? '&nbsp;' : text[i]}</span>`;
+        }
+        target.innerHTML = html;
+    },
+    
+    updateCar: (progress) => {
+        const car = document.getElementById('raceCar');
+        if(!car) return;
+        const percent = Math.min(100, progress * 100);
+        car.style.left = percent + '%';
+    },
+    
+    updateTimer: () => {
+        if(!TypingGame.startTime) return;
+        const elapsed = (Date.now() - TypingGame.startTime) / 1000;
+        const typed = TypingGame.userInput.length;
+        const total = TypingGame.currentText.length;
+        const wpm = Math.round((typed / 5) / (elapsed / 60)) || 0;
+        const acc = Math.max(0, Math.round(((typed - TypingGame.errors) / typed) * 100)) || 100;
+        TypingGame.updateStats(wpm, acc, elapsed);
+    },
+    
+    updateStats: (wpm, acc, time) => {
+        const w = document.getElementById('raceWpm');
+        const a = document.getElementById('raceAcc');
+        const t = document.getElementById('raceTime');
+        if(w) w.textContent = wpm;
+        if(a) a.textContent = acc + '%';
+        if(t) t.textContent = time.toFixed(1) + 's';
+    },
+    
+    finish: () => {
+        clearInterval(TypingGame.timer);
+        const elapsed = (Date.now() - TypingGame.startTime) / 1000;
+        const wpm = Math.round((TypingGame.userInput.length / 5) / (elapsed / 60));
+        const acc = Math.round(((TypingGame.userInput.length - TypingGame.errors) / TypingGame.userInput.length) * 100);
         
-        // Natijani saqlash
-        const user = Storage.getUser();
-        if (user) {
-            Storage.saveResult({
-                type: 'typing',
-                nickname: user.nickname,
-                wpm: finalWpm,
-                accuracy: finalAcc,
-                time: state.totalTime,
-                lang: state.currentLang
-            });
+        // Natija ekranini ko'rsatish
+        const result = document.getElementById('raceResult');
+        if(result){
+            result.innerHTML = `
+                <h2>🏁 Poyga tugadi!</h2>
+                <div class="result-stats">
+                    <div>🚀 Tezlik: <b>${wpm} WPM</b></div>
+                    <div>🎯 Aniqlik: <b>${acc}%</b></div>
+                    <div>⏱ Vaqt: <b>${elapsed.toFixed(1)}s</b></div>
+                </div>
+                <button onclick="TypingGame.restart()">🔄 Qayta</button>
+                <button onclick="Navigation.goHome()">🏠 Home</button>
+            `;
+            result.classList.add('show');
         }
         
-        // Xabar ko'rsatish
-        if (finalWpm > 30) {
-            elements.messageDisplay.textContent = `🏆 Ajoyib! Siz haqiqiy IT Qahramonsiz! (${finalWpm} WPM)`;
-            elements.messageDisplay.style.color = '#a6e3a1';
-        } else {
-            elements.messageDisplay.textContent = `💪 Yaxshi urinish! Mashq qilishda davom eting! (${finalWpm} WPM)`;
-            elements.messageDisplay.style.color = '#f9e2af';
+        // Statistika saqlash
+        const user = JSON.parse(localStorage.getItem('codekids_user') || 'null');
+        if(user){
+            const res = JSON.parse(localStorage.getItem('codekids_results') || '[]');
+            res.push({type:'typing', nickname:user.nickname, wpm:wpm, accuracy:acc, 
+                      time:elapsed, timestamp:new Date().toISOString()});
+            localStorage.setItem('codekids_results', JSON.stringify(res));
         }
+    },
+    
+    restart: () => {
+        const result = document.getElementById('raceResult');
+        if(result) result.classList.remove('show');
+        TypingGame.init();
+    },
+    
+    stop: () => {
+        clearInterval(TypingGame.timer);
+        const result = document.getElementById('raceResult');
+        if(result) result.classList.remove('show');
     }
 };
