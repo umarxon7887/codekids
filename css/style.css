@@ -507,164 +507,43 @@ body {
 }
 
 
-/* ============ TYPING RACE (TypeRacer) ============ */
-.race-track {
-    position: relative;
-    height: 60px;
-    background: linear-gradient(90deg, #313244 0%, #45475a 100%);
-    border-radius: 12px;
-    margin: 20px 0;
-    overflow: hidden;
-    border: 2px solid #585b70;
-}
-.race-finish {
-    position: absolute;
-    right: 10px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 2rem;
-    z-index: 2;
-}
-.race-car {
-    position: absolute;
-    left: 0;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 2rem;
-    transition: left 0.2s ease;
-    z-index: 1;
-}
-@keyframes shake {
-    0%, 100% { transform: translateY(-50%) translateX(0); }
-    25% { transform: translateY(-50%) translateX(-5px); }
-    75% { transform: translateY(-50%) translateX(5px); }
-}
-.race-stats {
-    display: flex;
-    justify-content: space-around;
-    background: #313244;
-    padding: 15px;
-    border-radius: 12px;
-    margin-bottom: 20px;
-}
-.race-stat {
-    text-align: center;
-}
-.race-stat .stat-label {
-    font-size: 0.9rem;
-    color: #a6adc8;
-    margin-bottom: 5px;
-}
-.race-stat .stat-value {
-    font-size: 1.5rem;
-    font-weight: bold;
-    color: #89b4fa;
-}
-.race-text {
-    font-size: 1.3rem;
-    line-height: 1.8;
-    background: #181825;
-    padding: 20px;
-    border-radius: 12px;
-    margin-bottom: 15px;
-    min-height: 80px;
-    font-family: 'Courier New', monospace;
-}
-.race-text .char {
-    padding: 2px 1px;
-    border-radius: 3px;
-    transition: all 0.1s;
-}
-.race-text .char.correct {
-    color: #a6e3a1;
-}
-.race-text .char.wrong {
-    color: #f38ba8;
-    background: rgba(243, 139, 168, 0.2);
-}
-.race-text .char.current {
-    background: #f9e2af;
-    color: #1e1e2e;
-    animation: blink 1s infinite;
-}
-.race-text .char.future {
-    color: #6c7086;
-}
-@keyframes blink {
-    0%, 50% { opacity: 1; }
-    51%, 100% { opacity: 0.5; }
-}
-.race-input {
-    width: 100%;
-    padding: 15px;
-    font-size: 1.2rem;
-    background: #313244;
-    border: 2px solid #45475a;
-    border-radius: 8px;
-    color: #cdd6f4;
-    font-family: 'Courier New', monospace;
-}
-.race-input:focus {
-    outline: none;
-    border-color: #89b4fa;
-}
-.race-result {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(30, 30, 46, 0.95);
-    z-index: 100;
-    padding: 20px;
-    align-items: center;
-    justify-content: center;
-}
-.race-result.show {
-    display: flex;
-}
-.race-result > div {
-    background: #313244;
-    padding: 30px;
-    border-radius: 16px;
-    text-align: center;
-    max-width: 400px;
-}
-.race-result h2 {
-    font-size: 2rem;
-    color: #a6e3a1;
-    margin-bottom: 20px;
-}
-.result-stats {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    margin-bottom: 20px;
-    font-size: 1.1rem;
-}
-.result-stats b {
-    color: #89b4fa;
-}
-.race-result button {
-    margin: 5px;
-    padding: 12px 24px;
-    background: #89b4fa;
-    color: #1e1e2e;
-    border: none;
-    border-radius: 8px;
-    font-weight: bold;
-    cursor: pointer;
-}
-.race-result button:hover {
-    background: #b4befe;
-}
-
-/* ============ RACE QO'SHIMCHALARI ============ */
-.lang-switch { display:flex; justify-content:center; gap:8px; margin:10px 0; }
-.lang-btn { padding:6px 14px; background:#45475a; color:#cdd6f4; border:none; border-radius:8px; cursor:pointer; font-weight:bold; }
-.lang-btn.active { background:#89b4fa; color:#1e1e2e; }
-.race-car.shake { animation: shake 0.3s; }
-.race-result .result-box { background:#313244; padding:30px; border-radius:16px; text-align:center; max-width:400px; width:100%; }
-
-.game-user { color:#a6e3a1; font-weight:bold; font-size:1rem; }
+/* ============ TYPING RACE v2 ============ */
+.race-track { position:relative; height:120px; background:linear-gradient(180deg,#34354a 0%,#2a2b3d 50%,#34354a 100%); border-radius:16px; margin:16px 0; overflow:hidden; border:2px solid #45475a; box-shadow:inset 0 4px 14px rgba(0,0,0,.45); }
+.road-line { position:absolute; left:0; right:0; top:50%; height:4px; transform:translateY(-50%); background:repeating-linear-gradient(90deg,#f9e2af 0 22px,transparent 22px 42px); opacity:.65; }
+.race-lane { position:absolute; left:0; right:0; height:50%; }
+.lane-top { top:0; } .lane-bottom { bottom:0; }
+.lane-name { position:absolute; left:8px; top:2px; font-size:.62rem; color:#a6adc8; z-index:3; font-weight:bold; }
+.lane-bottom .lane-name { top:auto; bottom:2px; }
+.race-car { position:absolute; left:0; top:50%; transform:translateY(-50%); font-size:2.1rem; transition:left .25s linear; filter:drop-shadow(0 3px 6px rgba(0,0,0,.5)); z-index:2; animation:engine .35s infinite alternate; }
+.race-car.rival { font-size:1.9rem; opacity:.92; }
+@keyframes engine { from{ transform:translateY(-50%) scale(1); } to{ transform:translateY(-53%) scale(1.04); } }
+.race-finish { position:absolute; right:4px; top:0; bottom:0; display:flex; align-items:center; font-size:2rem; z-index:1; }
+.countdown { position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(17,17,27,.85); z-index:60; font-size:5.5rem; font-weight:bold; color:#f9e2af; text-shadow:0 0 30px rgba(249,226,175,.6); }
+.countdown.show { display:flex; animation:cdpop .3s; }
+@keyframes cdpop { from{transform:scale(.4);opacity:0;} to{transform:scale(1);opacity:1;} }
+.race-stats { display:flex; justify-content:space-around; background:#313244; padding:12px; border-radius:12px; margin-bottom:14px; }
+.race-stat { text-align:center; }
+.race-stat .stat-label { font-size:.85rem; color:#a6adc8; margin-bottom:4px; }
+.race-stat .stat-value { font-size:1.4rem; font-weight:bold; color:#89b4fa; }
+.race-text { position:relative; font-size:1.2rem; line-height:2; background:#181825; padding:14px 16px; border-radius:12px; margin-bottom:12px; max-height:104px; overflow-y:auto; font-family:'Courier New',monospace; scrollbar-width:none; }
+.race-text::-webkit-scrollbar { display:none; }
+.race-text .char { padding:2px 1px; border-radius:3px; }
+.race-text .char.correct { color:#a6e3a1; }
+.race-text .char.wrong { color:#f38ba8; background:rgba(243,139,168,.25); }
+.race-text .char.current { background:#f9e2af; color:#1e1e2e; animation:blink 1s infinite; }
+.race-text .char.future { color:#6c7086; }
+@keyframes blink { 0%,50%{opacity:1;} 51%,100%{opacity:.45;} }
+.race-input { width:100%; padding:14px; font-size:1.15rem; background:#313244; border:2px solid #45475a; border-radius:10px; color:#cdd6f4; font-family:'Courier New',monospace; }
+.race-input:focus { outline:none; border-color:#89b4fa; box-shadow:0 0 0 3px rgba(137,180,250,.2); }
+.race-input:disabled { opacity:.5; }
+.race-result { display:none; position:fixed; inset:0; background:rgba(17,17,27,.92); z-index:100; overflow:hidden; }
+.race-result.show { display:flex; align-items:center; justify-content:center; }
+.result-box { background:#313244; padding:28px; border-radius:20px; text-align:center; max-width:90%; width:380px; position:relative; z-index:2; box-shadow:0 10px 40px rgba(0,0,0,.6); }
+.result-box h2 { font-size:1.7rem; color:#a6e3a1; margin-bottom:6px; }
+.result-medal { font-size:4rem; margin:8px 0; animation:cdpop .5s; }
+.result-stats { display:flex; flex-direction:column; gap:8px; margin:14px 0; font-size:1.05rem; color:#cdd6f4; }
+.result-stats b { color:#89b4fa; }
+.result-box button { margin:5px; padding:12px 22px; background:#89b4fa; color:#1e1e2e; border:none; border-radius:10px; font-weight:bold; cursor:pointer; font-size:1rem; }
+.confetti { position:absolute; top:-16px; width:9px; height:15px; border-radius:2px; z-index:1; animation:fall linear forwards; }
+@keyframes fall { to { transform:translateY(110vh) rotate(720deg); opacity:.8; } }
+@keyframes shake { 0%,100%{transform:translateY(-50%) translateX(0);} 25%{transform:translateY(-50%) translateX(-5px);} 75%{transform:translateY(-50%) translateX(5px);} }
