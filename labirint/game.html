@@ -198,6 +198,32 @@ const canvas = document.getElementById('maze');
 const ctx = canvas.getContext('2d');
 const controls = document.getElementById('controls');
 const bubble = document.getElementById('bubble');
+// ============ USTOZ SAVOLLARI (Supabase) ============
+const SUPA_URL='https://gziracvxzqyekeniqlcl.supabase.co';
+const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd6aXJhY3Z4enF5ZWtlbmlxbGNsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEwMjg5OTYsImV4cCI6MjEwNjYwNDk5Nn0.6tJFqIwi0CtXrumr-AqC2Td87T0wJ0vqjlza_dOnxD0';
+let teacherQuestions=[];
+async function loadTeacherQuestions(){
+  try{
+    const r=await fetch(SUPA_URL+'/rest/v1/questions?topic=eq.'+selectedTopic+'&level=eq.'+(levelIdx+1)+'&select=question,options,answer,level',
+      { headers:{ apikey:SUPA_KEY, Authorization:'Bearer '+SUPA_KEY } });
+    teacherQuestions = r.ok ? await r.json() : [];
+  }catch(e){ teacherQuestions=[]; }
+}
+function getAllSavollar(topic, level){
+  const local=(QUESTION_BANK.savollar[topic]||[]).filter(s=>s.level===level);
+  const remote=teacherQuestions.map(t=>({ q:t.question, options:t.options, a:t.answer, level:t.level }));
+  return local.concat(remote);
+}
+function pickSavol(topic, level){
+  const pool=getAllSavollar(topic, level);
+  if(!pool.length) return null;
+  let fresh=pool.filter(s=>askedSavollar.indexOf(s.q)===-1);
+  if(!fresh.length){ pool.forEach(s=>{ const i=askedSavollar.indexOf(s.q); if(i>-1) askedSavollar.splice(i,1); }); fresh=pool; }
+  const c=fresh[Math.floor(Math.random()*fresh.length)];
+  askedSavollar.push(c.q);
+  return c;
+}
+
 
 let levelIdx=0, size=13, cell, grid, player, steps=0, seconds=0;
 let timer=null, playing=false, autoMode=false, junctionMode=false, lastDir=null;
@@ -301,12 +327,13 @@ function braid(g,n,percent){
 }
 
 // ============ O'YIN ============
-function startGame(){
+async function startGame(){
   clearInterval(timer); clearInterval(autoTimer);
   size=LEVELS[levelIdx].size; autoMode=LEVELS[levelIdx].auto;
   steps=0; seconds=0; correctAnswers=0; playing=true;
   junctionMode=false; lastDir=null; path=[];
-  monsterLeft=(QUESTION_BANK.savollar[selectedTopic]||[]).filter(s=>s.level===levelIdx+1).length;
+  await loadTeacherQuestions();
+  monsterLeft=getAllSavollar(selectedTopic, levelIdx+1).length;
   lastMonsterStep=0;
   document.getElementById('monsters').textContent=monsterLeft;
   document.getElementById('steps').textContent=0;
@@ -418,7 +445,7 @@ function showMonster(){
   playing=false;
   monsterLeft--;
   document.getElementById('monsters').textContent=monsterLeft;
-  const savol=getSavol(selectedTopic, levelIdx+1);
+  const savol=pickSavol(selectedTopic, levelIdx+1);
   if(!savol){ playing=true; return; }
   document.getElementById('monsterQuestion').textContent=savol.q;
   const ad=document.getElementById('answerButtons'); ad.innerHTML='';

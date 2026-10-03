@@ -64,6 +64,7 @@
 
             <section class="welcome-section">
                 <h2>Salom, <span id="welcomeName">Dost</span>! 👋</h2>
+                <button class="btn-teacher-panel" id="teacherPanelBtn" style="display:none;" onclick="TeacherPanel.open()">🎛️ O'qituvchi paneli</button>
                 <p>Bugun qaysi instrument bilan mashq qilamiz?</p>
             </section>
 
@@ -149,6 +150,46 @@
             <div class="race-result" id="raceResult"></div>
         </div>
         <!-- JavaScript fayllar (tartib muhim!) -->
+    <div class="game-screen" id="teacherScreen">
+        <div class="game-header">
+            <button class="btn-back" onclick="Navigation.goHome()">← Orqaga</button>
+            <h2>🎛️ O'qituvchi paneli</h2>
+        </div>
+        <div class="teacher-panel">
+            <h3>➕ Yangi savol yaratish</h3>
+            <div class="tp-row">
+                <select id="qTopic">
+                    <option value="matematik">➕ Matematika</option>
+                    <option value="mantiq">🧠 Mantiq</option>
+                    <option value="it">💻 IT</option>
+                    <option value="ingliz">🔤 Ingliz tili</option>
+                    <option value="fan">🌍 Tabiat</option>
+                </select>
+                <select id="qLevel">
+                    <option value="1">1-daraja</option>
+                    <option value="2">2-daraja</option>
+                    <option value="3">3-daraja</option>
+                    <option value="4">4-daraja</option>
+                </select>
+            </div>
+            <input type="text" id="qText" placeholder="Savol matni...">
+            <input type="text" id="qOpt0" placeholder="1-variant">
+            <input type="text" id="qOpt1" placeholder="2-variant">
+            <input type="text" id="qOpt2" placeholder="3-variant">
+            <input type="text" id="qOpt3" placeholder="4-variant">
+            <select id="qAnswer">
+                <option value="0">To'g'ri javob: 1-variant</option>
+                <option value="1">To'g'ri javob: 2-variant</option>
+                <option value="2">To'g'ri javob: 3-variant</option>
+                <option value="3">To'g'ri javob: 4-variant</option>
+            </select>
+            <button class="btn-primary" id="qSaveBtn">💾 Saqlash</button>
+            <div class="error-message" id="qMsg"></div>
+            <h3>📋 Mening savollarim</h3>
+            <div id="qList"></div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabase.js"></script>
     <script src="js/storage.js"></script>
@@ -156,6 +197,7 @@
     <script src="js/navigation.js"></script>
     <script src="js/home.js"></script>
     <script src="js/typing-game.js"></script>
+    <script src="js/teacher.js"></script>
     <script src="js/app.js"></script>
 <script>if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js');}</script>
 </body>

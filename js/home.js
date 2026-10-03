@@ -103,6 +103,7 @@ const Home = {
     showUserInfo: (user) => {
         document.getElementById('userNickname').textContent = user.nickname;
         document.getElementById('welcomeName').textContent = user.nickname;
+        const tpb=document.getElementById('teacherPanelBtn'); if(tpb) tpb.style.display=(user.role==='teacher')?'inline-block':'none';
         document.getElementById('userAvatar').textContent = user.nickname[0].toUpperCase();
         const gn=document.getElementById('gameUserNickname'); if(gn) gn.textContent = user.nickname;
     },

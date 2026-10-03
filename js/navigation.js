@@ -14,6 +14,7 @@ const Navigation = {
         Navigation.screens.login = document.getElementById('loginScreen');
         Navigation.screens.home = document.getElementById('homeScreen');
         Navigation.screens.game = document.getElementById('gameScreen');
+        Navigation.screens.teacher = document.getElementById('teacherScreen');
     },
 
     showScreen: (screenName) => {

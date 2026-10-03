@@ -585,3 +585,15 @@ body {
 .teacher-auth input:focus { outline:none; border-color:#89b4fa; }
 .btn-secondary { padding:11px; background:#45475a; color:#cdd6f4; border:none; border-radius:8px; font-weight:bold; cursor:pointer; }
 .btn-back-small { background:none; border:none; color:#a6adc8; cursor:pointer; font-size:.8rem; text-decoration:underline; }
+
+/* ============ O'QITUVCHI PANELI ============ */
+.btn-teacher-panel { margin:10px auto 0; display:block; padding:12px 20px; background:#a6e3a1; color:#1e1e2e; border:none; border-radius:10px; font-weight:bold; cursor:pointer; }
+.teacher-panel { background:#313244; padding:16px; border-radius:12px; display:flex; flex-direction:column; gap:10px; margin-top:12px; }
+.teacher-panel h3 { color:#89b4fa; }
+.tp-row { display:flex; gap:8px; }
+.tp-row select { flex:1; }
+.teacher-panel select, .teacher-panel input { padding:10px 12px; border-radius:8px; border:1px solid #45475a; background:#1e1e2e; color:#cdd6f4; font-size:.95rem; }
+.q-item { display:flex; justify-content:space-between; align-items:center; gap:10px; background:#1e1e2e; padding:10px 12px; border-radius:10px; margin-bottom:8px; }
+.q-text { font-size:.9rem; line-height:1.5; }
+.q-text small { color:#a6e3a1; }
+.q-del { background:#f38ba8; color:#1e1e2e; border:none; border-radius:8px; padding:8px 10px; cursor:pointer; font-weight:bold; }
