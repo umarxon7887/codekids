@@ -4,7 +4,7 @@
 const TypingGame = {
     currentText:'', userInput:'', startTime:null, errors:0,
     timer:null, rivalTimer:null, rivalProgress:0, rivalWpm:32,
-    finished:false, rivalFinished:false,
+    finished:false, rivalFinished:false, lastTextIdx:-1,
 
     words: {
         uz: ['kompyuter','dastur','algoritm','funksiya','ozgaruvchi','tsikl','shart','massiv','obyekt','sinf','metod','klaviatura','monitor','protsessor','xotira','internet','brauzer','sayt','kod','server','malumot','fayl','papka','dasturchi','test','xato','tuzatish','loyiha','natija','tezlik'],
@@ -15,10 +15,18 @@ const TypingGame = {
     init: () => {
         const user = JSON.parse(localStorage.getItem('codekids_user')||'null');
         const lang = (user && user.language) ? user.language : 'uz';
-        const pool = TypingGame.words[lang] || TypingGame.words.uz;
-        const sel=[];
-        for(let i=0;i<8;i++) sel.push(pool[Math.floor(Math.random()*pool.length)]);
-        TypingGame.currentText = sel.join(' ');
+        const bank = (typeof TYPING_TEXTS !== 'undefined' && TYPING_TEXTS[lang] && TYPING_TEXTS[lang].length) ? TYPING_TEXTS[lang] : null;
+        if (bank) {
+            let idx = Math.floor(Math.random()*bank.length);
+            if (bank.length > 1 && idx === TypingGame.lastTextIdx) idx = (idx+1) % bank.length;
+            TypingGame.lastTextIdx = idx;
+            TypingGame.currentText = bank[idx];
+        } else {
+            const pool = TypingGame.words[lang] || TypingGame.words.uz;
+            const sel=[];
+            for(let i=0;i<8;i++) sel.push(pool[Math.floor(Math.random()*pool.length)]);
+            TypingGame.currentText = sel.join(' ');
+        }
         TypingGame.userInput=''; TypingGame.errors=0; TypingGame.startTime=null;
         TypingGame.finished=false; TypingGame.rivalFinished=false; TypingGame.rivalProgress=0;
         TypingGame.rivalWpm = 28 + Math.floor(Math.random()*10);
