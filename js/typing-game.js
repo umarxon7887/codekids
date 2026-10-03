@@ -108,7 +108,11 @@ const TypingGame = {
         }
         target.innerHTML=html;
         const cur=target.querySelector('.char.current');
-        if(cur) target.scrollTop=Math.max(0,cur.offsetTop-30);
+        if(cur){
+            // Joriy qatorni ko'rinadigan oynaning o'rtasida ushlab turish
+            const lineH=parseFloat(getComputedStyle(target).lineHeight)||24;
+            target.scrollTop=Math.max(0, cur.offsetTop - target.clientHeight/2 + lineH/2);
+        }
     },
 
     setCar: (id,p) => {
