@@ -42,7 +42,8 @@ const GroupGame = {
         const topic=document.getElementById('hostTopic').value;
         const level=parseInt(document.getElementById('hostLevel').value);
         const code=String(Math.floor(1000+Math.random()*9000));
-        const { data, error } = await c.from('rooms').insert({ host_id:t.id, code:code, topic:topic, level:level, status:'waiting' }).select().single();
+        const gtype=GroupGame.selectedGame||'quiz';
+        const { data, error } = await c.from('rooms').insert({ host_id:t.id, code:code, topic:topic, level:level, status:'waiting', game_type:gtype }).select().single();
         if(error) return alert('❌ '+error.message);
         GroupGame.room=data; GroupGame.role='host';
         const r=await fetch(SUPA_URL+'/rest/v1/questions?topic=eq.'+topic+'&level=eq.'+level+'&select=question,options,answer', { headers:{ apikey:SUPA_KEY, Authorization:'Bearer '+SUPA_KEY } });
@@ -151,7 +152,26 @@ const GroupGame = {
     }
 };
 
+
+// ============ KELAJAKDA SHU YERGA YANGI O'YIN QO'SHILADI ============
+const GAMES = [
+    { id:'quiz', emoji:'🎮', name:'Guruh viktorinasi', desc:'Ustoz savol beradi, bolalar jonli javob beradi' }
+    // Misol: { id:'labirint', emoji:'🧩', name:'Labirint poygasi', desc:'...' }
+];
+GroupGame.selectedGame=null;
+GroupGame.renderGames=()=>{
+    const g=document.getElementById('gamesGrid'); if(!g) return;
+    g.innerHTML=GAMES.map(x=>'<div class="game-card'+(GroupGame.selectedGame===x.id?' selected':'')+'" onclick="GroupGame.selectGame(\''+x.id+'\')">'+x.emoji+' <b>'+x.name+'</b><small>'+x.desc+'</small></div>').join('');
+};
+GroupGame.selectGame=(id)=>{
+    GroupGame.selectedGame=id; GroupGame.renderGames();
+    const st=document.getElementById('gameSettings'); if(st) st.style.display='flex';
+};
+
 document.addEventListener('DOMContentLoaded', () => {
+    GroupGame.renderGames();
+    const hs=document.getElementById('hostStartBtn');
+    if(hs) hs.onclick=()=>GroupGame.hostCreate();
     const jb=document.getElementById('joinBtn');
     if(jb) jb.onclick=()=>GroupGame.join(document.getElementById('joinCode').value);
     const hb=document.getElementById('hostCreateBtn');

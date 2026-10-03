@@ -5,6 +5,7 @@ const TeacherPanel = {
     open: () => {
         Navigation.showScreen('teacher');
         TeacherPanel.load();
+        if (window.GroupGame) GroupGame.renderGames();
     },
 
     save: async () => {

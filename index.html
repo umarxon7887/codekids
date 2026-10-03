@@ -157,7 +157,24 @@
             <h2>📝 O'qituvchi paneli</h2>
         </div>
         <div class="teacher-panel">
-            <button class="btn-teacher-panel" style="background:#89b4fa;" onclick="GroupGame.openHost()">🌐 Guruh o'yinini boshlash</button>
+            
+            <h3>🎮 O'yinlar paneli</h3>
+            <div class="games-grid" id="gamesGrid"></div>
+            <div id="gameSettings" style="display:none; flex-direction:column; gap:8px;">
+                <select id="hostTopic">
+                    <option value="matematik">➕ Matematika</option>
+                    <option value="mantiq">🧠 Mantiq</option>
+                    <option value="it">💻 IT</option>
+                    <option value="ingliz">🔤 Ingliz tili</option>
+                    <option value="fan">🌍 Tabiat</option>
+                </select>
+                <select id="hostLevel">
+                    <option value="1">1-daraja</option><option value="2">2-daraja</option>
+                    <option value="3">3-daraja</option><option value="4">4-daraja</option>
+                </select>
+                <button class="btn-primary" id="hostStartBtn">🚀 O'yinni boshlash</button>
+            </div>
+            <hr style="border-color:#45475a; margin:8px 0;">
             <h3>➕ Yangi savol yaratish</h3>
             <div class="tp-row">
                 <select id="qTopic">
@@ -200,25 +217,6 @@
             <div class="error-message" id="joinMsg"></div>
             <button class="btn-primary" id="joinBtn">🚪 Qo'shilish</button>
             <button class="btn-secondary" onclick="document.getElementById('joinModal').classList.remove('show')">Bekor qilish</button>
-        </div>
-    </div>
-    <div class="overlay" id="hostModal">
-        <div class="popup">
-            <h2>🌐 Guruh o'yinini boshlash</h2>
-            <select id="hostTopic" style="padding:10px;border-radius:8px;background:#1e1e2e;color:#cdd6f4;border:1px solid #45475a;">
-                <option value="matematik">➕ Matematika</option>
-                <option value="mantiq">🧠 Mantiq</option>
-                <option value="it">💻 IT</option>
-                <option value="ingliz">🔤 Ingliz tili</option>
-                <option value="fan">🌍 Tabiat</option>
-            </select>
-            <select id="hostLevel" style="padding:10px;border-radius:8px;background:#1e1e2e;color:#cdd6f4;border:1px solid #45475a;">
-                <option value="1">1-daraja</option><option value="2">2-daraja</option>
-                <option value="3">3-daraja</option><option value="4">4-daraja</option>
-            </select>
-            <p class="gp-hint">O'yinda faqat SIZ yaratgan savollar ishlatiladi (shu mavzu + daraja)</p>
-            <button class="btn-primary" id="hostCreateBtn">🎮 O'yin yaratish</button>
-            <button class="btn-secondary" onclick="document.getElementById('hostModal').classList.remove('show')">Bekor qilish</button>
         </div>
     </div>
     <div class="game-screen" id="groupScreen"><div id="groupContent"></div></div>
