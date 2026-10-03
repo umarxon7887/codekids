@@ -44,7 +44,7 @@ const GroupGame = {
     const { error:e2 } = await c.from('room_players').insert({ room_id:room.id, user_id:null, device:GroupGame.deviceId(), nickname:user.nickname, score:0, correct:0 });
     if(e2) return GroupGame.msg(e2.message);
     document.getElementById('joinModal').classList.remove('show');
-    if((room.game_type||'labirint')==='labirint'){
+    if(room.game_type!=='typing'){
       location.href='labirint/game.html?room='+room.code;
       return;
     }

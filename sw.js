@@ -1,4 +1,4 @@
-const CACHE='codekids-v5';
+const CACHE='codekids-v6';
 self.addEventListener('install',e=>{ self.skipWaiting(); });
 self.addEventListener('activate',e=>{
   e.waitUntil(

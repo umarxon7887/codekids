@@ -212,6 +212,7 @@ async function loadTeacherQuestions(){
 function getAllSavollar(topic, level){
   const local=(QUESTION_BANK.savollar[topic]||[]).filter(s=>s.level===level);
   const remote=teacherQuestions.map(t=>({ q:t.question, options:t.options, a:t.answer, level:t.level }));
+  if(window.ROOM_MODE && remote.length) return remote;
   return local.concat(remote);
 }
 function pickSavol(topic, level){
@@ -614,6 +615,7 @@ canvas.addEventListener('touchend',e=>{
   };
   function begin(){
     started=true; ov.classList.remove('show');
+    window.ROOM_MODE=true;
     selectedTopic=room.topic; levelIdx=(room.level||1)-1;
     document.querySelectorAll('.lvl-btn').forEach(b=>b.disabled=true);
     startGame();
