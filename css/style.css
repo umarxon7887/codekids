@@ -659,3 +659,10 @@ body {
 .race-result button:hover {
     background: #b4befe;
 }
+
+/* ============ RACE QO'SHIMCHALARI ============ */
+.lang-switch { display:flex; justify-content:center; gap:8px; margin:10px 0; }
+.lang-btn { padding:6px 14px; background:#45475a; color:#cdd6f4; border:none; border-radius:8px; cursor:pointer; font-weight:bold; }
+.lang-btn.active { background:#89b4fa; color:#1e1e2e; }
+.race-car.shake { animation: shake 0.3s; }
+.race-result .result-box { background:#313244; padding:30px; border-radius:16px; text-align:center; max-width:400px; width:100%; }
