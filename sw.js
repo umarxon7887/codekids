@@ -1,6 +1,12 @@
-const CACHE='codekids-v1';
+const CACHE='codekids-v3';
 self.addEventListener('install',e=>{ self.skipWaiting(); });
-self.addEventListener('activate',e=>{ e.waitUntil(clients.claim()); });
+self.addEventListener('activate',e=>{
+  e.waitUntil(
+    caches.keys().then(keys=>Promise.all(
+      keys.filter(k=>k!==CACHE).map(k=>caches.delete(k))
+    )).then(()=>clients.claim())
+  );
+});
 self.addEventListener('fetch',e=>{
   e.respondWith(caches.open(CACHE).then(async c=>{
     try{
