@@ -112,7 +112,7 @@ const TypingGame = {
             let cls='future';
             if(i<typed.length) cls = typed[i]===text[i] ? 'correct':'wrong';
             else if(i===typed.length) cls='current';
-            html+='<span class="char '+cls+'">'+(text[i]===' '?'&nbsp;':text[i])+'</span>';
+            html+='<span class="char '+cls+'">'+text[i]+'</span>';
         }
         target.innerHTML=html;
         const cur=target.querySelector('.char.current');
