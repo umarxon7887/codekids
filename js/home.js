@@ -104,7 +104,7 @@ const Home = {
         document.getElementById('userNickname').textContent = user.nickname;
         document.getElementById('welcomeName').textContent = user.nickname;
         document.getElementById('userAvatar').textContent = user.nickname[0].toUpperCase();
-        document.getElementById('gameUserNickname').textContent = user.nickname;
+        const gn=document.getElementById('gameUserNickname'); if(gn) gn.textContent = user.nickname;
     },
 
     /**

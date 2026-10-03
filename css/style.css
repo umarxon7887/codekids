@@ -666,3 +666,5 @@ body {
 .lang-btn.active { background:#89b4fa; color:#1e1e2e; }
 .race-car.shake { animation: shake 0.3s; }
 .race-result .result-box { background:#313244; padding:30px; border-radius:16px; text-align:center; max-width:400px; width:100%; }
+
+.game-user { color:#a6e3a1; font-weight:bold; font-size:1rem; }
