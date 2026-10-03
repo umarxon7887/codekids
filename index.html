@@ -92,29 +92,40 @@
             <div class="game-header">
                 <button class="btn-back" onclick="Navigation.goHome()">← Orqaga</button>
                 <h2>🏎️ Typing Race</h2>
-                <span id="raceUser" style="color:#a6e3a1;font-weight:bold;"></span>
             </div>
-            <div class="lang-switch">
-                <button class="lang-btn" data-lang="uz" onclick="TypingGame.setLang('uz')">UZ</button>
-                <button class="lang-btn" data-lang="ru" onclick="TypingGame.setLang('ru')">RU</button>
-                <button class="lang-btn" data-lang="en" onclick="TypingGame.setLang('en')">EN</button>
-            </div>
+            
+            <!-- Poyga yo'li -->
             <div class="race-track">
                 <div class="race-finish">🏁</div>
                 <div class="race-car" id="raceCar">🚗</div>
             </div>
+            
+            <!-- Statistika -->
             <div class="race-stats">
-                <div class="race-stat"><div class="stat-label">🚀 WPM</div><div class="stat-value" id="raceWpm">0</div></div>
-                <div class="race-stat"><div class="stat-label">🎯 Aniqlik</div><div class="stat-value" id="raceAcc">100%</div></div>
-                <div class="race-stat"><div class="stat-label">⏱ Vaqt</div><div class="stat-value" id="raceTime">0s</div></div>
+                <div class="race-stat">
+                    <div class="stat-label">🚀 WPM</div>
+                    <div class="stat-value" id="raceWpm">0</div>
+                </div>
+                <div class="race-stat">
+                    <div class="stat-label">🎯 Aniqlik</div>
+                    <div class="stat-value" id="raceAcc">100%</div>
+                </div>
+                <div class="race-stat">
+                    <div class="stat-label">⏱ Vaqt</div>
+                    <div class="stat-value" id="raceTime">0s</div>
+                </div>
             </div>
+            
+            <!-- Matn -->
             <div class="race-text" id="raceTarget"></div>
+            
+            <!-- Input -->
             <input type="text" class="race-input" id="raceInput" placeholder="Yozishni boshlang..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+            
+            <!-- Natija -->
             <div class="race-result" id="raceResult"></div>
         </div>
-    </div>
-
-    <!-- JavaScript fayllar (tartib muhim!) -->
+        <!-- JavaScript fayllar (tartib muhim!) -->
     <script src="js/storage.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/navigation.js"></script>
