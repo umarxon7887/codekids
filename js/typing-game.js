@@ -95,7 +95,7 @@ const TypingGame = {
         TypingGame.errors=errors;
         TypingGame.userInput=typed;
         TypingGame.updateDisplay();
-        TypingGame.setCar('raceCar', typed.length/target.length);
+        TypingGame.setCar('raceCar', Math.max(0,(typed.length-errors))/target.length);
         if(errors>0){
             const car=document.getElementById('raceCar');
             if(car){ car.style.animation='shake .3s'; setTimeout(()=>{ if(car) car.style.animation='engine .35s infinite alternate'; },300); }
@@ -116,11 +116,7 @@ const TypingGame = {
         }
         target.innerHTML=html;
         const cur=target.querySelector('.char.current');
-        if(cur){
-            // Joriy qatorni ko'rinadigan oynaning o'rtasida ushlab turish
-            const lineH=parseFloat(getComputedStyle(target).lineHeight)||24;
-            target.scrollTop=Math.max(0, cur.offsetTop - target.clientHeight/2 + lineH/2);
-        }
+        if(cur){ target.scrollTop=Math.max(0, cur.offsetTop - target.clientHeight + 60); }
     },
 
     setCar: (id,p) => {
