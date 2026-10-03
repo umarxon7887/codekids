@@ -63,6 +63,13 @@ const SupaAuth = {
 
 // ============ UI bog'lash ============
 document.addEventListener('DOMContentLoaded', () => {
+    // Ustoz kirgan bo'lsa - avtomatik platformaga kirish
+    const tAuto = SupaAuth.getTeacher();
+    if (tAuto && !localStorage.getItem('codekids_user')) {
+        localStorage.setItem('codekids_user', JSON.stringify({
+            nickname: tAuto.nickname, language: 'uz', role: 'teacher', teacherId: tAuto.id
+        }));
+    }
     const toggle = document.getElementById('teacherToggleBtn');
     const panel = document.getElementById('teacherAuth');
     const back = document.getElementById('teacherBackBtn');
