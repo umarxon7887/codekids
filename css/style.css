@@ -620,3 +620,7 @@ body {
 .game-card { background:#1e1e2e; padding:12px; border-radius:12px; cursor:pointer; border:2px solid transparent; display:flex; flex-direction:column; gap:4px; font-size:.95rem; text-align:left; }
 .game-card small { color:#a6adc8; }
 .game-card.selected { border-color:#a6e3a1; background:#26332a; }
+
+.group-board { display:flex; flex-wrap:wrap; gap:6px; margin:8px 0; }
+.gb-chip { background:#313244; padding:4px 10px; border-radius:20px; font-size:.75rem; color:#cdd6f4; }
+.gb-chip.lead { background:#a6e3a1; color:#1e1e2e; font-weight:bold; }

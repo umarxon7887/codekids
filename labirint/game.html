@@ -580,5 +580,59 @@ canvas.addEventListener('touchend',e=>{
   else startGame();
 })();
 </script>
+
+<script>
+// ============ GURUH REJIMI (?room=CODE) ============
+(function(){
+  const code=new URLSearchParams(location.search).get('room');
+  if(!code) return;
+  const H={ apikey:SUPA_KEY, Authorization:'Bearer '+SUPA_KEY, 'Content-Type':'application/json' };
+  let room=null, started=false, myRow=null;
+  const ov=document.createElement('div');
+  ov.className='overlay show';
+  ov.innerHTML='<div class="popup"><h2>🧩 Guruh labirinti</h2><p id="roomWaitMsg">⏳ O\'qituvchi boshlashini kuting...</p><p style="font-size:.8rem;color:#a6adc8;">Kod: '+code+'</p></div>';
+  document.body.appendChild(ov);
+  async function loadRoom(){
+    try{
+      const r=await fetch(SUPA_URL+'/rest/v1/rooms?code=eq.'+code+'&select=*',{headers:H});
+      const a=await r.json(); if(a&&a.length){ room=a[0]; window.GROUP_ROOM=room; }
+    }catch(e){}
+    return room;
+  }
+  async function loadMe(){
+    if(!room) return;
+    const dev=localStorage.getItem('codekids_device')||'';
+    const r=await fetch(SUPA_URL+'/rest/v1/room_players?room_id=eq.'+room.id+'&device=eq.'+dev+'&select=*',{headers:H});
+    const a=await r.json(); if(a&&a.length) myRow=a[0];
+  }
+  window.roomAddScore=async(delta)=>{
+    try{
+      if(!myRow) await loadMe(); if(!myRow) return;
+      myRow.score=(myRow.score||0)+delta;
+      await fetch(SUPA_URL+'/rest/v1/room_players?id=eq.'+myRow.id,{method:'PATCH',headers:H,body:JSON.stringify({score:myRow.score})});
+    }catch(e){}
+  };
+  function begin(){
+    started=true; ov.classList.remove('show');
+    selectedTopic=room.topic; levelIdx=(room.level||1)-1;
+    document.querySelectorAll('.lvl-btn').forEach(b=>b.disabled=true);
+    startGame();
+  }
+  setInterval(async()=>{
+    await loadRoom(); if(!room) return;
+    if(room.status==='playing' && !started) begin();
+    if(room.status==='finished'){
+      const m=document.getElementById('roomWaitMsg');
+      if(m) m.textContent='🏁 O\'yin tugadi! Natijangiz o\'qituvchida.';
+      if(started){ playing=false; ov.classList.add('show'); }
+    }
+  },2000);
+  loadRoom().then(()=>{ if(room&&room.status==='playing') begin(); });
+  const _check=window.checkAnswer;
+  window.checkAnswer=function(ch,cor,btn){ _check(ch,cor,btn); if(ch===cor) window.roomAddScore(100); };
+  const _win=window.win;
+  window.win=function(){ window.roomAddScore(500); _win(); };
+})();
+</script>
 </body>
 </html>

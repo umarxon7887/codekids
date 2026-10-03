@@ -4,7 +4,7 @@
 const TypingGame = {
     currentText:'', userInput:'', startTime:null, errors:0,
     timer:null, rivalTimer:null, rivalProgress:0, rivalWpm:32,
-    finished:false, rivalFinished:false, lastTextIdx:-1,
+    finished:false, rivalFinished:false, group:false, groupRoom:null, _lastRep:0, lastTextIdx:-1,
 
     words: {
         uz: ['kompyuter','dastur','algoritm','funksiya','ozgaruvchi','tsikl','shart','massiv','obyekt','sinf','metod','klaviatura','monitor','protsessor','xotira','internet','brauzer','sayt','kod','server','malumot','fayl','papka','dasturchi','test','xato','tuzatish','loyiha','natija','tezlik'],
@@ -100,6 +100,7 @@ const TypingGame = {
             const car=document.getElementById('raceCar');
             if(car){ car.style.animation='shake .3s'; setTimeout(()=>{ if(car) car.style.animation='engine .35s infinite alternate'; },300); }
         }
+        if(TypingGame.group){ TypingGame.groupReport(typed, target); }
         if(typed.length>=target.length) TypingGame.finish();
     },
 
@@ -154,6 +155,15 @@ const TypingGame = {
 
     finish: () => {
         if(TypingGame.finished) return;
+        if(TypingGame.group){
+            clearInterval(TypingGame.timer);
+            const el2=(Date.now()-TypingGame.startTime)/1000;
+            const wpm2=Math.round((TypingGame.currentText.length/5)/(el2/60));
+            GroupGame.reportProgress(TypingGame.currentText.length, true);
+            const res=document.getElementById('raceResult');
+            if(res){ res.innerHTML='<div class="result-box"><div class="result-medal">🏁</div><h2>Siz tugatdingiz!</h2><div class="result-stats"><div>🚀 '+wpm2+' WPM</div><div>⏱ '+el2.toFixed(1)+'s</div></div><p style="color:#a6adc8;">Jonli reyting yuqorida va o'qituvchi ekranida</p></div>'; res.classList.add('show'); }
+            return;
+        }
         TypingGame.finished=true;
         clearInterval(TypingGame.timer); clearInterval(TypingGame.rivalTimer);
         TypingGame.setCar('raceCar',1);
@@ -186,6 +196,35 @@ const TypingGame = {
         }
     },
 
+    initGroup: (room) => {
+        TypingGame.group=true; TypingGame.groupRoom=room;
+        clearInterval(TypingGame.timer); clearInterval(TypingGame.rivalTimer);
+        const rv=document.getElementById('raceRival'); if(rv) rv.style.display='none';
+        const rn=document.getElementById('raceRivalName'); if(rn) rn.style.display='none';
+        TypingGame.currentText=''; TypingGame.userInput=''; TypingGame.startTime=null; TypingGame.finished=false;
+        const target=document.getElementById('raceTarget');
+        if(target) target.innerHTML='<span class="char future">⏳ O'qituvchi o'yinni boshlashini kuting...</span>';
+        const input=document.getElementById('raceInput'); if(input){ input.disabled=true; input.value=''; }
+        TypingGame.updateStats(0,100,0);
+        if(!document.getElementById('groupBoard')){
+            const b=document.createElement('div'); b.id='groupBoard'; b.className='group-board';
+            const track=document.querySelector('.race-track'); if(track) track.parentNode.insertBefore(b, track);
+        }
+    },
+    loadGroupText: (text) => {
+        TypingGame.currentText=text; TypingGame.userInput=''; TypingGame.errors=0;
+        TypingGame.startTime=null; TypingGame.finished=true; TypingGame.rivalFinished=true;
+        TypingGame.updateDisplay(); TypingGame.setCar('raceCar',0);
+        const input=document.getElementById('raceInput');
+        if(input){ input.disabled=false; input.value=''; input.focus(); input.oninput=e=>TypingGame.handleInput(e); }
+        TypingGame.finished=false;
+    },
+    groupReport: (typed, text) => {
+        let correct=0; for(let i=0;i<typed.length;i++){ if(typed[i]===text[i]) correct++; }
+        const done=typed.length>=text.length;
+        const now=Date.now();
+        if(done || now-(TypingGame._lastRep||0)>1000){ TypingGame._lastRep=now; GroupGame.reportProgress(correct, done); }
+    },
     restart: () => { TypingGame.init(); },
 
     stop: () => {
