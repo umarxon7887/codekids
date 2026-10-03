@@ -104,6 +104,7 @@ const Home = {
         document.getElementById('userNickname').textContent = user.nickname;
         document.getElementById('welcomeName').textContent = user.nickname;
         const tpb=document.getElementById('teacherPanelBtn'); if(tpb) tpb.style.display=(user.role==='teacher')?'inline-block':'none';
+        const jb=document.getElementById('joinGameBtn'); if(jb) jb.style.display=(user.role==='teacher')?'none':'inline-block';
         const sub=document.getElementById('welcomeSubtitle'); if(sub) sub.textContent=(user.role==='teacher')?'Bugun nima yaratamiz? 💡':'Bugun qaysi instrument bilan mashq qilamiz?';
         document.getElementById('userAvatar').textContent = user.nickname[0].toUpperCase();
         const gn=document.getElementById('gameUserNickname'); if(gn) gn.textContent = user.nickname;

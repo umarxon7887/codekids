@@ -15,6 +15,7 @@ const Navigation = {
         Navigation.screens.home = document.getElementById('homeScreen');
         Navigation.screens.game = document.getElementById('gameScreen');
         Navigation.screens.teacher = document.getElementById('teacherScreen');
+        Navigation.screens.group = document.getElementById('groupScreen');
     },
 
     showScreen: (screenName) => {
