@@ -161,7 +161,7 @@ const TypingGame = {
             const wpm2=Math.round((TypingGame.currentText.length/5)/(el2/60));
             GroupGame.reportProgress(TypingGame.currentText.length, true);
             const res=document.getElementById('raceResult');
-            if(res){ res.innerHTML='<div class="result-box"><div class="result-medal">🏁</div><h2>Siz tugatdingiz!</h2><div class="result-stats"><div>🚀 '+wpm2+' WPM</div><div>⏱ '+el2.toFixed(1)+'s</div></div><p style="color:#a6adc8;">Jonli reyting yuqorida va o\'qituvchi ekranida</p></div>'; res.classList.add('show'); }
+            if(res){ res.innerHTML='<div class="result-box"><div class="result-medal">🏁</div><h2>Siz tugatdingiz!</h2><div class="result-stats"><div>🚀 '+wpm2+' WPM</div><div> '+el2.toFixed(1)+'s</div></div><p style="color:#a6adc8;">Natijangiz o\'qituvchiga yuborildi ✅</p><button class="btn-primary" onclick="location.href='index.html'" style="padding:14px 26px;background:#89b4fa;color:#1e1e2e;border:none;border-radius:10px;font-weight:bold;font-size:1rem;margin-top:14px;">🏠 Homega qaytish</button></div>'; res.classList.add('show'); }
             return;
         }
         TypingGame.finished=true;

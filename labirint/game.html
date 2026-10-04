@@ -621,12 +621,19 @@ canvas.addEventListener('touchend',e=>{
     started=true; ov.classList.remove('show');
     window.ROOM_MODE=true;
     selectedTopic=room.topic; levelIdx=(room.level||1)-1;
+    // Mavzu tanlash ekranini yashirish
+    const ts=document.getElementById('topicScreen'); if(ts) ts.style.display='none';
+    const ls=document.getElementById('levelScreen'); if(ls) ls.style.display='none';
     document.querySelectorAll('.lvl-btn').forEach(b=>b.disabled=true);
     startGame();
   }
   setInterval(async()=>{
     await loadRoom(); if(!room) return;
     if(room.status==='playing' && !started) begin();
+    if(room.status==='waiting' && !started){
+      const m=document.getElementById('roomWaitMsg');
+      if(m) m.innerHTML='<div style="font-size:1.1rem;">⏳ O\'qituvchi boshlashini kuting...</div><div style="color:#a6adc8;font-size:.8rem;margin-top:6px;">Kod: '+code+'</div>';
+    }
     if(room.status==='waiting' && !started){
       const m=document.getElementById('roomWaitMsg');
       if(m) m.textContent='⏳ O\'qituvchi boshlashini kuting... (Kod: '+code+')';
