@@ -628,3 +628,6 @@ body {
 .race-lane.dyn { position:absolute; left:0; right:0; border-bottom:1px dashed #45475a; }
 .race-car.dyn { animation:none; font-size:1.5rem; transition:left .6s linear; }
 .lane-pct { position:absolute; right:10px; top:50%; transform:translateY(-50%); font-size:.7rem; color:#a6adc8; font-weight:bold; }
+
+.csv-box { background:#1e1e2e; padding:12px; border-radius:10px; display:flex; flex-direction:column; gap:8px; }
+.csv-box input[type=file] { color:#a6adc8; font-size:.85rem; }

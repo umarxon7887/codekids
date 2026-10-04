@@ -204,6 +204,17 @@
             </select>
             <button class="btn-primary" id="qSaveBtn">💾 Saqlash</button>
             <div class="error-message" id="qMsg"></div>
+            <h3>📄 CSV dan yuklash (ko'p savol birdan)</h3>
+            <div class="csv-box">
+                <p class="gp-hint">Format: mavzu; daraja; savol; 1-variant; 2-variant; 3-variant; 4-variant; to'g'ri javob (1-4)</p>
+                <input type="file" id="csvFile" accept=".csv,text/csv">
+                <div class="tp-row">
+                    <button class="btn-secondary" id="csvTemplateBtn">📥 Namuna CSV</button>
+                    <button class="btn-primary" id="csvUploadBtn">📤 Yuklash</button>
+                </div>
+                <div class="error-message" id="csvMsg"></div>
+            </div>
+            <hr style="border-color:#45475a; margin:8px 0;">
             <h3>📋 Mening savollarim</h3>
             <div id="qList"></div>
         </div>
