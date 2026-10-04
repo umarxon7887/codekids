@@ -625,15 +625,29 @@ canvas.addEventListener('touchend',e=>{
     if(room.status==='playing' && !started) begin();
     if(room.status==='finished'){
       const m=document.getElementById('roomWaitMsg');
-      if(m) m.textContent='🏁 O\'yin tugadi! Natijangiz o\'qituvchida.';
+      if(m) m.innerHTML='<div style="font-size:1.2rem;">🏁 O\'yin tugadi!</div><div style="color:#a6adc8;font-size:.85rem;margin-top:8px;">Davom etish uchun xohlagan joyingizga bosing</div>';
       if(started){ playing=false; ov.classList.add('show'); }
+      if(!ov.dataset.clickBound){
+        ov.dataset.clickBound='1';
+        ov.style.cursor='pointer';
+        ov.addEventListener('click', ()=>{ location.href='../index.html'; });
+      }
     }
   },2000);
   loadRoom().then(()=>{ if(room&&room.status==='playing') begin(); });
   const _check=window.checkAnswer;
   window.checkAnswer=function(ch,cor,btn){ _check(ch,cor,btn); if(ch===cor) window.roomAddScore(100); };
   const _win=window.win;
-  window.win=function(){ window.roomAddScore(500); _win(); };
+  window.win=function(){
+      window.roomAddScore(500);
+      if(window.ROOM_MODE){
+        const wov=document.getElementById('winOverlay');
+        if(wov){ wov.classList.add('show');
+          const pop=wov.querySelector('.popup');
+          if(pop) pop.innerHTML='<h2>🏁 Siz finishga yetdingiz!</h2><p style="color:#a6adc8;">Natijangiz o\'qituvchiga yuborildi ✅</p><button class="btn-primary" onclick="location.href=\'../index.html\'" style="padding:14px 26px;background:#89b4fa;color:#1e1e2e;border:none;border-radius:10px;font-weight:bold;font-size:1rem;">🏠 Homega qaytish</button>';
+        }
+      } else _win();
+    };
 })();
 </script>
 </body>
