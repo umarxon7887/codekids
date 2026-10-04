@@ -212,7 +212,11 @@ async function loadTeacherQuestions(){
 function getAllSavollar(topic, level){
   const local=(QUESTION_BANK.savollar[topic]||[]).filter(s=>s.level===level);
   const remote=teacherQuestions.map(t=>({ q:t.question, options:t.options, a:t.answer, level:t.level }));
-  if(window.ROOM_MODE && remote.length) return remote;
+  if(window.ROOM_MODE){
+    if(remote.length) return remote;
+    // Agar ustoz savollari yo'q bo'lsa, default savollardan foydalanish
+    return local;
+  }
   return local.concat(remote);
 }
 function pickSavol(topic, level){
@@ -623,6 +627,10 @@ canvas.addEventListener('touchend',e=>{
   setInterval(async()=>{
     await loadRoom(); if(!room) return;
     if(room.status==='playing' && !started) begin();
+    if(room.status==='waiting' && !started){
+      const m=document.getElementById('roomWaitMsg');
+      if(m) m.textContent='⏳ O\'qituvchi boshlashini kuting... (Kod: '+code+')';
+    }
     if(room.status==='finished'){
       const m=document.getElementById('roomWaitMsg');
       if(m) m.innerHTML='<div style="font-size:1.2rem;">🏁 O\'yin tugadi!</div><div style="color:#a6adc8;font-size:.85rem;margin-top:8px;">Davom etish uchun xohlagan joyingizga bosing</div>';
