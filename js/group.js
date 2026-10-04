@@ -182,10 +182,10 @@ const GroupGame = {
     const c=SupaAuth.client(); if(!c||!GroupGame.room) return;
     const { data } = await c.from('room_players').select('*').eq('room_id',GroupGame.room.id).order('score',{ascending:false});
     GroupGame.players=data||[];
-    const el=document.getElementById('gpPlayers'); if(!el) return;
+    const el=document.getElementById('gpPlayers');
     const gtype=(GroupGame.room.game_type||'labirint');
     const max=(GroupGame.room.question&&GroupGame.room.question.text)?GroupGame.room.question.text.length:1;
-    el.innerHTML=GroupGame.players.map((p,i)=>{
+    if(el) el.innerHTML=GroupGame.players.map((p,i)=>{
       const extra=(gtype==='typing')?(Math.min(100,Math.round(p.score/max*100))+'% '+(p.correct?'🏁':'✍️')):('<b>'+p.score+'</b> ball');
       return '<div class="gp-row">'+(i+1)+'. '+p.nickname+' — '+extra+'</div>';
     }).join('')||'<p>Hali o\'yinchilar yo\'q — kodni bolalarga ayting!</p>';
