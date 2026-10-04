@@ -200,7 +200,7 @@ const GroupGame = {
     el.innerHTML='<div class="game-header"><button class="btn-back" onclick="GroupGame.leave()">← Chiqish</button><h2>🌐 '+(GAMES.find(g=>g.id===(r.game_type||'labirint'))||{}).name+'</h2></div>'+
       '<div class="host-code">O\'YIN KODI: <b>'+r.code+'</b></div>'+
       '<p class="gp-hint">Bolalar uy sahifadagi "O\'yinga qo\'shilish" tugmasi orqali shu kodni kiritadilar</p>'+
-      '<div class="race-track" id="hostRace" style="margin:12px 0;"></div><div id="gpHostControls"></div>'+
+      ((r.game_type||'labirint')==='typing'?'<div class="race-track" id="hostRace" style="margin:12px 0;"></div>':'<p class="gp-hint">🧩 Bolalar labirint o\'ynaydi: har to\'g\'ri javob +100, finish +500 ball. Natijalar pastda jonli ko\'rinadi.</p>')+'<div id="gpHostControls"></div>'+
       '<h3>👥 O\'yinchilar</h3><div id="gpPlayers"></div>';
     GroupGame.onRoom(r);
   },
