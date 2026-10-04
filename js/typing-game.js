@@ -161,7 +161,7 @@ const TypingGame = {
             const wpm2=Math.round((TypingGame.currentText.length/5)/(el2/60));
             GroupGame.reportProgress(TypingGame.currentText.length, true);
             const res=document.getElementById('raceResult');
-            if(res){ res.innerHTML='<div class="result-box"><div class="result-medal">🏁</div><h2>Siz tugatdingiz!</h2><div class="result-stats"><div>🚀 '+wpm2+' WPM</div><div>⏱ '+el2.toFixed(1)+'s</div></div><p style="color:#a6adc8;">Jonli reyting yuqorida va o'qituvchi ekranida</p></div>'; res.classList.add('show'); }
+            if(res){ res.innerHTML='<div class="result-box"><div class="result-medal">🏁</div><h2>Siz tugatdingiz!</h2><div class="result-stats"><div>🚀 '+wpm2+' WPM</div><div>⏱ '+el2.toFixed(1)+'s</div></div><p style="color:#a6adc8;">Jonli reyting yuqorida va o\'qituvchi ekranida</p></div>'; res.classList.add('show'); }
             return;
         }
         TypingGame.finished=true;
@@ -203,7 +203,7 @@ const TypingGame = {
         const rn=document.getElementById('raceRivalName'); if(rn) rn.style.display='none';
         TypingGame.currentText=''; TypingGame.userInput=''; TypingGame.startTime=null; TypingGame.finished=false;
         const target=document.getElementById('raceTarget');
-        if(target) target.innerHTML='<span class="char future">⏳ O'qituvchi o'yinni boshlashini kuting...</span>';
+        if(target) target.innerHTML='<span class="char future">⏳ O\'qituvchi o\'yinni boshlashini kuting...</span>';
         const input=document.getElementById('raceInput'); if(input){ input.disabled=true; input.value=''; }
         TypingGame.updateStats(0,100,0);
         if(!document.getElementById('groupBoard')){
