@@ -165,6 +165,19 @@ const GroupGame = {
     el.innerHTML=(data||[]).map((p,i)=>'<span class="gb-chip'+(i===0?' lead':'')+'">'+(i+1)+'. '+p.nickname+' '+Math.min(100,Math.round(p.score/max*100))+'%'+(p.correct?' 🏁':'')+'</span>').join('');
   },
 
+  renderRace: (el, max) => {
+    if(!el || !GroupGame.players || !GroupGame.players.length) { if(el) el.innerHTML='<div class="road-line"></div><div class="race-finish">🏁</div>'; return; }
+    const order=[...GroupGame.players].sort((a,b)=>a.id-b.id);
+    const emojis=['🚗','🚕','🚙','🏎️','🚓','🚑','🚒','🛻','🚜','🏍️'];
+    el.style.height=(order.length*46)+'px';
+    el.innerHTML='<div class="race-finish">🏁</div>'+order.map((p,i)=>{
+      const pct=Math.min(100, Math.round((p.score||0)/max*100));
+      return '<div class="race-lane dyn" style="top:'+(i*46)+'px;height:46px;">'+
+        '<span class="lane-name">'+emojis[i%10]+' '+p.nickname+(p.correct?' 🏁':'')+'</span>'+
+        '<div class="race-car dyn" style="left:'+(pct*0.84)+'%;">'+emojis[i%10]+'</div>'+
+        '<span class="lane-pct">'+pct+'%</span></div>';
+    }).join('');
+  },
   renderPlayers: async () => {
     const c=SupaAuth.client(); if(!c||!GroupGame.room) return;
     const { data } = await c.from('room_players').select('*').eq('room_id',GroupGame.room.id).order('score',{ascending:false});
@@ -176,6 +189,8 @@ const GroupGame = {
       const extra=(gtype==='typing')?(Math.min(100,Math.round(p.score/max*100))+'% '+(p.correct?'🏁':'✍️')):('<b>'+p.score+'</b> ball');
       return '<div class="gp-row">'+(i+1)+'. '+p.nickname+' — '+extra+'</div>';
     }).join('')||'<p>Hali o\'yinchilar yo\'q — kodni bolalarga ayting!</p>';
+    GroupGame.renderRace(document.getElementById('hostRace'), max);
+    GroupGame.renderRace(document.querySelector('#gameScreen .race-track'), max);
   },
 
   openScreen: () => {
@@ -185,7 +200,7 @@ const GroupGame = {
     el.innerHTML='<div class="game-header"><button class="btn-back" onclick="GroupGame.leave()">← Chiqish</button><h2>🌐 '+(GAMES.find(g=>g.id===(r.game_type||'labirint'))||{}).name+'</h2></div>'+
       '<div class="host-code">O\'YIN KODI: <b>'+r.code+'</b></div>'+
       '<p class="gp-hint">Bolalar uy sahifadagi "O\'yinga qo\'shilish" tugmasi orqali shu kodni kiritadilar</p>'+
-      '<div id="gpHostControls"></div>'+
+      '<div class="race-track" id="hostRace" style="margin:12px 0;"></div><div id="gpHostControls"></div>'+
       '<h3>👥 O\'yinchilar</h3><div id="gpPlayers"></div>';
     GroupGame.onRoom(r);
   },

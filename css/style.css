@@ -624,3 +624,7 @@ body {
 .group-board { display:flex; flex-wrap:wrap; gap:6px; margin:8px 0; }
 .gb-chip { background:#313244; padding:4px 10px; border-radius:20px; font-size:.75rem; color:#cdd6f4; }
 .gb-chip.lead { background:#a6e3a1; color:#1e1e2e; font-weight:bold; }
+
+.race-lane.dyn { position:absolute; left:0; right:0; border-bottom:1px dashed #45475a; }
+.race-car.dyn { animation:none; font-size:1.5rem; transition:left .6s linear; }
+.lane-pct { position:absolute; right:10px; top:50%; transform:translateY(-50%); font-size:.7rem; color:#a6adc8; font-weight:bold; }

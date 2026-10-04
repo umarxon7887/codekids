@@ -200,6 +200,8 @@ const TypingGame = {
         TypingGame.group=true; TypingGame.groupRoom=room;
         clearInterval(TypingGame.timer); clearInterval(TypingGame.rivalTimer);
         const rv=document.getElementById('raceRival'); if(rv) rv.style.display='none';
+        const lt=document.querySelector('.lane-top'); if(lt) lt.style.display='none';
+        const lb=document.querySelector('.lane-bottom'); if(lb) lb.style.display='none';
         const rn=document.getElementById('raceRivalName'); if(rn) rn.style.display='none';
         TypingGame.currentText=''; TypingGame.userInput=''; TypingGame.startTime=null; TypingGame.finished=false;
         const target=document.getElementById('raceTarget');
