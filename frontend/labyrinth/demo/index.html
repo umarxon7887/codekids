@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="uz"><head><meta charset="utf-8"><title>CodeKids Labirint — demo</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>
+html,body{height:100%;margin:0;overflow:hidden;background:#0d0f1c;color:#fff;font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+#c{position:fixed;inset:0;width:100%;height:100%;display:block;background:linear-gradient(#1b2145,#2d3566)}
+#hud{position:fixed;left:0;right:0;top:0;display:flex;gap:10px;justify-content:space-between;align-items:flex-start;padding:calc(env(safe-area-inset-top,0px) + 8px) 10px 0;pointer-events:none;font-weight:800}
+.pill{background:#0008;border-radius:12px;padding:6px 10px}
+#sb{font-size:12px;font-weight:600;line-height:1.5;min-width:110px}
+#banner,#toast{position:fixed;left:50%;transform:translateX(-50%);background:#000c;border-radius:12px;padding:8px 14px;font-weight:700;font-size:14px;display:none}
+#banner{top:60px}#toast{bottom:calc(env(safe-area-inset-bottom,0px) + 20px)}
+.ov{position:fixed;inset:0;display:none;place-items:center;background:#000a;padding:16px}
+.card{background:#1c2033;border-radius:18px;padding:18px;max-width:420px;width:100%;box-shadow:0 8px 40px #000a}
+.card h2{margin:0 0 12px;font-size:18px}
+.opt{display:block;width:100%;margin:8px 0;padding:13px;border:0;border-radius:12px;background:#6366f1;color:#fff;font-weight:700;font-size:15px}
+.opt.ok{background:#10b981}.opt.bad{background:#ef4444}.opt:disabled{opacity:.9}
+li{margin:4px 0}
+</style></head><body>
+<canvas id="c"></canvas>
+<div id="hud"><div class="pill" id="me">❤️ – · ⭐ 0</div><div class="pill" id="timer">⏱ --:--</div><div class="pill" id="sb"></div></div>
+<div id="banner"></div><div id="toast"></div>
+<div class="ov" id="wait"><div class="card"><h2>⏳ Kutilmoqda…</h2>O'yin boshlanishini kuting (mock server 4 soniyada o'zi boshlaydi).</div></div>
+<div class="ov" id="q"><div class="card"><h2 id="qt"></h2><div id="qo"></div><div id="qr" style="min-height:22px;font-weight:700"></div></div></div>
+<div class="ov" id="fin"><div class="card"><h2 id="ft"></h2><ol id="fl"></ol></div></div>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import { io } from '/socket.io/socket.io.esm.min.js';
+import { startLabyrinth } from '../client/main.js';
+import { ApiClient } from '../client/api.js';
+const $ = (id) => document.getElementById(id), show = (id, on) => { $(id).style.display = on ? 'grid' : 'none'; };
+let timerAt = null, lockAt = 0, qEl = null, hue = 200;
+
+// Oddiy avatar. Tovuq GLB'ni ulash: yuklangan modelni clone qilib qaytaring va userData.onTick'da mixer.update(dt) / isMoving bo'yicha animatsiyani yoqing.
+const makeAvatar = (isMe) => {
+  const g = new THREE.Group(), col = isMe ? 0xffc83d : new THREE.Color().setHSL(((hue += 67) % 360) / 360, .6, .55);
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(.22, .26, .45, 16), new THREE.MeshStandardMaterial({ color: col }));
+  const head = new THREE.Mesh(new THREE.SphereGeometry(.2, 16, 12), new THREE.MeshStandardMaterial({ color: col }));
+  body.position.y = .25; head.position.y = .62; g.add(body, head); return g;
+};
+
+const ui = {
+  setConnection: (s) => { const b = $('banner'); b.style.display = s === 'online' ? 'none' : 'block'; b.textContent = s === 'retrying' ? '🔌 Qayta ulanmoqda…' : '🔌 Ulanish uzildi'; },
+  showWaiting: (on) => show('wait', on),
+  // kids rejimida lives = null: yurakchalar yashiriladi
+  setHud: (m) => { $('me').textContent = (m.lives == null ? '' : `❤️ ${m.lives} · `) + `⭐ ${m.score}`; },
+  setTimer: (t) => { timerAt = t; },
+  toast: (t) => { const e = $('toast'); e.textContent = t; e.style.display = 'block'; clearTimeout(e._t); e._t = setTimeout(() => (e.style.display = 'none'), 2200); qEl?.querySelectorAll('button').forEach((b) => (b.disabled = false)); },
+  showQuestion: (q, choose) => {
+    $('qt').textContent = q.text; $('qr').textContent = ''; qEl = $('qo'); qEl.innerHTML = '';
+    q.options.forEach((o, i) => { const b = document.createElement('button'); b.className = 'opt'; b.textContent = o; b.onclick = () => { qEl.querySelectorAll('button').forEach((x) => (x.disabled = true)); choose(i); }; qEl.appendChild(b); });
+    show('q', true);
+  },
+  showAnswerResult: ({ correct, correctIndex }) => {
+    const bs = qEl.querySelectorAll('button'); if (correctIndex != null) bs[correctIndex]?.classList.add('ok');
+    $('qr').textContent = correct ? '✅ To\'g\'ri! +10' : '❌ Noto\'g\'ri. Boshiga qaytasiz, 5 soniya kuting.';
+    setTimeout(() => ui.closeQuestion(), 1700);
+  },
+  closeQuestion: () => { show('q', false); qEl = null; },
+  showLock: (until) => { lockAt = until; },
+  showSpectator: (on) => { const b = $('banner'); b.style.display = on ? 'block' : 'none'; b.textContent = '👀 Jonlar tugadi: kuzatuvchi rejimi'; },
+  showFinish: ({ me, players, final }) => {
+    $('ft').textContent = final ? '🏁 O\'yin tugadi' : `🎉 Marraga yetdingiz!${me?.rank ? ' O\'rin: ' + me.rank : ''}`;
+    $('fl').innerHTML = [...players].sort((a, b) => b.score - a.score).map((p) => `<li>${p.nickname}: ${p.score} ball${p.finished && !p.eliminated ? ' 🏁' : ''}${p.eliminated ? ' 💀' : ''}</li>`).join('');
+    show('fin', true);
+  },
+  showAuthRequired: () => ui.toast('Sessiya tugadi: sahifani yangilang va qayta kiring'),
+  setScoreboard: (ps) => { $('sb').innerHTML = ps.slice(0, 4).map((p) => `${p.nickname}: ${p.score}`).join('<br>'); },
+};
+setInterval(() => {
+  const mmss = (ms) => { const s = Math.max(0, Math.ceil(ms / 1000)); return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`; };
+  $('timer').textContent = '⏱ ' + (timerAt ? mmss(timerAt - Date.now()) : '--:--');
+  const b = $('banner'); if (lockAt > Date.now()) { b.style.display = 'block'; b.textContent = `⏳ Kuting: ${Math.ceil((lockAt - Date.now()) / 1000)} s`; } else if (lockAt) { lockAt = 0; b.style.display = 'none'; }
+}, 250);
+
+// Haqiqiy oqim: REST login -> REST rooms/join -> socket (token bilan). Mock: istalgan email/parol; "teacher..." = host.
+const q = new URLSearchParams(location.search), code = q.get('code') ?? '1234', api = new ApiClient();
+try {
+  await api.login(`${q.get('u') ?? 'oquvchi1'}@demo.uz`, 'password123'); // ?u=oquvchi2 bilan boshqa o'quvchi sifatida kiring
+  await api.joinRoom(code);
+  startLabyrinth({ canvas: $('c'), io, serverUrl: location.origin, code, getToken: () => api.getToken(), onAuthError: () => api.refresh(), ui, makeAvatar });
+} catch (e) { ui.toast(`${e.code ?? 'XATO'}: ${e.message}`); }
+</script></body></html>

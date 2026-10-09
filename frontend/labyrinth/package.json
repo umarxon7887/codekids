@@ -1,0 +1,3 @@
+{ "name": "codekids-labyrinth", "private": true, "type": "module",
+  "scripts": { "mock": "node mock-server/server.js", "test": "node mock-server/core.test.js" },
+  "dependencies": { "socket.io": "^4.7.5" } }
