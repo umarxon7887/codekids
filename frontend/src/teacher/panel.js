@@ -2,6 +2,7 @@
 import { api } from '../core/api.js';
 import { showError, toast } from '../core/toast.js';
 import { html, esc, table } from '../utils/dom.js';
+import { t } from '../i18n/index.js';
 
 const TABS = [['dash', 'Panel'], ['classes', 'Sinflar'], ['contents', 'Kontent'], ['rooms', 'Xona']];
 const list = (r, key) => r[key] || r.items || (Array.isArray(r) ? r : []);
@@ -28,11 +29,14 @@ export async function mountTeacher(root) {
   return () => {};
 }
 
+/** Dashboard: jami xonalar va faol xonalar alohida ko'rsatiladi (`active_rooms`, agar backend bersa). */
 async function dash(box) {
   const d = await api.get('/teacher/dashboard');
   const o = d.dashboard || d;
-  box.innerHTML = `<div class="grid2">${Object.entries(o).filter(([, v]) => typeof v !== 'object')
-    .map(([k, v]) => `<div class="stat"><b>${esc(v)}</b><span>${esc(k)}</span></div>`).join('')}</div>`;
+  const LABELS = { contents: 'Kontentlar', classes: 'Sinflar', students: "O'quvchilar", total_rooms: t('dash.total_rooms'), active_rooms: t('dash.active_rooms') };
+  const order = (k) => (k === 'active_rooms' ? 0 : 1);
+  const entries = Object.entries(o).filter(([, v]) => typeof v !== 'object').sort((a, b) => order(a[0]) - order(b[0]));
+  box.innerHTML = `<div class="grid2">${entries.map(([k, v]) => `<div class="stat ${k === 'active_rooms' ? 'stat--live' : ''}"><b>${esc(v)}</b><span>${esc(LABELS[k] || k)}</span></div>`).join('')}</div>`;
 }
 
 async function classes(box) {

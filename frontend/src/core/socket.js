@@ -60,9 +60,8 @@ export function disconnectSocket() {
  * @param {string} event @param {any} [payload] @param {number} [timeoutMs]
  * @returns {Promise<any>}
  */
-export function emitAck(event, payload, timeoutMs = 8000, { queue = true } = {}) {
+export function emitAck(event, payload, timeoutMs = 8000) {
   const s = connectSocket();
-  if (!queue && !s.connected) return Promise.reject(Object.assign(new Error("Aloqa yo'q"), { code: 'OFFLINE' }));
   return new Promise((resolve, reject) => {
     s.timeout(timeoutMs).emit(event, payload, (err, res) => {
       if (err) return reject(Object.assign(new Error('Server javob bermadi'), { code: 'NETWORK_ERROR' }));

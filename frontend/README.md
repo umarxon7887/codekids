@@ -1,14 +1,17 @@
-# CodeKids Frontend (Vite + ES Modules) — API /api/v1
+# CodeKids Frontend v2 (Vite + ES Modules + Three.js)
 
     npm install
-    npm run dev        # http://localhost:5173 (LAN: telefonda ham ochiladi)
-    npm run build      # -> dist/
-    npm run preview    # production buildni sinash (Service Worker faqat shu yerda ishlaydi)
+    npm run dev                 # lokal: VITE_BASE=/ npm run dev (base `/codekids/` bo'lsa http://localhost:5173/codekids/)
+    npm run build               # GitHub Pages uchun (base /codekids/) -> dist/
+    npm run preview             # Service Worker faqat production buildda ishlaydi
 
-Backend manzili: `.env` ichida `VITE_BACKEND_URL=https://...` (standart: Render backend).
-Cookie uchun backendda CORS `credentials: true` + `SameSite=None; Secure` kerak.
+`.env`: `VITE_BACKEND_URL=https://codekids-api.onrender.com` (standart shu).
+Boshqa base: `VITE_BASE=/ npm run build`.
 
-## Oqimlar
-- Student: login -> Typing Race (yakka) yoki xona kodi -> `/room/:code` (typing yoki labirint avtomatik)
-- Teacher: Ustoz paneli -> kontent (matn/CSV) -> Xona yaratish -> `/host/:code` (start, reyting)
-- Mehmon: `#/guest` — login'siz, natija saqlanmaydi
+## Tuzilma
+- `src/core/` — api (refresh), socket, state (token xotirada), settings (tema, past quvvat), roomApi (close/kick)
+- `src/games/labyrinth/` — `renderer3d.js` (Three.js, lazy chunk), `renderer2d.js` (WebGL yo'q bo'lsa), `game.js`
+- `src/games/typing/` — lobi, o'yin (progress tiklash), progress paneli
+- `src/teacher/` — panel, host
+- `src/ui/` — auth, room, endscreen
+- `src/i18n/` — uz (asosiy), ru (qisman)

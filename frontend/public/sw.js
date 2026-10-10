@@ -1,11 +1,11 @@
 /**
- * Service Worker: app shell oflayn ishlaydi.
- * - Navigatsiya: network-first, oflayn bo'lsa keshdagi index.html
- * - Statik assetlar: stale-while-revalidate
- * - Backend (api / socket.io) HECH QACHON keshlanmaydi
+ * Service Worker (GitHub Pages: /codekids/ ostida). Barcha yo'llar SW scope'iga nisbatan.
+ * Navigatsiya: network-first (oflayn -> index.html). Statik: stale-while-revalidate.
+ * Backend (boshqa origin) hech qachon keshlanmaydi.
  */
-const VERSION = 'ck-v2';
-const SHELL = ['/', '/index.html', '/manifest.json'];
+const VERSION = 'ck-v3';
+const SCOPE = self.registration.scope;
+const SHELL = [SCOPE, `${SCOPE}index.html`, `${SCOPE}manifest.json`];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(VERSION).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
@@ -23,9 +23,8 @@ self.addEventListener('fetch', (e) => {
   const { request } = e;
   const url = new URL(request.url);
   if (request.method !== 'GET' || url.origin !== self.location.origin) return;
-
   if (request.mode === 'navigate') {
-    e.respondWith(fetch(request).catch(() => caches.match('/index.html')));
+    e.respondWith(fetch(request).catch(() => caches.match(`${SCOPE}index.html`)));
     return;
   }
   e.respondWith(

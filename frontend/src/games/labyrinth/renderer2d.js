@@ -1,5 +1,5 @@
 /**
- * @file Labirint renderer (Canvas 2D) — `labyrinth:init` ma'lumotidan chizadi.
+ * @file Labirint renderer (Canvas 2D) — WebGL ishlamasa FALLBACK — `labyrinth:init` ma'lumotidan chizadi.
  * grid[y][x]: "1"=devor, "0"=yo'l (satrlar matn). Katta labirintlarda (size>11) kamera
  * qahramonni kuzatadi, shuning uchun kataklar kichrayib ketmaydi. Harakat — silliq interpolatsiya.
  */
@@ -26,11 +26,8 @@ export class MazeRenderer {
     this.speed = 16;
     this._raf = 0;
     this._last = 0;
-    this._q = []; this._side = 0;
     this._onResize = () => this.resize();
     window.addEventListener('resize', this._onResize);
-    this._ro = new ResizeObserver(() => this.resize());
-    this._ro.observe(canvas.parentElement);
   }
 
   /** @param {{grid:string[]|string[][],size:number,start:any,exit:any,checkpoints?:any[]}} m */
@@ -44,7 +41,6 @@ export class MazeRenderer {
     this.target = { ...s };
     this.cleared = new Set();
     this.others.clear();
-    this._q = []; this._side = 0;
     this.view = Math.min(m.size, MAX_VIEW);
     this.resize();
   }
@@ -53,8 +49,6 @@ export class MazeRenderer {
     if (!this.maze) return;
     const box = this.canvas.parentElement.getBoundingClientRect();
     const side = Math.floor(Math.min(box.width || 320, window.innerHeight * 0.55));
-    if (side === this._side) return;
-    this._side = side;
     const dpr = window.devicePixelRatio || 1;
     this.cell = side / this.view;
     this.canvas.style.width = `${side}px`;
@@ -70,11 +64,9 @@ export class MazeRenderer {
    * @param {number} x @param {number} y @param {boolean} [snap]
    */
   setMe(x, y, snap = false) {
-    const last = this._q.at(-1) ?? this.target;
-    if (snap || Math.abs(x - last.x) + Math.abs(y - last.y) > 1.6) {
-      this._q.length = 0; this.pos = { x, y }; this.target = { x, y }; return;
-    }
-    if (x !== last.x || y !== last.y) this._q.push({ x, y });
+    const far = Math.abs(x - this.pos.x) + Math.abs(y - this.pos.y) > 1.6;
+    this.target = { x, y };
+    if (snap || far) this.pos = { x, y };
   }
 
   /** `you.cleared`: koordinatalar/indekslar massivi yoki son bo'lishi mumkin. @param {any} v */
@@ -98,10 +90,14 @@ export class MazeRenderer {
       if (p.id === meId || p.eliminated) continue;
       seen.add(p.id);
       const o = this.others.get(p.id);
-      if (o) { if (Math.abs(p.x - o.tx) + Math.abs(p.y - o.ty) > 1.6) { o.x = p.x; o.y = p.y; } o.tx = p.x; o.ty = p.y; } else this.others.set(p.id, { x: p.x, y: p.y, tx: p.x, ty: p.y, nick: p.nickname || '?' });
+      if (o) { o.tx = p.x; o.ty = p.y; } else this.others.set(p.id, { x: p.x, y: p.y, tx: p.x, ty: p.y, nick: p.nickname || '?' });
     }
     for (const id of [...this.others.keys()]) if (!seen.has(id)) this.others.delete(id);
   }
+
+  /** 3D renderer bilan bir xil interfeys (2D'da ahamiyatsiz). */
+  setLocked() {}
+  setLowPower() {}
 
   start() {
     if (this._raf) return;
@@ -109,8 +105,7 @@ export class MazeRenderer {
     const loop = (t) => {
       const dt = Math.min((t - this._last) / 1000, 0.05);
       this._last = t;
-      if (this._q.length && Math.hypot(this.target.x - this.pos.x, this.target.y - this.pos.y) < 0.15) this.target = this._q.shift();
-     const k = 1 - Math.exp(-this.speed * (1 + this._q.length * 0.5) * dt);
+      const k = 1 - Math.exp(-this.speed * dt);
       this.pos.x += (this.target.x - this.pos.x) * k;
       this.pos.y += (this.target.y - this.pos.y) * k;
       for (const o of this.others.values()) { o.x += (o.tx - o.x) * k; o.y += (o.ty - o.y) * k; }
@@ -121,7 +116,7 @@ export class MazeRenderer {
   }
 
   stop() { cancelAnimationFrame(this._raf); this._raf = 0; }
-  destroy() { this.stop(); window.removeEventListener('resize', this._onResize); this._ro?.disconnect(); }
+  destroy() { this.stop(); window.removeEventListener('resize', this._onResize); }
 
   _draw(t) {
     if (!this.maze) return;

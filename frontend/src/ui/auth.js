@@ -56,7 +56,6 @@ export function mountAuth(root, onDone) {
         await auth.register(body);
       }
       toast('Xush kelibsiz!', 'success');
-      location.hash = '#/';
       onDone();
     } catch (e) { showError(e); } finally { btn.disabled = false; }
   };

@@ -1,18 +1,9 @@
 {
   "name": "codekids-frontend",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
   "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview --host"
-  },
-  "dependencies": {
-    "socket.io-client": "^4.7.5",
-    "three": "^0.186.1"
-  },
-  "devDependencies": {
-    "vite": "^5.4.8"
-  }
+  "scripts": { "dev": "vite", "build": "vite build", "preview": "vite preview --host" },
+  "dependencies": { "socket.io-client": "^4.7.5", "three": "^0.169.0" },
+  "devDependencies": { "vite": "^5.4.8" }
 }

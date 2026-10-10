@@ -59,8 +59,113 @@ input { margin: 6px 0; }
 .btn--opt.is-right { background: var(--ok); } .btn--opt.is-wrong { background: var(--bad); }
 .fb { min-height: 1.4em; font-weight: 700; }
 
-#maze { touch-action: none; }
+/* ---- v3: tema, yagona typing maydoni, host/end ekranlar, sozlamalar ---- */
+:root { color-scheme: dark; }
+[data-theme="light"] { color-scheme: light; --bg:#f5f3ff; --card:#ffffff; --txt:#1e1b4b; --ok:#15803d; --bad:#b91c1c; }
+[data-theme="light"] input, [data-theme="light"] select, [data-theme="light"] textarea { background:#fff; color:#1e1b4b; }
+[data-theme="light"] .tile, [data-theme="light"] .tab, [data-theme="light"] .btn--opt, [data-theme="light"] .pill { color:#1e1b4b; box-shadow:0 1px 4px #1e1b4b22; }
+[data-theme="light"] .tab.is-on { color:#fff; }
+[data-theme="light"] .bar, [data-theme="light"] .banner { background:#e7e3ff; color:#1e1b4b; }
+[data-theme="light"] .toast { color:#fff; }
+[data-theme="light"] .skeleton { background: linear-gradient(90deg,#e7e3ff 25%,#d9d3ff 50%,#e7e3ff 75%); background-size:200% 100%; }
+[data-theme="light"] td, [data-theme="light"] th { border-color:#c7c0f5; }
+[data-theme="light"] .ch--bad { background:#b91c1c22; }
+[data-theme="light"] .banner--warn { background:#fde68a; color:#78350f; }
+[data-theme="light"] .modal { background:#1e1b4baa; }
 
-#t-input { height: 0; padding: 0; border: 0; margin: 0; opacity: 0; }
-#t-text { cursor: text; }
-.ch--err { background: #c0392b; color: #fff; border-radius: 4px; }
+#settings { position:fixed; top:max(8px,env(safe-area-inset-top)); right:8px; display:flex; gap:6px; z-index:60; }
+#settings button { width:44px; height:44px; border-radius:12px; border:2px solid var(--brand); background:var(--card); color:var(--txt); font-size:20px; cursor:pointer; }
+#settings button[aria-pressed="true"] { background:var(--brand); }
+#app { padding-top:max(60px, calc(env(safe-area-inset-top) + 52px)); }
+
+.typing { position:relative; display:block; cursor:text; }
+.typing__input { position:absolute; inset:0; width:100%; height:100%; opacity:0; font-size:16px; border:0; padding:0; margin:0; }
+.typing:focus-within .typing__text { outline:3px solid var(--brand); }
+.ch { opacity:.55; } .ch--ok, .ch--bad, .ch--cur { opacity:1; }
+
+.btn--danger { background:#dc2626; color:#fff; }
+.kick { min-width:44px; min-height:44px; border:0; border-radius:12px; background:#dc2626; color:#fff; font-size:18px; cursor:pointer; }
+.row--kick { grid-template-columns: 1fr auto auto; }
+.board .row--kick { grid-template-columns: 110px 1fr auto; }
+.is-kicked { opacity:.5; text-decoration:line-through; }
+
+.end h2 { margin-top:0; }
+.ranking { list-style:none; padding:0; margin:12px 0; display:grid; gap:8px; max-height:50vh; overflow:auto; }
+.ranking li { display:flex; justify-content:space-between; gap:10px; padding:12px 14px; border-radius:14px; background:var(--card); border:2px solid transparent; }
+.ranking li.is-me { border-color:var(--brand); }
+.stat--live { border:2px solid var(--ok); }
+.game__stage canvas { max-width:100%; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; scroll-behavior:auto !important; }
+}
+@media (min-width: 900px) { #app { max-width: 760px; } }
+
+/* Typing: noto'g'ri belgi kiritilganda matn qatori silkinadi */
+.shake{animation:shake .32s}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+@media (prefers-reduced-motion: reduce){.shake{animation:none}}
+
+/* Hidden atributi har doim yashirsin (display qoidalari uni bekor qilmasin) */
+[hidden]{display:none!important}
+
+/* Ustoz: sahna chapda, jonli reyting o'ngda */
+.lab-board-toggle{display:none}
+.lab-host .game{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:12px;align-items:start}
+.lab-host .game > .game__bar{grid-column:1/-1}
+.lab-host .game > .game__stage{grid-column:1}
+.lab-host .game > .row2{grid-column:1}
+.lab-host .game > #lab-board{grid-column:2;grid-row:2 / span 3;position:sticky;top:12px;margin:0;max-height:calc(100dvh - 120px);overflow:auto}
+
+/* Telefon: reyting o'ngdan chiqadigan panel */
+@media (max-width:899px){
+  .lab-host .game{display:block}
+  .lab-host .lab-board-toggle{display:inline-flex;align-items:center;min-height:40px;padding:6px 12px;margin:6px 0;border:0;border-radius:10px;font-weight:700;background:var(--brand,#6366f1);color:#fff}
+  .lab-host .game > #lab-board{position:fixed;top:0;right:0;bottom:0;width:min(86vw,320px);max-height:none;margin:0;padding:12px;z-index:20;overflow:auto;background:var(--card,#fff);box-shadow:-8px 0 24px #0005;transform:translateX(100%);transition:transform .25s ease}
+  .lab-host.lab-board-open .game > #lab-board{transform:none}
+}
+
+/* host-polish: ustoz ekrani (kamera o'zgarmaydi) */
+.lab-host .game{max-width:1120px;margin:0 auto}
+.lab-host .game__bar .btn--ghost{color:var(--tx,#1d2133);border:2px solid var(--brand,#6366f1);background:transparent}
+.lab-host .game > .game__stage{border-radius:16px;overflow:hidden;box-shadow:0 8px 24px #0002}
+.lab-host .row2{display:flex;flex-direction:column;gap:14px;margin-top:16px}
+.lab-host #lab-close{background:transparent;color:#dc2626;border:2px solid #dc2626;min-height:48px}
+.lab-host #lab-board{border-radius:14px;padding:14px}
+
+/* host-wide: ustoz labirint sahifasi kengligi (faqat .lab-host ichida) */
+.lab-host, #app:has(.lab-host), main:has(.lab-host), .card:has(.lab-host) {
+  max-width: none !important;
+  width: min(1180px, 96vw) !important;
+}
+.lab-host .game { width: 100% !important; max-width: 1120px !important; margin: 0 auto !important; }
+.lab-host .game > .game__stage { min-height: 520px; }
+.lab-host .game__bar .btn--ghost { color: #fff !important; }
+
+/* Labirint: orqaga tugmasi (yashil uchburchak) */
+.lab-back{color:#22c55e !important;font-size:22px;font-weight:900;background:transparent !important;border:2px solid #22c55e !important;min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center}
+
+/* Orqaga: faqat yashil uchburchak, chegara va fon yo'q */
+.lab-host .game__bar a.lab-back,
+.game__bar a.lab-back {
+  color: #22c55e !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  padding: 0 6px !important;
+  min-width: auto !important;
+  min-height: auto !important;
+  font-size: 26px;
+  font-weight: 900;
+}
+
+/* O'quvchi bosh sahifasi: o'yin kartalari (gorizontal scroll, erkin surish) */
+.gcards{display:flex;gap:14px;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;padding:6px 2px 14px;margin:0 -2px;scrollbar-width:thin}
+.gcard{flex:0 0 min(78%,260px);scroll-snap-align:start;display:flex;flex-direction:column;gap:8px;padding:20px;border-radius:20px;border:0;text-align:left;color:#fff;text-decoration:none;font:inherit;cursor:pointer;min-height:180px;box-shadow:0 10px 24px #0004}
+.gcard b{font-size:20px}
+.gcard small{opacity:.9;font-size:13px;line-height:1.35}
+.gcard__ico{font-size:34px}
+.gcard--typing{background:linear-gradient(135deg,#6366f1,#4338ca)}
+.gcard--lab{background:linear-gradient(135deg,#10b981,#047857)}
+.gcard--blocks{background:linear-gradient(135deg,#f59e0b,#d97706)}
+@media(min-width:900px){.gcard{flex:0 0 260px}}

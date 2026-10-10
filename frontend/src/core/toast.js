@@ -29,6 +29,8 @@ const MESSAGES = {
   INVALID_CHOICE: "Noto'g'ri variant tanlandi.",
   PLAYER_FINISHED: 'Siz allaqachon tugatgansiz.',
   BLOCKED: 'Devor!',
+  KICKED: 'Siz xonadan chiqarildingiz.',
+  ROOM_CLOSED: 'Xona yopilgan.',
 };
 
 /** @param {string} code @param {string} [fallback] */
