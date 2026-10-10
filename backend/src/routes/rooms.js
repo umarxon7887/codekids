@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { query } from '../db.js';
 import { validate } from '../middleware/validate.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
 import { createRoomSchema, joinRoomSchema, roomCodeParams, kickParams } from '../schemas/rooms.js';
@@ -31,6 +32,19 @@ router.post(
 );
 
 // GET /api/v1/rooms/:code
+router.get('/mine', requireAuth, requireRole('teacher'), async (req, res) => {
+  const { rows } = await query(
+    `SELECT r.id, r.code, r.game_type, r.status, r.topic, r.level, r.created_at, r.expires_at,
+            (SELECT count(*)::int FROM game_players p WHERE p.room_id = r.id AND p.kicked = false) AS players
+       FROM game_rooms r
+      WHERE r.host_id = $1
+      ORDER BY (r.status = 'finished') ASC, r.created_at DESC
+      LIMIT 50`,
+    [req.user.id]
+  );
+  res.json({ items: rows });
+});
+
 router.get(
   '/:code',
   requireAuth,

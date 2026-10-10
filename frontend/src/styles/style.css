@@ -169,3 +169,25 @@ input { margin: 6px 0; }
 .gcard--lab{background:linear-gradient(135deg,#10b981,#047857)}
 .gcard--blocks{background:linear-gradient(135deg,#f59e0b,#d97706)}
 @media(min-width:900px){.gcard{flex:0 0 260px}}
+
+/* Kontent: mavzu kartochkalari, savol tahriri, CSV format */
+.ct-topic{margin:14px 0 6px;font-size:16px}
+.ct-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
+.ct-card{background:var(--card,#2a2d5a);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:6px;cursor:pointer;min-height:44px}
+.ct-badge{font-size:12px;opacity:.9}
+.ct-edit{display:grid;gap:8px;margin:10px 0}
+.ct-q{border:1px solid #8884;border-radius:12px;padding:10px;margin:8px 0;display:grid;gap:6px}
+.ct-opt{display:flex;gap:6px;align-items:center}
+.ct-opt input[data-o]{flex:1}
+.ct-fmt pre{overflow-x:auto;background:#0003;padding:8px;border-radius:8px}
+
+/* race-lane-css: typing poyga paneli */
+.race{display:grid;gap:6px;padding:8px;border-radius:14px;background:#0002}
+.lane{display:grid;grid-template-columns:minmax(80px,120px) 1fr 44px;gap:8px;align-items:center;padding:4px 6px;border-radius:10px}
+.lane--me{background:#6366f133;outline:2px solid #6366f1}
+.lane__name{font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lane__pct{font-size:12px;text-align:right;opacity:.9}
+.lane__track{position:relative;height:24px;border-radius:12px;background:repeating-linear-gradient(90deg,#8883 0 8px,#0000 8px 16px)}
+.car{position:absolute;top:50%;transform:translate(-50%,-50%);font-size:20px;transition:left .45s linear;will-change:left}
+.lane--done .lane__track{background:#10b98122}
+.race__more{font-size:12px;opacity:.8;padding:4px 6px}

@@ -68,6 +68,7 @@ export const listQuerySchema = z.object({
   topic: topicField.optional(),
   level: z.coerce.number().int().min(1).max(4).optional(),
   type: z.enum(['questions', 'typing_text']).optional(),
+  language: z.enum(['uz', 'ru']).optional(),
   q: z.string().trim().min(1).max(100).optional(),
   limit: z.coerce.number().int().min(1).max(50).default(20),
   offset: z.coerce.number().int().min(0).default(0),

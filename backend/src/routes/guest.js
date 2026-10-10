@@ -31,7 +31,7 @@ function pruneUsed() {
 
 // POST /api/v1/guest/session: login talab qilinmaydi
 router.post('/session', validate({ body: guestSessionSchema }), async (req, res) => {
-  const { content_id } = req.validated.body;
+  const { content_id, language } = req.validated.body;
 
   const { rows } = content_id
     ? await query(
@@ -42,7 +42,9 @@ router.post('/session', validate({ body: guestSessionSchema }), async (req, res)
     : await query(
         `SELECT id, data FROM contents
           WHERE type = 'typing_text' AND is_published = true AND deleted_at IS NULL
-          ORDER BY random() LIMIT 1`
+          AND ($1::text IS NULL OR language = $1)
+          ORDER BY random() LIMIT 1`,
+        [language ?? null]
       );
 
   const content = rows[0];

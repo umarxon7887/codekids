@@ -25,7 +25,7 @@ const clearRun = () => { try { sessionStorage.removeItem(RUN_KEY); } catch { /* 
  * @param {{mode?:'solo'|'guest'|'room', contentId?:string, language?:string, code?:string}} [opts]
  * @returns {Promise<()=>void>} cleanup
  */
-export async function mountTyping(root, { mode = 'solo', contentId, language = 'uz', code } = {}) {
+export async function mountTyping(root, { mode = 'solo', contentId, language = 'uz', code, fresh = false } = {}) {
   root.replaceChildren(html(`
     <section class="game">
       <div class="game__bar"><a href="#/" class="btn btn--ghost" aria-label="Orqaga">←</a><h2>Typing Race</h2></div>
@@ -43,7 +43,8 @@ export async function mountTyping(root, { mode = 'solo', contentId, language = '
   const $ = (s) => root.querySelector(s);
   const textEl = $('#t-text'), input = $('#t-input'), timeEl = $('#t-time'), wpmEl = $('#t-wpm'), msg = $('#t-msg'), resEl = $('#t-result');
   let serverCorrect = 0;
-  const runKey = `${mode}:${code || ''}:${contentId || ''}`;
+  let meId = null;
+  const runKey = `${mode}:${code || ''}:${contentId || ''}:${language}`;
   const me = getUser();
 
   let target = '', session = null, guestToken = null, expiresAt = 0;
@@ -66,7 +67,7 @@ export async function mountTyping(root, { mode = 'solo', contentId, language = '
 
   async function createRound() {
     if (mode === 'guest') {
-      const g = await api.post('/guest/session', contentId ? { content_id: contentId } : {}, { auth: false });
+      const g = await api.post('/guest/session', { ...(contentId ? { content_id: contentId } : {}), language }, { auth: false });
       guestToken = g.guest_token; target = g.target_text; expiresAt = Date.now() + (g.expires_in || 900) * 1000;
     } else {
       session = await api.post('/typing/sessions', { content_id: contentId, language, ...(code ? { room_code: code } : {}) });
@@ -108,7 +109,7 @@ export async function mountTyping(root, { mode = 'solo', contentId, language = '
     roundStarted = true;
     try {
       const saved = loadRun();
-      const resume = saved && saved.key === runKey && saved.target && (!saved.expiresAt || Date.now() < saved.expiresAt) ? saved : null;
+      const resume = !fresh && saved && saved.key === runKey && saved.target && (!saved.expiresAt || Date.now() < saved.expiresAt) ? saved : null;
       if (resume) {
         target = resume.target; session = resume.session; guestToken = resume.guestToken; expiresAt = resume.expiresAt;
       } else {
@@ -182,7 +183,7 @@ export async function mountTyping(root, { mode = 'solo', contentId, language = '
     const socket = connectSocket();
     const onSnap = (snap) => {
       lastSnap = snap;
-      renderBoard($('#t-board'), snap);
+      renderBoard($('#t-board'), snap, { meId });
       if (snap.status === 'active') beginRound();
       else if (snap.status === 'finished') finish().finally(() => showEnd(snap.players));
       else if (!roundStarted) { msg.hidden = false; msg.textContent = 'Ustoz boshlashini kuting...'; }

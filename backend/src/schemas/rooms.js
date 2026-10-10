@@ -13,6 +13,7 @@ export const createRoomSchema = z
   .object({
     game_type: z.enum(['typing', 'labyrinth']),
     content_id: z.string().uuid().optional(),
+    language: z.enum(['uz', 'ru']).optional(),
     topic: z.string().trim().min(1).max(100).optional(),
     level: z.number().int().min(1).max(4).default(1),
     max_players: z.number().int().min(2).max(100).default(30),
@@ -21,7 +22,7 @@ export const createRoomSchema = z
     mode: z.unknown().optional().transform((v) => (v === 'kids' ? 'kids' : 'standard')),
   })
   .superRefine((d, ctx) => {
-    if (!d.content_id) {
+    if (!d.content_id && d.game_type === 'labyrinth') {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['content_id'],

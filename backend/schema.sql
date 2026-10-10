@@ -287,3 +287,8 @@ CREATE INDEX IF NOT EXISTS typing_sessions_room_idx ON typing_sessions (room_id)
 -- Xona boshqaruvi: chiqarilgan o'yinchi va typing o'rni
 ALTER TABLE game_players ADD COLUMN IF NOT EXISTS kicked BOOLEAN NOT NULL DEFAULT false;
 ALTER TABLE game_players ADD COLUMN IF NOT EXISTS rank SMALLINT;
+
+-- Typing matnlari tili (uz/ru). Mavjud matnlar sarlavhasiga qarab to'ldiriladi.
+ALTER TABLE contents ADD COLUMN IF NOT EXISTS language VARCHAR(5);
+UPDATE contents SET language = CASE WHEN title LIKE '%(RU)%' THEN 'ru' ELSE 'uz' END
+ WHERE type = 'typing_text' AND language IS NULL;

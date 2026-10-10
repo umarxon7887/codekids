@@ -55,7 +55,7 @@ async function getOwnedContent(id, userId) {
 
 // GET /api/v1/contents: nashr etilgan kontentlar lentasi
 router.get('/', validate({ query: listQuerySchema }), async (req, res) => {
-  const { topic, level, type, q, limit, offset } = req.validated.query;
+  const { topic, level, type, q, limit, offset, language } = req.validated.query;
 
   const { rows } = await query(
     `SELECT ${CONTENT_COLUMNS}
@@ -67,22 +67,27 @@ router.get('/', validate({ query: listQuerySchema }), async (req, res) => {
         AND ($2::smallint IS NULL OR c.level = $2)
         AND ($3::content_type IS NULL OR c.type = $3)
         AND ($4::text IS NULL OR c.title ILIKE $4 OR c.description ILIKE $4)
+        AND ($5::text IS NULL OR c.language = $5)
       ORDER BY c.created_at DESC
-      LIMIT $5 OFFSET $6`,
-    [
-      topic ?? null,
-      level ?? null,
-      type ?? null,
-      q ? `%${escapeLike(q)}%` : null,
-      limit,
-      offset,
-    ]
+      LIMIT $6 OFFSET $7`,
+    [topic ?? null, level ?? null, type ?? null, q ? `%${escapeLike(q)}%` : null, language ?? null, limit, offset]
   );
 
   res.json({ items: rows, pagination: { limit, offset } });
 });
 
 // GET /api/v1/contents/search: qisman moslik (ILIKE) + imlo xatolariga chidamli (pg_trgm)
+router.get('/mine', requireAuth, requireRole('teacher'), async (req, res) => {
+  const type = req.query.type === 'typing_text' ? 'typing_text' : 'questions';
+  const { rows } = await query(
+    `SELECT id, type, title, topic, level, language, is_published, plays_count, likes_count, created_at, data
+       FROM contents WHERE author_id = $1 AND deleted_at IS NULL AND type = $2
+      ORDER BY created_at DESC LIMIT 200`,
+    [req.user.id, type]
+  );
+  res.json({ items: rows });
+});
+
 router.get('/search', validate({ query: searchQuerySchema }), async (req, res) => {
   const { q, limit } = req.validated.query;
   const pattern = `%${escapeLike(q)}%`;

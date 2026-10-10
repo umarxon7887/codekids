@@ -14,6 +14,7 @@ export const submitResultSchema = z.object({
 });
 export const guestSessionSchema = z.object({
   content_id: z.string().uuid().optional(),
+  language: z.enum(['uz', 'ru']).optional(),
 });
 
 export const guestResultSchema = z.object({

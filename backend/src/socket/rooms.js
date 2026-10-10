@@ -160,7 +160,7 @@ export function registerRoomHandlers(socket) {
     s.data.roomCode = code;
     s.emit('room:snapshot', snapshot(room));
     const me = room.players.get(user.id);
-    return { joined: true, you: me ? { correct: me.correct, finished: me.finished } : null };
+    return { joined: true, you: me ? { id: me.id, correct: me.correct, finished: me.finished } : null };
   });
 
   // room:start: faqat host boshlaydi

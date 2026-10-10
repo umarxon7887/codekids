@@ -35,7 +35,17 @@ export function publicRoom(room, { includeSettings = false } = {}) {
   return out;
 }
 
-export async function createRoom(hostId, data) {
+export async function createRoom(hostId, input) {
+  let data = input;
+  if (data.game_type === 'typing' && !data.content_id) {
+    const { rows: pick } = await query(
+      `SELECT id FROM contents WHERE type = 'typing_text' AND is_published = true
+         AND deleted_at IS NULL AND language = $1 ORDER BY random() LIMIT 1`,
+      [data.language ?? 'uz']
+    );
+    if (!pick[0]) throw new AppError(409, 'NO_TEXT', "Bu tilda nashr etilgan typing matni yo'q");
+    data = { ...data, content_id: pick[0].id };
+  }
   if (data.content_id) {
     const { rows } = await query(
       `SELECT type, data FROM contents
