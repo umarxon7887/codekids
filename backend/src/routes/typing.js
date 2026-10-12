@@ -36,7 +36,16 @@ router.post(
   requireAuth,
   validate({ body: createSessionSchema }),
   async (req, res) => {
-    const d = req.validated.body;
+    const d = { ...req.validated.body };
+    if (!d.content_id) {
+      const { rows: pick } = await query(
+        `SELECT id FROM contents WHERE type = 'typing_text' AND is_published = true
+           AND deleted_at IS NULL AND language = $1 ORDER BY random() LIMIT 1`,
+        [d.language]
+      );
+      if (!pick[0]) throw new AppError(409, 'NO_TEXT', "Bu tilda nashr etilgan matn yo'q");
+      d.content_id = pick[0].id;
+    }
 
     const { rows: found } = await query(
       `SELECT id, data

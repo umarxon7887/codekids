@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const createSessionSchema = z.object({
-  content_id: z.string().uuid(),
+  content_id: z.string().uuid().optional(),
   game_mode: z.enum(['solo', 'race']).default('solo'),
   language: z.enum(['uz', 'ru', 'en']),
   room_code: z.string().trim().toUpperCase().regex(/^[A-Z0-9]{4,8}$/, "Xona kodi noto'g'ri").optional(),
