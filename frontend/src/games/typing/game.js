@@ -55,12 +55,15 @@ export async function mountTyping(root, { mode = 'solo', contentId, language = '
   const correctCount = () => [...input.value].filter((c, i) => c === target[i]).length;
 
   function paint(typed) {
+    const y = window.scrollY;
     textEl.innerHTML = [...target].map((ch, i) => {
       let cls = 'ch';
       if (i < typed.length) cls += typed[i] === ch ? ' ch--ok' : ' ch--bad';
       else if (i === typed.length) cls += ' ch--cur';
       return `<span class="${cls}">${ch === ' ' ? '&nbsp;' : esc(ch)}</span>`;
     }).join('');
+    window.scrollTo(0, y);
+    textEl.querySelector('.ch--cur')?.scrollIntoView({ block: 'center', behavior: 'instant' });
   }
 
   const persist = () => saveRun({ key: runKey, session, guestToken, target, typed: input.value, startWall, expiresAt });
