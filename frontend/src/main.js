@@ -3,7 +3,7 @@ import './styles/style.css';
 import { auth } from './core/api.js';
 import { getUser, getAccessToken } from './core/state.js';
 import { disconnectSocket } from './core/socket.js';
-import { initTheme, toggleTheme, isLowPower, setLowPower } from './core/settings.js';
+import { initTheme, isLowPower, setLowPower } from './core/settings.js';
 import { toast } from './core/toast.js';
 import { BASE_URL } from './core/config.js';
 import { t } from './i18n/index.js';
@@ -17,10 +17,8 @@ let seq = 0; // kechikkan render natijalarini bekor qilish
 
 function mountSettings() {
   const bar = html(`<div id="settings">
-    <button id="btn-theme" aria-label="${t('theme.toggle')}" title="${t('theme.toggle')}">🌓</button>
     <button id="btn-lp" aria-label="${t('lowpower.toggle')}" title="${t('lowpower.toggle')}" aria-pressed="${isLowPower()}">🔋</button></div>`);
   document.body.appendChild(bar);
-  bar.querySelector('#btn-theme').onclick = toggleTheme;
   bar.querySelector('#btn-lp').onclick = (e) => {
     const on = !isLowPower();
     setLowPower(on);

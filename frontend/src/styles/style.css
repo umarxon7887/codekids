@@ -1,6 +1,6 @@
 :root { --bg:#1e1b4b; --card:#2d2a6e; --brand:#6c5ce7; --ok:#22c55e; --bad:#ef4444; --txt:#f5f3ff; }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-html, body { margin: 0; height: 100%; background: var(--bg); color: var(--txt); font-family: system-ui, sans-serif; overscroll-behavior: none; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--txt); font-family: 'Nunito', system-ui, sans-serif; overscroll-behavior: none; }
 #app { min-height: 100%; padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom)); max-width: 560px; margin: 0 auto; }
 h1, h2 { margin: .4em 0; }
 .card, .home { display: grid; gap: 14px; padding: 20px; }
@@ -61,10 +61,11 @@ input { margin: 6px 0; }
 
 /* ---- v3: tema, yagona typing maydoni, host/end ekranlar, sozlamalar ---- */
 :root { color-scheme: dark; }
-[data-theme="light"] { color-scheme: light; --bg:#f5f3ff; --card:#ffffff; --txt:#1e1b4b; --ok:#15803d; --bad:#b91c1c; }
+[data-theme="light"] { color-scheme: light; --bg:#FFF9F2; --card:#ffffff; --txt:#3D3429; --ok:#15803d; --bad:#b91c1c; }
 [data-theme="light"] input, [data-theme="light"] select, [data-theme="light"] textarea { background:#fff; color:#1e1b4b; }
 [data-theme="light"] .tile, [data-theme="light"] .tab, [data-theme="light"] .btn--opt, [data-theme="light"] .pill { color:#1e1b4b; box-shadow:0 1px 4px #1e1b4b22; }
 [data-theme="light"] .tab.is-on { color:#fff; }
+[data-theme="light"] .btn--ghost { color: var(--brand); }
 [data-theme="light"] .bar, [data-theme="light"] .banner { background:#e7e3ff; color:#1e1b4b; }
 [data-theme="light"] .toast { color:#fff; }
 [data-theme="light"] .skeleton { background: linear-gradient(90deg,#e7e3ff 25%,#d9d3ff 50%,#e7e3ff 75%); background-size:200% 100%; }
@@ -191,3 +192,15 @@ input { margin: 6px 0; }
 .car{position:absolute;top:50%;transform:translate(-50%,-50%);font-size:20px;transition:left .45s linear;will-change:left}
 .lane--done .lane__track{background:#10b98122}
 .race__more{font-size:12px;opacity:.8;padding:4px 6px}
+
+/* design4-fonts */
+h1, h2, h3, .tab, .btn, .tile { font-family: 'Fredoka', 'Nunito', system-ui, sans-serif; }
+
+/* typing-design4 */
+.typing__text { font: 600 22px/1.8 'Nunito', system-ui, sans-serif; background: #fff; color: #7A6E5F; padding: 22px; border-radius: 30px; border: 2.5px solid #F5EDE0; box-shadow: 0 6px 0 #F5EDE0; min-height: 200px; word-break: break-word; }
+.typing__text .ch { transition: all .1s; border-radius: 4px; }
+.typing__text .ch--ok { color: #5BC47E; background: #E0F5E8; }
+.typing__text .ch--bad { color: #D4788A; background: #FDE8EC; text-decoration: underline; }
+.typing__text .ch--cur { background: #EDE7F8; border-bottom: 3px solid #8B7BC7; }
+#t-time, #t-wpm { font-family: 'Fredoka', sans-serif; font-weight: 700; color: #8B7BC7; }
+#t-time, #t-wpm { background: #EDE7F8; border-radius: 999px; padding: 6px 14px; }

@@ -1,19 +1,13 @@
 /** @file Foydalanuvchi sozlamalari: tema, past quvvat rejimi, harakatni kamaytirish. */
-const KEY_THEME = 'ck_theme';
 const KEY_LP = 'ck_lowpower';
 
-export function initTheme() {
-  const saved = localStorage.getItem(KEY_THEME);
-  const theme = saved || (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
-  document.documentElement.dataset.theme = theme;
-}
+const LIGHT = matchMedia('(prefers-color-scheme: light)');
 
-/** @returns {'light'|'dark'} */
-export function toggleTheme() {
-  const next = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
-  document.documentElement.dataset.theme = next;
-  localStorage.setItem(KEY_THEME, next);
-  return next;
+/** Tema faqat qurilma rejimiga qarab: yorug' bo'lsa yorug', qorong'u bo'lsa qorong'u. */
+export function initTheme() {
+  const apply = () => { document.documentElement.dataset.theme = LIGHT.matches ? 'light' : 'dark'; };
+  apply();
+  LIGHT.addEventListener('change', apply);
 }
 
 export const prefersReducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
