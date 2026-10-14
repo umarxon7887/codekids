@@ -1,0 +1,76 @@
+/* ===== Poyga paneli (typing race): jiddiy "kechki trek" uslubi. board.js shu faylni o'zi import qiladi ===== */
+.rc-board { --cw: 88px; --rc-h: 58px; --edge: 26px; --lane-h: calc(var(--rc-h) + 52px); display: grid; gap: 6px; padding: 14px 12px; border-radius: 22px; color: #f2f0fa;
+  background: radial-gradient(120% 90% at 50% 0, #2b2745, #181626); border: 2px solid #3b3660; box-shadow: 0 10px 28px #0004, inset 0 1px 0 #ffffff14; }
+@media (min-width: 900px) { .rc-board { --cw: 110px; --rc-h: 70px; padding: 18px 18px 14px; } }
+
+/* --- Qator --- */
+.rc-view { height: calc(var(--vis, 1) * var(--lane-h)); overflow-y: hidden; overflow-x: hidden; border-radius: 14px; }
+.rc-view.is-scroll { overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; scrollbar-width: thin; scrollbar-color: #5a5290 transparent; }
+.rc-list { position: relative; height: calc(var(--n, 1) * var(--lane-h)); }
+.rc-leader { text-align: center; font: 800 13px/1 'Fredoka', system-ui, sans-serif; letter-spacing: .05em; text-transform: uppercase; color: #FFC857; padding: 2px 0 4px; }
+.rc-lane { position: absolute; left: 0; right: 0; top: 0; height: var(--lane-h); box-sizing: border-box; display: grid; grid-template-rows: auto auto; align-content: center; gap: 6px; padding: 6px 8px; border-radius: 14px;
+  transform: translateY(calc(var(--i, 0) * var(--lane-h))); transition: transform .55s cubic-bezier(.3, .8, .3, 1), background .3s, box-shadow .3s; }
+.rc-lane--me { background: linear-gradient(90deg, #ffc8571f, #ffc85705); box-shadow: inset 0 0 0 2px #FFC857; }
+.rc-lane__head { display: flex; align-items: center; gap: 10px; font: 700 14px/1 'Fredoka', 'Nunito', system-ui, sans-serif; letter-spacing: .04em; text-transform: uppercase; }
+.rc-rank { flex: none; width: 28px; height: 28px; display: grid; place-items: center; border-radius: 8px; background: #3b3660; color: #fff; font: 800 15px/1 ui-monospace, Menlo, monospace; }
+.rc-rank[data-m="1"] { background: linear-gradient(#ffd966, #e0a800); color: #3b2a00; }
+.rc-rank[data-m="2"] { background: linear-gradient(#e8ecf3, #aab3c2); color: #1f2937; }
+.rc-rank[data-m="3"] { background: linear-gradient(#e6a56b, #b8692b); color: #2b1500; }
+.rc-rank[data-m="f"] { background: #2EC4B6; color: #05302c; }
+.rc-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rc-lane--me .rc-name::after { content: ' · SIZ'; color: #FFC857; }
+.rc-pct { font: 800 15px/1 ui-monospace, Menlo, monospace; letter-spacing: 0; color: #ffffffd9; }
+.rc-kick { min-width: 30px; min-height: 30px; padding: 0; font-size: 12px; border-radius: 8px; background: #3b3660; color: #fff; border: 0; }
+
+/* --- Yo'l: asfalt, chetida qizil-oq bordyur, o'rtada chiziq, masofa belgilari --- */
+.rc-road { position: relative; height: var(--rc-h); border-radius: 10px; overflow: hidden; border: 0;
+  background:
+    linear-gradient(90deg, transparent calc(25% - 1px), #ffffff1f 0 calc(25% + 1px), transparent 0 calc(50% - 1px), #ffffff1f 0 calc(50% + 1px), transparent 0 calc(75% - 1px), #ffffff1f 0 calc(75% + 1px), transparent 0),
+    repeating-linear-gradient(90deg, #ffffff06 0 3px, transparent 3px 7px),
+    linear-gradient(#4a4a58, #34343f 50%, #2b2b35); box-shadow: inset 0 0 0 1px #0008, 0 2px 0 #0006; }
+.rc-road::before, .rc-road::after { content: ''; position: absolute; left: 0; right: 0; height: 6px; z-index: 1;
+  background: repeating-linear-gradient(90deg, #e5383b 0 14px, #f4f4f8 14px 28px); }
+.rc-road::before { top: 0; } .rc-road::after { bottom: 0; }
+.rc-trail { position: absolute; left: 0; top: 50%; height: 3px; border-radius: 3px; transform: translateY(-50%); background: linear-gradient(90deg, transparent, var(--car)); opacity: .75;
+  width: calc(var(--p) * (100% - var(--cw) - var(--edge)) + var(--cw) * .55); transition: width .45s linear; }
+.rc-start { position: absolute; left: 14px; top: 6px; bottom: 6px; width: 4px; background: repeating-linear-gradient(0deg, #fff 0 5px, transparent 5px 10px); opacity: .85; }
+.rc-finish { position: absolute; right: 0; top: 0; bottom: 0; width: var(--edge); z-index: 1; background: conic-gradient(#111 25%, #fff 0 50%, #111 0 75%, #fff 0) 0 0 / 13px 13px; box-shadow: -3px 0 6px #0006; }
+
+/* --- Mashina --- */
+.rc-car { position: absolute; z-index: 2; top: 50%; width: var(--cw); aspect-ratio: 100 / 42; left: calc(var(--p) * (100% - var(--cw) - var(--edge)) + 2px); transform: translateY(-50%); transition: left .45s linear; filter: drop-shadow(0 3px 2px #0008); }
+.rc-car svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.rc-wheel { transform-box: fill-box; transform-origin: center; }
+.rc-flame { opacity: 0; transform-box: fill-box; transform-origin: right center; }
+.is-go .rc-car { animation: rc-bob .22s ease-in-out 4; }
+.is-go .rc-wheel { animation: rc-spin .18s linear 5; }
+.is-go .rc-flame { opacity: 1; animation: rc-flame .09s ease-in-out 10 alternate; }
+.is-done .rc-road { box-shadow: 0 0 0 2px #FFC857, 0 0 22px #FFC85799; }
+.is-done .rc-car { animation: rc-win .8s ease-in-out infinite; }
+
+.rc-more { text-align: center; font-weight: 700; opacity: .7; font-size: 12px; padding: 2px 8px 0; }
+
+@keyframes rc-bob { 0%, 100% { transform: translateY(-50%); } 50% { transform: translateY(-54%); } }
+@keyframes rc-spin { to { transform: rotate(360deg); } }
+@keyframes rc-flame { from { transform: scaleX(.6); } to { transform: scaleX(1.3); } }
+@keyframes rc-win { 0%, 100% { transform: translateY(-50%) rotate(0); } 50% { transform: translateY(-58%) rotate(-2deg); } }
+@keyframes rc-pulse { 50% { opacity: .6; } }
+
+/* --- O'quvchi oynasi --- */
+#t-time::before { content: '⏱ '; }
+#t-wpm::before { content: '⚡ '; }
+.game .stats { margin: 12px 0 4px; }
+#t-msg:not([hidden]) { animation: rc-pulse 1.6s ease-in-out infinite; font-weight: 700; }
+
+/* --- Ustoz oynasi: xona kodi "табло" --- */
+.rc-code { display: grid; gap: 10px; justify-items: center; padding: 16px 12px 20px; border-radius: 22px; color: #f2f0fa; cursor: pointer; user-select: none;
+  background: radial-gradient(120% 90% at 50% 0, #2b2745, #181626); border: 2px solid #3b3660; box-shadow: 0 10px 28px #0004; }
+.rc-code:active { transform: translateY(2px); }
+.rc-code small { opacity: .7; font: 700 12px 'Nunito', system-ui, sans-serif; letter-spacing: .14em; text-transform: uppercase; }
+.rc-code b { display: flex; justify-content: center; gap: 7px; }
+.rc-code i { font: 800 clamp(30px, 9vw, 54px)/1 ui-monospace, SFMono-Regular, Menlo, monospace; width: 1.05em; padding: .22em 0; text-align: center; border-radius: 10px; color: #FFC857; background: linear-gradient(#1a1729, #29243f); box-shadow: inset 0 0 0 1px #ffffff1a, 0 3px 0 #0006; text-shadow: 0 0 14px #ffc85766; }
+.rc-hint { text-align: center; margin: 8px 0; }
+.rc-chip { display: table; margin: 10px auto; padding: 8px 18px; border-radius: 999px; background: #1f1c33; color: #f2f0fa; border: 1px solid #3b3660; font: 700 14px 'Fredoka', system-ui, sans-serif; letter-spacing: .04em; }
+.rc-actions { display: flex; gap: 10px; margin: 10px 0 14px; }
+.rc-actions .btn { flex: 1; }
+.rc-start-btn { background: linear-gradient(180deg, #2fd37b, #1ba75d); box-shadow: 0 5px 0 #0f7a41; }
+.rc-start-btn:active { transform: translateY(3px); box-shadow: 0 2px 0 #0f7a41; }

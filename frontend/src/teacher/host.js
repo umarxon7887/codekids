@@ -18,10 +18,11 @@ export async function mountHost(root, { code, game }) {
   }
   root.replaceChildren(html(`
     <section class="game">
-      <div class="game__bar"><a href="#/teacher" class="btn btn--ghost" aria-label="Orqaga">←</a><h2>Typing xonasi</h2></div>
-      <div class="bigcode">${esc(code)}</div>
-      <p class="muted">${t('host.codeHint')}</p>
-      <div class="row2"><button id="start" class="btn btn--big">${t('host.start')}</button><button id="close" class="btn btn--danger">${t('host.close')}</button></div>
+      <div class="game__bar"><a href="#/teacher" class="btn btn--ghost" aria-label="Orqaga">←</a><h2>🏁 Typing xonasi</h2></div>
+      <div class="rc-code" id="codecard" title="Nusxalash"><small>Xona kodi · bosib nusxalang</small><b>${[...esc(code)].map((c) => `<i>${c}</i>`).join('')}</b></div>
+      <p class="muted rc-hint">${t('host.codeHint')}</p>
+      <div id="h-chip" class="rc-chip">👥 0 ta o'quvchi qo'shildi</div>
+      <div class="rc-actions"><button id="start" class="btn btn--big rc-start-btn">${t('host.start')}</button><button id="close" class="btn btn--danger">${t('host.close')}</button></div>
       <div id="board" class="board"></div>
       <div id="h-end" hidden></div>
     </section>`));
@@ -29,10 +30,14 @@ export async function mountHost(root, { code, game }) {
   const socket = connectSocket();
   let lastSnap = null, ended = false;
 
+  $('#codecard').onclick = async () => {
+    try { await navigator.clipboard.writeText(code); toast('Kod nusxalandi', 'success'); } catch { /* clipboard ruxsat bermasa jim */ }
+  };
+
   function showEnd(players, title) {
     if (ended) return;
     ended = true;
-    $('#board').hidden = true; $('#start').hidden = true; $('#close').hidden = true;
+    $('#board').hidden = true; $('#start').hidden = true; $('#close').hidden = true; $('#h-chip').hidden = true;
     renderEndScreen($('#h-end'), { title, players: fromPlayers(players, 'correct'), backHref: '#/teacher', scoreLabel: t('score.letters') });
   }
 
@@ -41,6 +46,8 @@ export async function mountHost(root, { code, game }) {
     if (ended) return;
     renderBoard($('#board'), snap, { kickable: true });
     $('#start').hidden = snap.status !== 'waiting';
+    const n = (snap.players || []).length;
+    $('#h-chip').textContent = snap.status === 'active' ? `🏎️ Poyga ketmoqda · ${n} ta o'quvchi` : `👥 ${n} ta o'quvchi qo'shildi`;
     if (snap.status === 'finished') showEnd(snap.players);
   };
   const onFinished = (d) => showEnd(d?.players || lastSnap?.players || []);

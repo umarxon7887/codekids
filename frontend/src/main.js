@@ -41,7 +41,7 @@ function home(root, user) {
       ${teacher ? '<a class="tile" href="#/teacher">👩‍🏫 Ustoz paneli</a>' : `
         <a class="tile" href="#/typing">⌨️ Typing Race</a>
         <div class="tile tile--form"><span>🧩 Xonaga kirish</span>
-          <input id="code" maxlength="6" placeholder="6 belgili kod" autocapitalize="characters" aria-label="Xona kodi">
+          <input id="code" maxlength="6" inputmode="numeric" pattern="[0-9]*" placeholder="6 xonali raqam" aria-label="Xona kodi">
           <button id="join" class="btn">Kirish</button></div>`}
       <button id="out" class="btn btn--ghost">Chiqish</button>
     </section>`));

@@ -3,7 +3,7 @@ import { query, withTransaction } from '../db.js';
 import { AppError } from '../errors.js';
 
 // 0, O, 1, I belgilari chiqarilgan: bolalar kodni o'qiganda adashmasligi uchun
-const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const CODE_ALPHABET = '0123456789';
 const CODE_LENGTH = 6;
 const CODE_ATTEMPTS = 5;
 const ROOM_TTL_MS = 2 * 60 * 60 * 1000;

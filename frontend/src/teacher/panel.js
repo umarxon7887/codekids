@@ -259,7 +259,7 @@ async function rooms(box) {
   box.innerHTML = `<button id="nr-toggle" class="btn">+ Yangi xona</button>
     <div id="nr-form" class="row2" hidden>
       <select id="nr-game"><option value="labyrinth">Labirint</option><option value="typing">Typing</option></select>
-      <select id="nr-lang" class="typ-only" aria-label="Til"><option value="uz">O'zbekcha</option><option value="ru">Русский</option></select>
+      <select id="nr-lang" class="typ-only" aria-label="Til"><option value="uz">O'zbekcha</option><option value="ru">Русский</option><option value="en">English</option></select>
       <select id="nr-content" class="lab-only"><option value="">yuklanmoqda…</option></select>
       <select id="nr-size" class="lab-only"><option value="11">11×11</option><option value="15" selected>15×15</option><option value="21">21×21</option></select>
       <select id="nr-mode" class="lab-only"><option value="standard">Standart (3 jon)</option><option value="kids">Bolalar (jonsiz)</option></select>

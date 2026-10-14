@@ -2,6 +2,10 @@
  * @file Typing o'yini. Rejimlar: solo | guest | room. WPM/aniqlik serverda hisoblanadi;
  * ekrandagi jonli WPM faqat ko'rsatish uchun. Sahifa yangilansa, sessiya (sessionStorage) tiklanadi.
  * Matn va kiritish maydoni birlashgan: matnga bosilganda yashirin input fokus oladi.
+ *
+ * Skroll qoidasi: matn har bosishda qayta qurilmaydi (belgi <span>lari bir marta yaratiladi, faqat class o'zgaradi),
+ * sahifa faqat kursor ko'rinish oynasidan chiqib ketsa va faqat kerakli masofaga suriladi (markazga qaytarilmaydi).
+ * Yashirin input 1px va fixed: brauzer o'zi "kursorni ko'rsat" deb sahifani sakratmasligi uchun.
  */
 import { api } from '../../core/api.js';
 import { connectSocket, emitAck } from '../../core/socket.js';
@@ -15,10 +19,26 @@ import { renderBoard } from './board.js';
 import { renderEndScreen, renderKicked, fromPlayers } from '../../ui/endscreen.js';
 
 const RUN_KEY = 'ck_typing_run';
+const TOP_PAD = 72;    // tepada qotib turgan sozlama tugmalari uchun joy (px)
+const BOTTOM_PAD = 24; // klaviatura ustidagi zaxira (px)
+// CSS dagi `.typing__input{inset:0;width:100%;height:100%}` ni bekor qiladi
+const HIDDEN_INPUT_STYLE = 'position:fixed;top:0;left:0;right:auto;bottom:auto;width:1px;height:1px;opacity:0';
 const ts = (v) => (v == null ? 0 : typeof v === 'number' ? v : Date.parse(v) || 0);
 const loadRun = () => { try { return JSON.parse(sessionStorage.getItem(RUN_KEY)); } catch { return null; } };
 const saveRun = (r) => { try { sessionStorage.setItem(RUN_KEY, JSON.stringify(r)); } catch { /* to'lgan/yopiq */ } };
 const clearRun = () => { try { sessionStorage.removeItem(RUN_KEY); } catch { /* ignore */ } };
+
+/**
+ * Sahifa yangilanganda tugallanmagan mashqni topadi (lobbi shundan foydalanadi: til tanlatmasdan davom ettiradi).
+ * Faqat shu rejimga (solo | guest) tegishli, muddati o'tmagan mashq qaytariladi.
+ * @param {'solo'|'guest'} mode
+ */
+export function findResumable(mode) {
+  const s = loadRun();
+  if (!s || s.mode !== mode || !s.target || !s.language) return null;
+  if (s.expiresAt && Date.now() >= s.expiresAt) return null;
+  return s;
+}
 
 /**
  * @param {HTMLElement} root
@@ -34,7 +54,7 @@ export async function mountTyping(root, { mode = 'solo', contentId, language = '
       <div id="t-msg" class="banner" hidden></div>
       <label class="typing" id="t-wrap">
         <div id="t-text" class="typing__text"><div class="skeleton"></div></div>
-        <input id="t-input" class="typing__input" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Matn terish maydoni" disabled />
+        <input id="t-input" class="typing__input" style="${HIDDEN_INPUT_STYLE}" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Matn terish maydoni" disabled />
       </label>
       <div id="t-result" class="result" hidden></div>
       <div id="t-end" hidden></div>
@@ -52,21 +72,58 @@ export async function mountTyping(root, { mode = 'solo', contentId, language = '
   let roundStarted = false, done = false, lastSent = -1, lastSnap = null, endShown = false, kickStop = () => {};
   const cleanups = [];
 
+  // Matn belgilari: <span> lar bir marta quriladi, keyin faqat class yangilanadi
+  let chars = [], chEls = [], builtFor = null;
+
   const correctCount = () => [...input.value].filter((c, i) => c === target[i]).length;
 
-  function paint(typed) {
-    const y = window.scrollY;
-    textEl.innerHTML = [...target].map((ch, i) => {
-      let cls = 'ch';
-      if (i < typed.length) cls += typed[i] === ch ? ' ch--ok' : ' ch--bad';
-      else if (i === typed.length) cls += ' ch--cur';
-      return `<span class="${cls}">${ch === ' ' ? '&nbsp;' : esc(ch)}</span>`;
-    }).join('');
-    window.scrollTo(0, y);
-    textEl.querySelector('.ch--cur')?.scrollIntoView({ block: 'center', behavior: 'instant' });
+  function buildText() {
+    chars = [...target];
+    textEl.innerHTML = chars.map((ch) => `<span class="ch">${ch === ' ' ? '&nbsp;' : esc(ch)}</span>`).join('');
+    chEls = [...textEl.children];
+    builtFor = target;
   }
 
-  const persist = () => saveRun({ key: runKey, session, guestToken, target, typed: input.value, startWall, expiresAt });
+  /** Kursor ko'rinadigan oynadan chiqsagina sahifani kerakli masofaga suradi (klaviatura hisobga olinadi). */
+  function keepCursorVisible() {
+    const el = chEls[input.value.length];
+    if (!el) return; // matn tugagan: kursor yo'q, sahifani qimirlatmaymiz
+    const vv = window.visualViewport;
+    const vTop = vv ? vv.offsetTop : 0;
+    const vBottom = vv ? vv.offsetTop + vv.height : window.innerHeight;
+    const r = el.getBoundingClientRect();
+    const lo = vTop + TOP_PAD;
+    const hi = vBottom - BOTTOM_PAD;
+    if (r.top < lo) window.scrollBy({ top: r.top - lo, behavior: 'instant' });
+    else if (r.bottom > hi) window.scrollBy({ top: r.bottom - hi, behavior: 'instant' });
+  }
+
+  function paint(typed) {
+    // Matn tashqaridan tozalangan bo'lsa (masalan "xonaga ulandi" bosqichi) qayta quramiz
+    if (builtFor !== target || !chEls[0]?.isConnected) buildText();
+    for (let i = 0; i < chEls.length; i++) {
+      let cls = 'ch';
+      if (i < typed.length) cls += typed[i] === chars[i] ? ' ch--ok' : ' ch--bad';
+      else if (i === typed.length) cls += ' ch--cur';
+      if (chEls[i].className !== cls) chEls[i].className = cls;
+    }
+    keepCursorVisible();
+  }
+
+  // Klaviatura ochilib/yopilganda kursor yopilib qolmasin
+  const vv = window.visualViewport;
+  const onViewport = () => { if (roundStarted && !done) keepCursorVisible(); };
+  vv?.addEventListener('resize', onViewport);
+  cleanups.push(() => vv?.removeEventListener('resize', onViewport));
+
+  // Input endi kichkina va fixed, shuning uchun matnga bosilganda fokusni o'zimiz beramiz (sahifani surmasdan)
+  const wrap = $('#t-wrap');
+  const focusInput = () => { if (!input.disabled) input.focus({ preventScroll: true }); };
+  wrap.addEventListener('click', focusInput);
+  cleanups.push(() => wrap.removeEventListener('click', focusInput));
+
+  // mode/language/contentId/code ham saqlanadi: yangilangandan keyin lobbi mashqni shulardan tiklaydi
+  const persist = () => saveRun({ key: runKey, mode, language, contentId, code, session, guestToken, target, typed: input.value, startWall, expiresAt });
 
   async function createRound() {
     if (mode === 'guest') {
@@ -123,7 +180,9 @@ export async function mountTyping(root, { mode = 'solo', contentId, language = '
       if (resume?.typed) { input.value = resume.typed; startTimers(resume.startWall); tick(); }
       paint(input.value);
       persist();
-      input.focus();
+      input.focus({ preventScroll: true });
+      // Oxirgi belgi yozilgan zahoti sahifa yangilangan bo'lsa, natija yuborilmay qolgan bo'ladi: yakunlaymiz
+      if (resume && target && input.value.length >= target.length) finish();
     } catch (e) { roundStarted = false; showError(e); textEl.textContent = "Mashqni boshlab bo'lmadi"; }
   }
 
@@ -141,6 +200,8 @@ export async function mountTyping(root, { mode = 'solo', contentId, language = '
         ${r.saved === false ? '<p class="muted">Mehmon natijasi saqlanmaydi. Ro\'yxatdan o\'ting!</p>' : ''}
         ${mode === 'room' ? '' : `<a class="btn btn--big" href="#/">${t('app.back')}</a>`}`;
       toast('Natija qabul qilindi', 'success');
+      // Klaviatura yopilgach brauzer sahifani o'zi suradi: natijani ko'rsatish joyini o'zimiz belgilaymiz
+      setTimeout(() => resEl.scrollIntoView({ block: 'nearest' }), 350);
     } catch (e) {
       showError(e);
       if (e.code === 'SESSION_USED' || e.code === 'TOKEN_USED') clearRun();
@@ -186,7 +247,7 @@ export async function mountTyping(root, { mode = 'solo', contentId, language = '
     const socket = connectSocket();
     const onSnap = (snap) => {
       lastSnap = snap;
-      renderBoard($('#t-board'), snap, { meId });
+      renderBoard($('#t-board'), snap, { meId: me?.id, meNick: me?.nickname, compact: true });
       if (snap.status === 'active') beginRound();
       else if (snap.status === 'finished') finish().finally(() => showEnd(snap.players));
       else if (!roundStarted) { msg.hidden = false; msg.textContent = 'Ustoz boshlashini kuting...'; }
@@ -211,13 +272,20 @@ export async function mountTyping(root, { mode = 'solo', contentId, language = '
       if (e.code === 'KICKED') showKicked();
       return () => cleanups.forEach((f) => f());
     }
-    textEl.textContent = '';
+    // Raund snapshot orqali join'dan oldin boshlangan bo'lsa, matn o'chib qolmasin
+    if (roundStarted && target) paint(input.value);
+    else textEl.textContent = '';
   } else {
     await beginRound();
   }
 
+  // Bu funksiya faqat ilova ichida boshqa sahifaga o'tilganda chaqiriladi (←, boshqa marshrut).
+  // Sahifa yangilanganda (F5) chaqirilmaydi, shuning uchun saqlangan mashq qoladi va tiklanadi.
+  // Solo/guest mashqidan ataylab chiqilsa, eskisini tozalaymiz (lobbi qayta tiklab yubormasligi uchun).
+  // Xona rejimida saqlanadi: o'quvchi xonaga qaytsa davom etadi.
   return () => {
     clearInterval(timer); clearInterval(progressTimer); kickStop();
     input.removeEventListener('input', onInput); cleanups.forEach((f) => f());
+    if (mode !== 'room') clearRun();
   };
 }

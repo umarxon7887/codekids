@@ -13,7 +13,7 @@ export const createRoomSchema = z
   .object({
     game_type: z.enum(['typing', 'labyrinth']),
     content_id: z.string().uuid().optional(),
-    language: z.enum(['uz', 'ru']).optional(),
+    language: z.enum(['uz', 'ru', 'en']).optional(),
     topic: z.string().trim().min(1).max(100).optional(),
     level: z.number().int().min(1).max(4).default(1),
     max_players: z.number().int().min(2).max(100).default(30),
