@@ -83,6 +83,9 @@ export class MazeRenderer {
   /** @param {number} x @param {number} y */
   markCleared(x, y) { this.cleared.add(`${x},${y}`); }
 
+  /** Yashirin bayroqni ochadi (hamma savolga javob berilgach server `exit` yuboradi). @param {any} exit */
+  revealExit(exit) { if (this.maze) this.maze.exit = norm(exit); }
+
   /** @param {{id:any,nickname?:string,x:number,y:number,eliminated?:boolean}[]} list @param {any} meId */
   setPlayers(list, meId) {
     const seen = new Set();

@@ -261,9 +261,8 @@ async function rooms(box) {
       <select id="nr-game"><option value="labyrinth">Labirint</option><option value="typing">Typing</option></select>
       <select id="nr-lang" class="typ-only" aria-label="Til"><option value="uz">O'zbekcha</option><option value="ru">Русский</option><option value="en">English</option></select>
       <select id="nr-content" class="lab-only"><option value="">yuklanmoqda…</option></select>
-      <select id="nr-size" class="lab-only"><option value="11">11×11</option><option value="15" selected>15×15</option><option value="21">21×21</option></select>
       <select id="nr-mode" class="lab-only"><option value="standard">Standart (3 jon)</option><option value="kids">Bolalar (jonsiz)</option></select>
-      <input id="nr-min" type="number" min="1" max="120" value="10" placeholder="daqiqa">
+      <input id="nr-min" type="number" min="20" max="120" value="20" placeholder="daqiqa">
       <button id="nr-go" class="btn">Yaratish</button>
     </div>
     <div id="rooms-list"></div>`;
@@ -291,10 +290,10 @@ async function rooms(box) {
     const game = box.querySelector('#nr-game').value;
     const content_id = box.querySelector('#nr-content').value;
     if (game === 'labyrinth' && !content_id) { toast('Avval nashr etilgan savollar to\'plamini tanlang', 'error'); return; }
-    const body = { game_type: game, max_players: 30, duration_minutes: Number(box.querySelector('#nr-min').value) || 10 };
+    const body = { game_type: game, max_players: 30, duration_minutes: Math.max(20, Number(box.querySelector('#nr-min').value) || 20) };
     if (game === 'labyrinth') body.content_id = content_id;
     else body.language = box.querySelector('#nr-lang').value;
-    if (game === 'labyrinth') { body.mode = box.querySelector('#nr-mode').value; body.labyrinth = { size: Number(box.querySelector('#nr-size').value) }; }
+    if (game === 'labyrinth') { body.mode = box.querySelector('#nr-mode').value; }
     try {
       const r = await api.post('/rooms', body);
       toast('Xona yaratildi: ' + r.room.code, 'success');

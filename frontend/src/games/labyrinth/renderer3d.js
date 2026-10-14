@@ -176,6 +176,24 @@ export class MazeRenderer3D {
     this._snapCamera();
   }
 
+  /** Yashirin bayroqni ochadi (hamma savolga javob berilgach server `exit` yuboradi). */
+  revealExit(exit) {
+    const e = norm(exit);
+    if (!e || !this.maze || this.flag) return;
+    this.maze.exit = e;
+    const flag = new THREE.Group();
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 1.1, 8), new THREE.MeshLambertMaterial({ color: 0xffffff }));
+    pole.position.y = 0.55;
+    const cloth = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.32), new THREE.MeshBasicMaterial({ color: 0x22c55e, side: THREE.DoubleSide }));
+    cloth.position.set(0.25, 0.95, 0);
+    const pad = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.05, 24), new THREE.MeshLambertMaterial({ color: 0x22c55e }));
+    pad.position.y = 0.025;
+    flag.add(pole, cloth, pad);
+    flag.position.set(e.x + 0.5, 0, e.y + 0.5);
+    this.flag = flag;
+    this.world.add(flag);
+  }
+
   resize() {
     const box = this.canvas.parentElement.getBoundingClientRect();
     const w = Math.max(240, Math.floor(box.width || 320));

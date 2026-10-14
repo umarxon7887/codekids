@@ -1,8 +1,9 @@
 /**
- * @file Labirint o'yini (server-authoritative, 3D). Oqim:
+ * @file Labirint o'yini (server-authoritative, 3D, 5 level). Oqim:
  *   labyrinth:join {code} -> labyrinth:init -> labyrinth:start (host)
- *   labyrinth:move {code,direction} -> ack {x,y,finished,question}; labyrinth:answer {code,choice}
+ *   labyrinth:move {code,direction} -> ack {x,y,finished,question,next}; labyrinth:answer {code,choice} -> ack {..., questions, exit}
  *   labyrinth:update / labyrinth:finished; chiqarish: `kicked` yoki KICKED xatosi; yopish: ROOM_CLOSED.
+ * Har levelda bayroq yashirin: hamma savolga javob berilgach server `exit` ni yuboradi. Finishga yetgach `next` (keyingi level) keladi.
  * Harakat optimistik chiziladi, ack'dagi x,y bilan tuzatiladi. BLOCKED/TOO_FAST/LOCKED jim o'tkaziladi.
  */
 import { connectSocket, emitAck } from '../../core/socket.js';
@@ -33,8 +34,11 @@ export async function mountLabyrinth(root, { code, host = false }) {
     <section class="game">
       <div class="game__bar"><a href="${host ? '#/teacher' : '#/'}" class="btn btn--ghost lab-back" aria-label="Orqaga">◀</a><h2>Labirint <small>${esc(code)}</small></h2><span id="lab-time" class="pill">--:--</span></div>
       <div class="hud" id="hud" ${host ? 'hidden' : ''}><span id="hud-lives"></span><span id="hud-score">⭐ 0</span><span id="hud-rank"></span></div>
+      <div class="hud" id="hud2" ${host ? 'hidden' : ''}><span id="hud-level">Level 1/5</span><span id="hud-q">❓ 0/0</span></div>
+      <nav class="tabs" id="lab-levels" hidden></nav>
       <div class="game__stage"><div class="skeleton" id="lab-skel"></div><canvas id="maze" hidden></canvas></div>
       <div id="lab-lock" class="banner banner--warn" hidden></div>
+      <div id="lab-hint" class="banner" hidden></div>
       <div id="lab-wait" class="banner" ${host ? 'hidden' : ''}>Ustoz o'yinni boshlashini kuting...</div>
       <div class="row2" ${host ? '' : 'hidden'}>
         <button id="lab-start" class="btn btn--big" hidden>${t('host.start')}</button>
@@ -60,6 +64,9 @@ export async function mountLabyrinth(root, { code, host = false }) {
   let pos = { x: 0, y: 0 }, grid = null;
   let finished = false, busy = false, lastStep = 0, question = null, joinedOnce = false;
   let lastPlayers = [], endShown = false, kickStop = () => {};
+  // level holati: o'yinchi turgan level, shu leveldagi savollar va bayroq ko'rinishi
+  let level = 1, levels = 5, qInfo = { total: 0, left: 0 }, exitShown = false;
+  let allLevels = null, hostView = 1; // faqat ustoz: hamma levelni almashtirib ko'radi
 
   const now = () => Date.now() + offset;
   const syncClock = (serverNow) => { if (serverNow != null) offset = ts(serverNow) - Date.now(); };
@@ -80,6 +87,44 @@ export async function mountLabyrinth(root, { code, host = false }) {
     if (p.rank) $('#hud-rank').textContent = `#${p.rank}`;
   }
 
+  /** Level va savollar hisobi: "Level 2/5", "❓ 1/3" va bayroq haqida maslahat. */
+  function levelHud() {
+    if (host) return;
+    $('#hud-level').textContent = `Level ${level}/${levels}`;
+    $('#hud-q').textContent = `❓ ${qInfo.total - qInfo.left}/${qInfo.total}`;
+    const hint = $('#lab-hint');
+    hint.hidden = finished || endShown || status !== 'active';
+    hint.textContent = qInfo.left > 0
+      ? `🏁 Bayroq yashirin. Yana ${qInfo.left} ta savolga javob bering`
+      : (exitShown ? '🏁 Bayroq ochildi! Unga boring' : '');
+    if (!hint.textContent) hint.hidden = true;
+  }
+
+  /** Boshqa levelda yurgan o'yinchilar bu labirintda ko'rinmaydi (koordinatalari boshqa xarita uchun). */
+  function pushPlayers() {
+    const view = host ? hostView : level;
+    renderer.setPlayers(lastPlayers.filter((p) => (p.level ?? 1) === view), playerId);
+  }
+
+  /** Level ma'lumotini (init yoki `next`) renderer'ga yuklaydi. */
+  function loadLevel(p) {
+    level = p.level || 1;
+    levels = p.levels || 5;
+    grid = p.grid;
+    qInfo = p.questions || { total: 0, left: 0 };
+    exitShown = !!p.exit;
+    renderer.load({ grid: p.grid, size: p.size, start: p.start, exit: p.exit, checkpoints: p.checkpoints });
+    levelHud();
+  }
+
+  /** Ustoz uchun: level tugmalari. */
+  function levelTabs() {
+    const nav = $('#lab-levels');
+    if (!host || !allLevels?.length) return;
+    nav.hidden = false;
+    nav.innerHTML = allLevels.map((l) => `<button class="tab ${l.level === hostView ? 'is-on' : ''}" data-l="${l.level}">${l.level}-level</button>`).join('');
+  }
+
   /** Host: jonli reyting + "Chiqarish" tugmalari. */
   function hostBoard(players) {
     if (!(players || []).length) { const b0 = $('#lab-board'); b0.hidden = false; b0.innerHTML = '<p class="muted">Hali o\'yinchilar yo\'q. O\'quvchilar kodni kiritganda shu yerda chiqadi.</p>'; return; }
@@ -87,7 +132,7 @@ export async function mountLabyrinth(root, { code, host = false }) {
     el.hidden = false;
     const sorted = [...(players || [])].sort((a, b) => (a.rank || 99) - (b.rank || 99) || b.score - a.score);
     el.innerHTML = `<h3>Reyting</h3>${sorted.map((p, i) => `<div class="row row--kick ${p.kicked ? 'is-kicked' : ''}">
-      <span>${p.rank || i + 1}. ${esc(p.nickname)}${p.eliminated ? ' 💀' : p.finished ? ' 🏁' : ''}${p.kicked ? ' 🚫' : ''}</span><b>${esc(p.score ?? 0)}</b>
+      <span>${p.rank || i + 1}. ${esc(p.nickname)} <small class="muted">L${esc(p.level ?? 1)}</small>${p.eliminated ? ' 💀' : p.finished ? ' 🏁' : ''}${p.kicked ? ' 🚫' : ''}</span><b>${esc(p.score ?? 0)}</b>
       ${p.kicked ? '' : `<button class="kick" data-kick="${esc(p.id)}" aria-label="${t('host.kick')}: ${esc(p.nickname)}">✕</button>`}</div>`).join('')}`;
   }
 
@@ -98,6 +143,7 @@ export async function mountLabyrinth(root, { code, host = false }) {
     $('#lab-board').hidden = true;
     $('#lab-start').hidden = true;
     $('#lab-close').hidden = true;
+    $('#lab-hint').hidden = true;
     renderEndScreen($('#lab-end'), {
       title, players: fromPlayers(players, 'score'), meId: playerId, meNick: me?.nickname,
       backHref: host ? '#/teacher' : '#/', modal: !host,
@@ -108,6 +154,7 @@ export async function mountLabyrinth(root, { code, host = false }) {
     if (host || endShown) return;
     endShown = true; finished = true;
     $('#lab-modal').hidden = true;
+    $('#lab-hint').hidden = true;
     kickStop = renderKicked($('#lab-end'));
   }
 
@@ -136,7 +183,8 @@ export async function mountLabyrinth(root, { code, host = false }) {
       const r = await emitAck('labyrinth:answer', { code, choice });
       btns[r.correctIndex]?.classList.add('is-right');
       if (!r.correct) btns[choice]?.classList.add('is-wrong');
-      $('#lab-fb').textContent = r.correct ? "To'g'ri! +10 ball" : "Noto'g'ri. 5 soniya kutasiz.";
+      const opens = r.correct && r.exit && !exitShown;
+      $('#lab-fb').textContent = r.correct ? (opens ? "To'g'ri! +10 ball. Bayroq ochildi! 🏁" : "To'g'ri! +10 ball") : "Noto'g'ri. 5 soniya kutasiz.";
       await sleep(1200);
       m.hidden = true;
       question = null;
@@ -144,13 +192,30 @@ export async function mountLabyrinth(root, { code, host = false }) {
       if (r.correct) renderer.markCleared(r.x, r.y);
       renderer.setMe(r.x, r.y);
       lockedUntil = ts(r.lockedUntil);
+      if (r.questions) qInfo = r.questions;
+      if (r.exit && !exitShown) { exitShown = true; renderer.revealExit?.(r.exit); }
       hud(r);
-      if (r.finished) { finished = true; toast(r.eliminated ? 'Jonlaringiz tugadi' : 'Marraga yetdingiz! 🎉', r.eliminated ? 'error' : 'success'); }
+      levelHud();
+      if (r.finished) { finished = true; levelHud(); toast(r.eliminated ? 'Jonlaringiz tugadi' : 'Marraga yetdingiz! 🎉', r.eliminated ? 'error' : 'success'); }
     } catch (e) {
       if (handleStateError(e)) return;
       showError(e);
       btns.forEach((b) => { b.disabled = false; });
     }
+  }
+
+  /** Finishga yetildi: qisqa tabrik oynasi, keyin yangi labirint. `busy` shu vaqtda harakatni to'sib turadi. */
+  async function levelUp(r) {
+    const m = $('#lab-modal');
+    m.hidden = false;
+    m.innerHTML = `<div class="modal__card"><h3>🎉 ${level}-level tugadi!</h3><p>Keyingisi: ${esc(r.next.level)}-level, ${esc(r.next.levels)} tadan</p></div>`;
+    await sleep(1600);
+    m.hidden = true;
+    pos = { x: r.x, y: r.y };
+    loadLevel(r.next);
+    renderer.setMe(r.x, r.y, true);
+    renderer.setCleared([]);
+    pushPlayers();
   }
 
   /** @param {keyof typeof DIRS} dir */
@@ -167,9 +232,10 @@ export async function mountLabyrinth(root, { code, host = false }) {
     renderer.setMe(nx, ny); // optimistik
     try {
       const r = await emitAck('labyrinth:move', { code, direction: dir });
+      if (r.next) { await levelUp(r); return; }
       pos = { x: r.x, y: r.y };
       renderer.setMe(r.x, r.y);
-      if (r.finished) { finished = true; toast('Marraga yetdingiz! 🎉', 'success'); }
+      if (r.finished) { finished = true; levelHud(); toast(`Hamma ${levels} level tugadi! 🏆`, 'success'); }
       if (r.question) showQuestion(r.question);
     } catch (e) {
       renderer.setMe(pos.x, pos.y); // silliq rollback (uzoq bo'lsa renderer o'zi sakraydi)
@@ -182,8 +248,9 @@ export async function mountLabyrinth(root, { code, host = false }) {
     $('#lab-skel')?.remove();
     canvas.hidden = false;
     syncClock(init.serverNow);
-    grid = init.grid;
-    renderer.load({ grid, size: init.size, start: init.start, exit: init.exit, checkpoints: init.checkpoints });
+    allLevels = init.allLevels || null;
+    hostView = 1;
+    loadLevel(init);
     renderer.start();
     setStatus(init.status, init.endsAt);
     const you = init.you;
@@ -198,7 +265,9 @@ export async function mountLabyrinth(root, { code, host = false }) {
       if (you.question) showQuestion(you.question);
     }
     lastPlayers = init.players || [];
-    renderer.setPlayers(lastPlayers, playerId);
+    pushPlayers();
+    levelHud();
+    levelTabs();
     if (host) hostBoard(lastPlayers);
     if (init.status === 'finished') showEnd(lastPlayers, t('end.title'));
   };
@@ -206,9 +275,10 @@ export async function mountLabyrinth(root, { code, host = false }) {
     syncClock(u.serverNow);
     setStatus(u.status, u.endsAt);
     lastPlayers = u.players || lastPlayers;
-    renderer.setPlayers(lastPlayers, playerId);
+    pushPlayers();
     const mine = lastPlayers.find((p) => p.id === playerId);
     if (mine) { hud(mine); if (mine.finished) finished = true; if (mine.kicked) showKicked(); }
+    levelHud();
     if (host && !endShown) hostBoard(lastPlayers);
   };
   const onFinished = ({ players }) => { status = 'finished'; lastPlayers = players || lastPlayers; showEnd(lastPlayers, t('end.title')); };
@@ -268,6 +338,15 @@ export async function mountLabyrinth(root, { code, host = false }) {
     const b = ev.target.closest('[data-kick]');
     if (!b || !confirm(t('host.confirmKick'))) return;
     try { await kickPlayer(code, b.dataset.kick); toast(t('host.kicked'), 'success'); } catch (e) { showError(e); }
+  });
+  $('#lab-levels').addEventListener('click', (ev) => {
+    const b = ev.target.closest('[data-l]');
+    const L = b && allLevels?.[Number(b.dataset.l) - 1];
+    if (!L) return;
+    hostView = L.level;
+    loadLevel(L);
+    pushPlayers();
+    levelTabs();
   });
 
   // taymer + qulf banneri (+ 3D qahramon holati)
