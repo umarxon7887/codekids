@@ -1,0 +1,40 @@
+/* Kirish / Ro'yxatdan o'tish ekrani */
+#app:has(.au) { max-width: none; }
+.au { box-sizing: border-box; max-width: 440px; margin: 0 auto; padding: 20px 20px 32px; display: flex; flex-direction: column; gap: 20px; }
+.au-hero { display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; padding-top: 28px; }
+.au-logo { width: 76px; height: 76px; border-radius: 26px; background: var(--butter); display: grid; place-items: center; }
+.au-name { font-size: 32px; font-weight: 700; }
+.au-tag { font-size: 16px; color: var(--ink-2); max-width: 280px; }
+.au-dots { display: flex; gap: 10px; margin-top: 4px; }
+.au-dots span { width: 52px; height: 52px; border-radius: 999px; display: grid; place-items: center; }
+.au-card { background: var(--white); border: 1.5px solid var(--line); border-radius: 30px; padding: 24px; display: flex; flex-direction: column; gap: 16px; margin: 0; }
+.au-card h1 { margin: 0; font-size: 24px; }
+.au-f { display: flex; flex-direction: column; gap: 6px; }
+.au-f label { font-size: 15px; font-weight: 500; }
+.au-in { display: flex; align-items: center; gap: 10px; height: 56px; box-sizing: border-box; padding: 0 8px 0 18px; border-radius: 999px; background: var(--milk); border: 1.5px solid #EBDDCB; color: var(--ink-2); }
+.au-in:focus-within { outline: 3px solid var(--ink); outline-offset: 2px; }
+.au-in input { flex: 1; min-width: 0; width: auto; border: 0; outline: 0; background: transparent; min-height: 0; padding: 0; margin: 0; font-size: 16px; border-radius: 0; color: var(--ink); }
+.au-in input:focus { outline: 0; }
+.au-eye { width: 44px; height: 44px; border: 0; border-radius: 999px; background: transparent; color: inherit; display: grid; place-items: center; padding: 0; cursor: pointer; }
+.au-role { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; background: var(--milk); border: 1.5px solid var(--line); border-radius: 999px; padding: 4px; }
+.au-role button { min-height: 46px; border: 0; border-radius: 999px; background: transparent; font: inherit; font-size: 16px; font-weight: 500; color: var(--ink); cursor: pointer; }
+.au-role button[aria-pressed="true"] { background: var(--ink); color: var(--milk); font-weight: 600; }
+.au-teach { display: flex; flex-direction: column; gap: 14px; background: #F6F2FD; border-radius: 24px; padding: 16px; }
+.au-teach b { font-size: 16px; font-weight: 600; color: #4A3D80; }
+.au-two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.au-go { width: 100%; margin-top: 4px; min-height: 56px; font-size: 18px; }
+.au-guest { width: 100%; box-sizing: border-box; font-weight: 500; }
+.au-alt { text-align: center; font-size: 16px; color: var(--ink-2); }
+.au-alt button { border: 0; background: none; padding: 4px; font: inherit; font-weight: 600; color: var(--ink); cursor: pointer; }
+@media (min-width: 900px) {
+  .au { max-width: 1040px; min-height: 100dvh; display: grid; grid-template-columns: 1fr 440px; column-gap: 56px; row-gap: 16px; align-content: center; padding: 40px; }
+  .au-hero { grid-column: 1; grid-row: 1 / span 3; align-items: flex-start; text-align: left; padding: 0; }
+  .au > :not(.au-hero) { grid-column: 2; }
+  .au-logo { width: 96px; height: 96px; border-radius: 32px; }
+  .au-name { font-size: 54px; }
+  .au-tag { font-size: 21px; max-width: 420px; }
+}
+/* tuzatish: maydonlar ustundan chiqib ketmasin */
+.au-two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.au-f { min-width: 0; }
+.au-in input { width: 0; }
