@@ -50,7 +50,7 @@ export async function mountTyping(root, { mode = 'solo', contentId, language = '
     <section class="game">
       <div class="game__bar"><a href="#/" class="btn btn--ghost" aria-label="Orqaga">←</a><h2>Typing Race</h2></div>
       <div id="t-board" class="board" ${mode === 'room' ? '' : 'hidden'}></div>
-      <div class="stats"><span id="t-time">00:00</span><span id="t-wpm">0 WPM</span></div>
+      <div class="stats"><a href="#/" class="ty-back" aria-label="Orqaga"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></a><span id="t-time">00:00</span><span id="t-wpm">0 WPM</span></div>
       <div id="t-msg" class="banner" hidden></div>
       <label class="typing" id="t-wrap">
         <div id="t-text" class="typing__text"><div class="skeleton"></div></div>
@@ -79,23 +79,32 @@ export async function mountTyping(root, { mode = 'solo', contentId, language = '
 
   function buildText() {
     chars = [...target];
-    textEl.innerHTML = chars.map((ch) => `<span class="ch">${ch === ' ' ? '&nbsp;' : esc(ch)}</span>`).join('');
+    textEl.innerHTML = chars.map((ch) => `<span class="ch">${ch === ' ' ? ' ' : esc(ch)}</span>`).join('');
     chEls = [...textEl.children];
     builtFor = target;
   }
 
   /** Kursor ko'rinadigan oynadan chiqsagina sahifani kerakli masofaga suradi (klaviatura hisobga olinadi). */
+  /** Matn o'z oynasi ichida suriladi: joriy qator doim 2-qatorda; oyna klaviaturadan yuqoridagi joyga sig'adi. */
   function keepCursorVisible() {
-    const el = chEls[input.value.length];
-    if (!el) return; // matn tugagan: kursor yo'q, sahifani qimirlatmaymiz
     const vv = window.visualViewport;
     const vTop = vv ? vv.offsetTop : 0;
-    const vBottom = vv ? vv.offsetTop + vv.height : window.innerHeight;
-    const r = el.getBoundingClientRect();
-    const lo = vTop + TOP_PAD;
-    const hi = vBottom - BOTTOM_PAD;
-    if (r.top < lo) window.scrollBy({ top: r.top - lo, behavior: 'instant' });
-    else if (r.bottom > hi) window.scrollBy({ top: r.bottom - hi, behavior: 'instant' });
+    const vH = vv ? vv.height : window.innerHeight;
+    const kb = vH < (window.screen?.height || window.innerHeight) * 0.7; // klaviatura ochiq
+    const stats = root.querySelector('.stats');
+    if (kb && stats) {
+      const gap = textEl.getBoundingClientRect().top - stats.getBoundingClientRect().top;
+      textEl.style.maxHeight = `${Math.max(120, vH - gap - BOTTOM_PAD - 8)}px`;
+      const s = stats.getBoundingClientRect().top - vTop - 8;
+      if (Math.abs(s) > 4) window.scrollBy({ top: s, behavior: 'instant' });
+    } else {
+      textEl.style.maxHeight = '';
+    }
+    const el = chEls[input.value.length] || chEls[chEls.length - 1];
+    if (!el) return;
+    const cs = getComputedStyle(textEl), lh = parseFloat(cs.lineHeight) || el.offsetHeight * 1.6;
+    const want = Math.max(0, Math.floor(el.offsetTop - parseFloat(cs.paddingTop) - lh - (lh - el.offsetHeight) / 2));
+    if (Math.abs(textEl.scrollTop - want) > 2) textEl.scrollTop = want;
   }
 
   function paint(typed) {

@@ -35,3 +35,12 @@ body:has(.ty) #settings { display: none; }
   .ty-reg { flex: 1 1 340px; min-width: 0; border-radius: 34px; padding: 30px; }
   .ty-reg .btn { margin-top: auto; }
 }
+/* Typing o'yini: matn o'z oynasida suriladi, so'zlar bo'linmaydi */
+.typing__text { position: relative; white-space: pre-wrap; word-break: normal; overflow-wrap: break-word; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; }
+.typing__text::-webkit-scrollbar { display: none; }
+.game:has(.typing) { padding-bottom: 70vh; }
+/* Typing o'yini: orqaga tugmasi vaqt/WPM qatorida, batareya yashirin */
+body:has(.typing) #settings { display: none; }
+.game:has(.typing) .game__bar > a { display: none; }
+.game:has(.typing) .stats { display: flex; align-items: center; gap: 10px; }
+.game:has(.typing) .stats #t-wpm { margin-left: auto; }
