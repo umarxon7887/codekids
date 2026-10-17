@@ -204,10 +204,12 @@ export async function mountTyping(root, { mode = 'solo', contentId, language = '
       const r = await submit();
       clearRun();
       resEl.hidden = false;
-      resEl.innerHTML = `<h3>Natija</h3><p>WPM: <b>${esc(r.wpm)}</b></p><p>Aniqlik: <b>${esc(r.accuracy)}%</b></p><p>Vaqt: <b>${esc(round(r.time_sec, 1))} s</b></p>
-        ${r.flagged ? '<p class="warn">⚠️ Natija shubhali deb belgilandi.</p>' : ''}
-        ${r.saved === false ? '<p class="muted">Mehmon natijasi saqlanmaydi. Ro\'yxatdan o\'ting!</p>' : ''}
-        ${mode === 'room' ? '' : `<a class="btn btn--big" href="#/">${t('app.back')}</a>`}`;
+      resEl.innerHTML = resultHtml(r, mode);
+      if (mode !== 'room') {
+        root.querySelector('.stats').hidden = true; wrap.hidden = true;
+        root.querySelector('.game__bar').hidden = true; window.scrollTo(0, 0);
+      }
+      resEl.querySelector('[data-again]')?.addEventListener('click', () => window.dispatchEvent(new HashChangeEvent('hashchange')));
       toast('Natija qabul qilindi', 'success');
       // Klaviatura yopilgach brauzer sahifani o'zi suradi: natijani ko'rsatish joyini o'zimiz belgilaymiz
       setTimeout(() => resEl.scrollIntoView({ block: 'nearest' }), 350);
@@ -297,4 +299,25 @@ export async function mountTyping(root, { mode = 'solo', contentId, language = '
     input.removeEventListener('input', onInput); cleanups.forEach((f) => f());
     if (mode !== 'room') clearRun();
   };
+}
+
+/** Natija ekrani (solo/guest/room). Yulduzlar aniqlikka qarab: 95%+ = 3, 80%+ = 2, aks holda 1. */
+function resultHtml(r, mode) {
+  const n = r.accuracy >= 95 ? 3 : r.accuracy >= 80 ? 2 : 1;
+  const star = (on, big) => `<svg aria-hidden="true" width="${big ? 52 : 40}" height="${big ? 52 : 40}" viewBox="0 0 24 24" fill="${on ? '#F4B400' : '#FFFFFF'}" stroke="#E0A800" stroke-width="1.2" stroke-linejoin="round"><path d="M12 2l3 7h7l-5.5 4.5L18.5 21 12 16.5 5.5 21l2-7.5L2 9h7z"/></svg>`;
+  const title = n === 3 ? 'Barakalla!' : n === 2 ? 'Yaxshi!' : "Yaxshi urinish!";
+  const saved = r.saved === false
+    ? `<div class="tr-reg"><b>Bu natija saqlanmadi</b><span>Ro'yxatdan o'tsang, natijalaring profilingda turadi.</span><a class="btn" href="#/">Ro'yxatdan o'tish</a></div>`
+    : mode === 'room' ? '' : '<div class="tr-ok">✓ Natija profilingga saqlandi</div>';
+  return `<div class="tr">
+    <div class="tr-hero">
+      <div class="tr-stars" role="img" aria-label="${n} yulduz">${star(n >= 1)}${star(n >= 2, true)}${star(n >= 3)}</div>
+      <h1>${title}</h1><p>Matnni oxirigacha yozding</p>
+      <div class="tr-big">${esc(r.wpm)}</div><div class="tr-u">WPM</div>
+    </div>
+    <div class="tr-two"><div><b>${esc(r.accuracy)}%</b><span>Aniqlik</span></div><div><b>${esc(round(r.time_sec, 1))} s</b><span>Vaqt</span></div></div>
+    ${r.flagged ? '<div class="tr-warn">⚠️ Natija shubhali deb belgilandi</div>' : ''}
+    ${saved}
+    ${mode === 'room' ? '' : `<div class="tr-btns"><button class="btn" data-again>Yana mashq qilish</button><a class="btn btn--ghost" href="#/">Bosh sahifaga</a></div>`}
+  </div>`;
 }

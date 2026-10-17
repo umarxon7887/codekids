@@ -44,3 +44,25 @@ body:has(.typing) #settings { display: none; }
 .game:has(.typing) .game__bar > a { display: none; }
 .game:has(.typing) .stats { display: flex; align-items: center; gap: 10px; }
 .game:has(.typing) .stats #t-wpm { margin-left: auto; }
+/* Typing natija ekrani */
+.game:has(.typing[hidden]) { padding-bottom: 0; }
+.result:has(.tr) { background: none; border: 0; padding: 0; margin: 0; }
+.tr { display: flex; flex-direction: column; gap: 14px; max-width: 560px; margin: 0 auto; }
+.tr-hero { background: #FFF1C9; border-radius: 32px; padding: 24px 20px; display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; }
+.tr-stars { display: flex; align-items: flex-end; gap: 6px; margin-bottom: 6px; }
+.tr-hero h1 { margin: 0; font-size: 38px; }
+.tr-hero p { margin: 0; font-size: 16px; color: #6B5A20; }
+.tr-big { font-size: 76px; font-weight: 700; line-height: 1; margin-top: 10px; font-variant-numeric: tabular-nums; }
+.tr-u { font-size: 18px; font-weight: 600; color: #6B5A20; }
+.tr-two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.tr-two > div { background: var(--white); border: 1.5px solid var(--line); border-radius: 24px; padding: 16px; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.tr-two b { font-size: 26px; font-weight: 600; }
+.tr-two span { font-size: 15px; color: var(--ink-2); }
+.tr-ok { background: var(--mint); border-radius: 20px; padding: 14px 18px; font-size: 15px; color: #335646; font-weight: 500; }
+.tr-warn { background: var(--butter); border-radius: 20px; padding: 14px 18px; font-size: 15px; }
+.tr-reg { background: var(--peach); border-radius: 30px; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
+.tr-reg b { font-size: 20px; font-weight: 600; }
+.tr-reg span { font-size: 15px; color: #5A4A40; }
+.tr-reg .btn { background: var(--white); color: var(--ink); }
+.tr-btns { display: flex; flex-direction: column; gap: 10px; }
+.tr-btns .btn { width: 100%; min-height: 56px; }
