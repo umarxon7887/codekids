@@ -1,0 +1,60 @@
+/* ===== CodeKids "Soft Milk" dizayn asosi. style.css dan KEYIN import qilinadi ===== */
+:root, html[data-theme] {
+  color-scheme: light;
+  --milk: #FFF9F2; --ink: #3B2F2F; --ink-2: #6B5A4F; --line: #F0E3D2;
+  --peach: #FFDFCB; --sky: #CFE6F7; --mint: #CDEBDD; --lav: #DCD3F5; --butter: #FFD98A; --white: #FFFFFF;
+  --r-card: 30px; --r-field: 20px; --r-pill: 999px;
+  --shadow: 0 6px 18px rgba(59, 47, 47, .08);
+  --font: 'Fredoka', system-ui, sans-serif;
+  /* eski o'zgaruvchilar yangi ranglarga ulanadi */
+  --bg: var(--milk); --card: var(--white); --brand: var(--ink); --txt: var(--ink); --ok: #2E9E6A; --bad: #D9534F;
+}
+html, body { background: var(--milk); color: var(--ink); font-family: var(--font); }
+h1, h2, h3, h4 { font-weight: 600; }
+.muted, small { color: var(--ink-2); }
+
+/* Maydonlar */
+input, select, textarea { font-family: inherit; font-size: 17px; color: var(--ink); background: var(--white); border: 1.5px solid var(--line); border-radius: var(--r-field); min-height: 52px; box-sizing: border-box; }
+input:focus, select:focus, textarea:focus { outline: 3px solid var(--butter); outline-offset: 1px; border-color: var(--ink); }
+input::placeholder, textarea::placeholder { color: #A8968A; }
+
+/* Tugmalar */
+.btn { font-family: inherit; font-weight: 600; font-size: 17px; min-height: 54px; padding: 0 24px; border-radius: var(--r-pill); background: var(--ink); color: var(--milk); display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.btn--ghost { background: transparent; color: var(--ink); border: 1.5px solid #E5D5C3; }
+.btn--big { min-height: 60px; font-size: 19px; }
+.btn--danger { background: var(--bad); color: #fff; }
+.btn:focus-visible { outline: 3px solid var(--butter); outline-offset: 2px; }
+.btn:disabled { opacity: .45; cursor: default; }
+
+/* Kartochkalar */
+.tile, .stat, .result, .banner, .typing__text { background: var(--white); color: var(--ink); border: 1.5px solid var(--line); border-radius: var(--r-card); box-shadow: none; }
+.tile { font-size: 22px; font-weight: 600; }
+.tile--sm { border-radius: 24px; }
+.stat b { font-weight: 600; }
+.stat--live { border: 2px solid var(--ok); }
+.banner--warn { background: var(--butter); color: var(--ink); border-color: transparent; }
+.pill { background: var(--white); color: var(--ink); border: 1.5px solid var(--line); }
+.bigcode { background: var(--white); color: var(--ink); border-radius: var(--r-card); font-family: var(--font); font-weight: 700; }
+
+/* Tablar */
+.tab { font-family: inherit; font-weight: 500; border-radius: var(--r-pill); background: var(--white); color: var(--ink); border: 1.5px solid var(--line); }
+.tab.is-on { background: var(--ink); color: var(--milk); border-color: var(--ink); }
+
+/* Typing matni */
+.typing__text { font-family: ui-monospace, Menlo, monospace; }
+.ch--cur { border-bottom-color: var(--ink); background: var(--butter); border-radius: 3px; }
+.ch--bad { background: #D9534F22; }
+
+/* Savol oynasi */
+.modal__card { background: var(--milk); border: 0; border-radius: 34px; box-shadow: var(--shadow); }
+.btn--opt { background: var(--white); color: var(--ink); border: 1.5px solid var(--line); border-radius: 22px; justify-content: flex-start; }
+.btn--opt.is-right { background: var(--mint); border-color: var(--ok); }
+.btn--opt.is-wrong { background: #F8D7D5; border-color: var(--bad); }
+
+/* Sozlama tugmasi */
+#settings button { border-radius: var(--r-pill); border: 1.5px solid var(--line); background: var(--white); color: var(--ink); }
+#settings button[aria-pressed="true"] { background: var(--butter); }
+
+/* Progress */
+.bar { background: var(--line); }
+.bar i { background: var(--ok); }

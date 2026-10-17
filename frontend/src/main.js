@@ -1,5 +1,6 @@
 /** @file Entry point: tema, sozlamalar paneli, sessiyani tiklash, hash-router (rol bo'yicha), SW. */
 import './styles/style.css';
+import './styles/tokens.css';
 import { auth } from './core/api.js';
 import { getUser, getAccessToken } from './core/state.js';
 import { disconnectSocket } from './core/socket.js';
