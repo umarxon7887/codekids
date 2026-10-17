@@ -1,0 +1,40 @@
+/* O'quvchi bosh sahifasi */
+#app:has(.hm) { max-width: none; }
+.hm { box-sizing: border-box; max-width: 1160px; margin: 0 auto; padding: 20px 20px 28px; display: flex; flex-direction: column; gap: 18px; }
+.hm-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; padding-right: 56px; }
+.hm-brand { display: flex; align-items: center; gap: 10px; font-size: 20px; font-weight: 700; }
+.hm-logo { width: 40px; height: 40px; border-radius: 14px; background: var(--butter); display: grid; place-items: center; }
+.hm-right { display: flex; align-items: center; gap: 10px; }
+.hm-me { display: flex; align-items: center; gap: 8px; background: var(--white); border: 1.5px solid var(--line); border-radius: 999px; padding: 4px 16px 4px 4px; font: inherit; font-size: 16px; font-weight: 500; color: var(--ink); cursor: pointer; }
+.hm-ava { width: 36px; height: 36px; border-radius: 999px; background: var(--butter); display: grid; place-items: center; font-weight: 700; }
+.hm-hi h1 { margin: 0; font-size: 32px; }
+.hm-hi p { margin: 4px 0 0; font-size: 17px; color: var(--ink-2); }
+.hm-cards { display: flex; flex-direction: column; gap: 18px; }
+.hm-card { box-sizing: border-box; border-radius: 30px; padding: 22px; display: flex; flex-direction: column; gap: 8px; color: var(--ink); text-decoration: none; border: 0; font: inherit; text-align: left; cursor: pointer; }
+.hm-ic { width: 52px; height: 52px; border-radius: 999px; background: var(--white); display: grid; place-items: center; }
+.hm-card b { font-size: 24px; font-weight: 600; }
+.hm-card span.d { font-size: 16px; }
+.hm-go { margin-top: 6px; align-self: flex-start; background: var(--ink); color: var(--milk); border-radius: 999px; padding: 12px 24px; font-size: 16px; font-weight: 600; }
+.hm-row { display: flex; align-items: center; justify-content: space-between; }
+.hm-new { background: var(--white); border-radius: 999px; padding: 6px 14px; font-size: 14px; font-weight: 600; color: #4A3D80; }
+.hm-join { display: flex; gap: 8px; margin-top: 6px; }
+.hm-join input { flex: 1; min-width: 0; width: 0; height: 52px; min-height: 0; margin: 0; padding: 0 18px; border: 0; border-radius: 999px; background: var(--white); font-size: 17px; letter-spacing: 2px; text-transform: uppercase; }
+.hm-join input::placeholder { letter-spacing: 0; text-transform: none; }
+.hm-join .btn { min-height: 52px; padding: 0 22px; }
+.hm-out { width: 100%; }
+.hm-out--top { display: none; }
+@media (min-width: 900px) {
+  .hm { padding: 24px 24px 56px; gap: 32px; }
+  .hm-brand { font-size: 26px; } .hm-logo { width: 48px; height: 48px; border-radius: 16px; }
+  .hm-hi h1 { font-size: 44px; } .hm-hi p { font-size: 20px; }
+  .hm-cards { flex-direction: row; gap: 20px; }
+  .hm-card { flex: 1 1 300px; min-width: 0; border-radius: 34px; padding: 28px; gap: 10px; }
+  .hm-ic { width: 60px; height: 60px; }
+  .hm-card b { font-size: 28px; }
+  .hm-out { display: none; }
+  .hm-out--top { display: inline-flex; width: auto; }
+}
+/* tuzatish: tepadagi bo'sh joy va batareya tugmasi */
+body:has(.hm) #settings, body:has(.au) #settings { display: none; }
+#app:has(.hm), #app:has(.au) { padding-top: 0; margin-top: 0; }
+.hm-top { padding-right: 0; }

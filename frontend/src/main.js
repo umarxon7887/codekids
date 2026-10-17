@@ -71,7 +71,8 @@ async function render({ path, query }) {
   m = path.match(/^\/host\/([A-Za-z0-9]+)$/);
   if (m) return (await import('./teacher/host.js')).mountHost(app, { code: m[1], game: query.game || 'typing' });
 
-  return home(app, user);
+  if (user.role === 'teacher') return (await import('./teacher/panel.js')).mountTeacher(app);
+  return (await import('./ui/home.js')).mountHome(app, user, route);
 }
 
 async function route() {
