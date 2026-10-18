@@ -86,5 +86,7 @@ export async function mountHost(root, { code, game }) {
   });
 
   try { await emitAck('room:join', { code }); } catch (e) { showError(e); }
-  return () => { socket.off('room:snapshot', onSnap); socket.off('room:finished', onFinished); };
+  const rejoin = () => emitAck('room:join', { code }).catch(() => {}); // ulanish tiklansa xonaga qayta qo'shilish
+  socket.on('connect', rejoin);
+  return () => { socket.off('room:snapshot', onSnap); socket.off('room:finished', onFinished); socket.off('connect', rejoin); };
 }
