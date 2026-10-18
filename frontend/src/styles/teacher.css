@@ -173,3 +173,4 @@ body:has(.hs) #settings { display: none; }
   .hs-code, .hs-acts { grid-column: 1; }
   .hs #board, .hs #h-end { grid-column: 2; grid-row: 2 / span 3; }
 }
+.hs-cbtn .btn { color: var(--ink); }

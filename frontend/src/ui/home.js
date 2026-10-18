@@ -35,7 +35,7 @@ export function mountHome(root, user, reroute) {
           <span class="hm-ic" style="color:#1F5C41">${svg('maze')}</span>
           <b>Xonaga kirish</b><span class="d" style="color:#335646">Ustoz bergan 6 xonali kodni kiriting</span>
           <div class="hm-join">
-            <input id="code" maxlength="6" placeholder="6 xonali kod" autocapitalize="characters" autocomplete="off" aria-label="Xona kodi">
+            <input id="code" maxlength="6" placeholder="6 xonali raqam" inputmode="numeric" pattern="[0-9]*" autocomplete="off" aria-label="Xona kodi">
             <button class="btn" type="submit">Kirish</button>
           </div>
         </form>

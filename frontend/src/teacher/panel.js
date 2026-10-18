@@ -291,7 +291,7 @@ async function rooms(box) {
       <label class="rm-f lab-only"><span>Savollar to'plami</span><select id="nr-content"><option value="">yuklanmoqda…</option></select><small>Faqat nashr etilgan to'plamlar chiqadi</small></label>
       <div class="rm-f lab-only"><span>Labirint o'lchami</span>${pills('sz', [['11', '11×11', 'kichik'], ['15', '15×15', "o'rta"], ['21', '21×21', 'katta']], '15')}</div>
       <div class="rm-f lab-only"><span>Rejim</span>${pills('md', [['standard', 'Standart', '3 ta jon'], ['kids', 'Bolalar', 'jonsiz']], 'standard')}</div>
-      <div class="rm-f typ-only" hidden><span>Matn tili</span>${pills('lng', [['uz', "O'zbekcha", ''], ['ru', 'Русский', '']], 'uz')}<small>Ustoz matn qo'shmaydi — matnni tizim tanlaydi</small></div>
+      <div class="rm-f typ-only" hidden><span>Matn tili</span>${pills('lng', [['uz', "O'zbekcha", ''], ['ru', 'Русский', ''], ['en', 'English', '']], 'uz')}<small>Ustoz matn qo'shmaydi — matnni tizim tanlaydi</small></div>
       <div class="rm-f"><span>Davomiyligi</span><div class="rm-step"><button type="button" id="mnm" aria-label="Kamaytirish">−</button><b id="mn">10 daqiqa</b><button type="button" id="mnp" aria-label="Ko'paytirish">+</button></div></div>
       <button class="btn rm-go" id="nr-go">Xona yaratish</button>
     </section>
