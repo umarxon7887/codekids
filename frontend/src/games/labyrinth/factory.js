@@ -8,12 +8,12 @@ function webglOk() {
   } catch { return false; }
 }
 
-/** @param {HTMLCanvasElement} canvas @returns {Promise<any>} */
-export async function createRenderer(canvas) {
+/** @param {HTMLCanvasElement} canvas @param {{host?:boolean}} [opts] @returns {Promise<any>} */
+export async function createRenderer(canvas, { host = false } = {}) {
   if (webglOk()) {
     try {
       const { MazeRenderer3D } = await import('./renderer3d.js');
-      return new MazeRenderer3D(canvas, { lowPower: isLowPower() });
+      return new MazeRenderer3D(canvas, { lowPower: isLowPower(), host });
     } catch (e) { console.warn('3D yuklanmadi, 2D ishlatiladi:', e); }
   }
   const { MazeRenderer } = await import('./renderer2d.js');

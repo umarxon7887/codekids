@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import { query } from '../db.js';
 import { AppError } from '../errors.js';
 import { logger } from '../logger.js';
@@ -14,6 +15,11 @@ const ANSWER_SCORE = 10;
 const RANK_BONUS = [50, 30, 20];
 const DEFAULT_BONUS = 10;
 const FINISHED_ROOM_TTL_MS = 5 * 60 * 1000;
+const HERO_COUNT = 8;
+// Hamma tugatgach yakuniy ekran darhol emas, oxirgi animatsiya ko'rinib ulgurgach chiqadi
+const ALL_DONE_DELAY_MS = 2500;
+
+const heroPayload = joinRoomSchema.extend({ hero: z.number().int().min(1).max(HERO_COUNT) });
 
 const channel = (code) => `room:${code}`;
 const cellKey = (x, y) => `${x},${y}`;
@@ -135,7 +141,7 @@ function serveQuestion(room, player, at) {
 async function loadLabyrinthRoom(code) {
   const { rows } = await query(
     `SELECT r.id, r.host_id, r.code, r.game_type, r.status, r.duration_minutes,
-            r.started_at, r.ended_at, r.settings, c.data AS content_data
+            r.started_at, r.ended_at, r.settings, c.data AS content_data, c.title AS content_title
        FROM game_rooms r
        LEFT JOIN contents c ON c.id = r.content_id
       WHERE r.code = $1`,
@@ -163,10 +169,19 @@ async function loadLabyrinthRoom(code) {
 
   const durationMs = row.duration_minutes * 60 * 1000;
   const startedAt = row.started_at ? new Date(row.started_at).getTime() : null;
+  const mode = row.settings.mode === 'kids' ? 'kids' : 'standard';
 
   return {
     gameType: 'labyrinth',
-    mode: row.settings.mode === 'kids' ? 'kids' : 'standard',
+    mode,
+    // Ustoz ekranidagi qisqa ma'lumot (mavzu, savollar soni, vaqt, jonlar)
+    info: {
+      title: row.content_title ?? null,
+      questions: questions.length,
+      levels: LEVEL_COUNT,
+      minutes: row.duration_minutes,
+      lives: mode === 'kids' ? null : START_LIVES,
+    },
     id: row.id,
     code: row.code,
     hostId: row.host_id,
@@ -180,6 +195,7 @@ async function loadLabyrinthRoom(code) {
     endsAt: startedAt ? startedAt + durationMs : null,
     endedAt: row.ended_at ? new Date(row.ended_at).getTime() : null,
     endTimer: null,
+    doneTimer: null,
     players: new Map(),
   };
 }
@@ -231,6 +247,9 @@ async function ensurePlayer(room, userId) {
     qPos: Number.isInteger(saved.qPos) ? saved.qPos : 0,
     qOrder: shuffle([...room.questions.keys()], rngFor(`${room.seed}:${row.id}:order`)),
     lockedUntil: saved.lockedUntil ?? null,
+    hero: Number.isInteger(saved.hero) ? saved.hero : null,
+    answered: Number.isInteger(saved.answered) ? saved.answered : 0,
+    right: Number.isInteger(saved.right) ? saved.right : 0,
     lastMoveAt: 0,
   };
   room.players.set(userId, player);
@@ -257,6 +276,9 @@ async function savePlayer(room, p) {
         qPos: p.qPos,
         rank: p.rank,
         lockedUntil: p.lockedUntil,
+        hero: p.hero,
+        answered: p.answered,
+        right: p.right,
       }),
     ]
   );
@@ -278,6 +300,9 @@ function publicPlayers(room) {
       eliminated: p.eliminated,
       rank: p.rank,
       kicked: p.kicked === true,
+      hero_id: p.hero ?? null,
+      answered: p.answered ?? 0,
+      right: p.right ?? 0,
     }))
     .sort((a, b) => b.score - a.score);
 }
@@ -296,6 +321,7 @@ function playerView(room, p) {
     rank: p.rank,
     question: p.pendingQuestion ? questionView(room, p.pendingQuestion) : null,
     lockedUntil: p.lockedUntil,
+    hero_id: p.hero ?? null,
   };
 }
 
@@ -315,11 +341,13 @@ function broadcastLater(io, room) {
 
 // ---------- Tugatish va taymer ----------
 
-export async function finishRoom(io, room) {
+// reason: 'time' (vaqt tugadi), 'all_done' (hamma tugatdi), 'closed' (ustoz yopdi)
+export async function finishRoom(io, room, reason = 'time') {
   if (room.status === 'finished') return;
   room.status = 'finished';
   room.endedAt = Date.now();
   if (room.endTimer) clearTimeout(room.endTimer);
+  if (room.doneTimer) clearTimeout(room.doneTimer);
 
   await query(
     `UPDATE game_rooms SET status = 'finished', ended_at = $2 WHERE id = $1`,
@@ -330,7 +358,7 @@ export async function finishRoom(io, room) {
   }
 
   broadcast(io, room);
-  io.to(channel(room.code)).emit('labyrinth:finished', { players: publicPlayers(room) });
+  io.to(channel(room.code)).emit('labyrinth:finished', { players: publicPlayers(room), reason });
   setTimeout(() => deleteRoom(room.code), FINISHED_ROOM_TTL_MS).unref();
 }
 
@@ -340,6 +368,21 @@ function scheduleEnd(io, room) {
   room.endTimer = setTimeout(() => {
     finishRoom(io, room).catch((err) => logger.error({ err }, 'Labirint tugatishda xato'));
   }, delay);
+}
+
+// Hamma o'yinchi tugatgan bo'lsa (marraga yetgan yoki joni tugagan), vaqtni kutmasdan yopamiz.
+// Chiqarilganlar hisobga olinmaydi.
+function allDone(room) {
+  const ps = [...room.players.values()].filter((p) => !p.kicked);
+  return ps.length > 0 && ps.every((p) => p.finished);
+}
+
+export function finishIfAllDone(io, room) {
+  if (room.status !== 'active' || room.doneTimer || !allDone(room)) return;
+  room.doneTimer = setTimeout(() => {
+    room.doneTimer = null;
+    if (allDone(room)) finishRoom(io, room, 'all_done').catch((err) => logger.error({ err }, 'Labirint tugatishda xato'));
+  }, ALL_DONE_DELAY_MS);
 }
 
 // ---------- Event handlerlar ----------
@@ -374,6 +417,7 @@ export function registerLabyrinthHandlers(socket) {
       ...(player ? levelPayload(room, player) : all[0]),
       allLevels: all, // faqat ustoz uchun: hamma levelni almashtirib ko'rish
       mode: room.mode,
+      info: room.info,
       status: room.status,
       endsAt: room.endsAt,
       serverNow: Date.now(),
@@ -382,6 +426,26 @@ export function registerLabyrinthHandlers(socket) {
     });
 
     return { joined: true, playerId: player ? player.id : null };
+  });
+
+  // Qahramon tanlash: faqat o'yin boshlanguncha. Tanlov o'yinchi holatida (state) saqlanadi.
+  wrapHandler(socket, 'labyrinth:hero', async (s, payload) => {
+    const user = requireUser(s);
+    const { code, hero } = heroPayload.parse(payload);
+    const room = await getRoomOrLoad(code);
+    const player = await ensurePlayer(room, user.id);
+    if (!player) {
+      throw new AppError(403, 'NOT_A_PARTICIPANT', "Bu xonaga qo'shilmagansiz");
+    }
+    if (room.status !== 'waiting') {
+      throw new AppError(409, 'ROOM_NOT_WAITING', "Qahramonni faqat o'yin boshlanguncha almashtirish mumkin");
+    }
+    if (player.hero !== hero) {
+      player.hero = hero;
+      await savePlayer(room, player);
+      broadcastLater(io, room);
+    }
+    return { hero };
   });
 
   wrapHandler(socket, 'labyrinth:start', async (s, payload) => {
@@ -488,6 +552,7 @@ export function registerLabyrinthHandlers(socket) {
 
     await savePlayer(room, player);
     broadcastLater(io, room);
+    if (player.finished) finishIfAllDone(io, room);
     return { x: player.x, y: player.y, finished: player.finished, question, next };
   });
 
@@ -517,6 +582,8 @@ export function registerLabyrinthHandlers(socket) {
     const correct = pending.perm[choice] === q.answer;
     const correctIndex = pending.perm.indexOf(q.answer);
     player.pendingQuestion = null;
+    player.answered = (player.answered ?? 0) + 1;
+    if (correct) player.right = (player.right ?? 0) + 1;
     const now = Date.now();
 
     if (correct) {
@@ -541,6 +608,7 @@ export function registerLabyrinthHandlers(socket) {
 
     await savePlayer(room, player);
     broadcastLater(io, room);
+    if (player.finished) finishIfAllDone(io, room);
 
     const revealed = exitRevealed(room, player);
     return {

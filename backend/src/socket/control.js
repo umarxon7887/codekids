@@ -2,7 +2,7 @@ import { query } from '../db.js';
 import { AppError } from '../errors.js';
 import { getRoom, markDirty } from './roomStore.js';
 import { getIo } from './bus.js';
-import { finishRoom as finishLabyrinth, broadcast as broadcastLabyrinth } from './labyrinth.js';
+import { finishRoom as finishLabyrinth, broadcast as broadcastLabyrinth, finishIfAllDone } from './labyrinth.js';
 import { closeTypingRoom } from './rooms.js';
 
 const channel = (code) => `room:${code}`;
@@ -22,14 +22,14 @@ export async function closeRoom(code, hostId) {
   const mem = getRoom(code);
 
   if (mem?.gameType === 'labyrinth') {
-    await finishLabyrinth(io, mem);
+    await finishLabyrinth(io, mem, 'closed');
   } else if (mem) {
     await closeTypingRoom(io, mem);
   } else {
     // Xona xotirada yo'q (server qayta ishga tushgan): faqat holatni yopamiz
     await query("UPDATE game_rooms SET status = 'finished', ended_at = now() WHERE id = $1", [row.id]);
     const evt = row.game_type === 'labyrinth' ? 'labyrinth:finished' : 'room:finished';
-    io.to(channel(code)).emit(evt, { players: [] });
+    io.to(channel(code)).emit(evt, { players: [], reason: 'closed' });
   }
   return { closed: true };
 }
@@ -59,7 +59,7 @@ export async function kickPlayer(code, hostId, playerRowId) {
   if (mem) {
     const mp = mem.players.get(row.user_id);
     if (mp) mp.kicked = true;
-    if (mem.gameType === 'labyrinth') broadcastLabyrinth(io, mem);
+    if (mem.gameType === 'labyrinth') { broadcastLabyrinth(io, mem); finishIfAllDone(io, mem); }
     else markDirty(code);
   }
   return { kicked: true };

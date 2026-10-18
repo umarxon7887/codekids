@@ -4,7 +4,7 @@
  * qahramonni kuzatadi, shuning uchun kataklar kichrayib ketmaydi. Harakat — silliq interpolatsiya.
  */
 
-const COLORS = { road: '#2d2a6e', wall: '#0f0d2e', edge: '#4b46c4', hero: '#6c5ce7', other: '#f472b6', ok: '#22c55e', cp: '#facc15' };
+const COLORS = { road: '#F1E4C8', wall: '#5E9E3E', edge: '#4A8231', hero: '#E0A800', other: '#7FA7D9', ok: '#7FD1A8', cp: '#FFD98A' };
 const MAX_VIEW = 11;
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 /** @param {any} c @returns {{x:number,y:number}|null} */
@@ -48,7 +48,7 @@ export class MazeRenderer {
   resize() {
     if (!this.maze) return;
     const box = this.canvas.parentElement.getBoundingClientRect();
-    const side = Math.floor(Math.min(box.width || 320, window.innerHeight * 0.55));
+    const side = Math.floor(Math.min(box.width || 320, box.height || window.innerHeight * 0.55));
     const dpr = window.devicePixelRatio || 1;
     this.cell = side / this.view;
     this.canvas.style.width = `${side}px`;
@@ -101,6 +101,11 @@ export class MazeRenderer {
   /** 3D renderer bilan bir xil interfeys (2D'da ahamiyatsiz). */
   setLocked() {}
   setLowPower() {}
+  setMode() {}
+  setMyHero() {}
+  setTag(el) { if (el) el.hidden = true; }
+  setZoom() {}
+  zoomBy() {}
 
   start() {
     if (this._raf) return;
