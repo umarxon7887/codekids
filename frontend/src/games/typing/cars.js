@@ -18,11 +18,12 @@ export function carSrc(p, key, me) {
 }
 
 /** Kutish vaqtida #t-pick ichiga mashina tanlash oynasini bir marta chizadi. */
-export function ensurePicker(root) {
+export function ensurePicker(root, onPick) {
   const box = root.querySelector('#t-pick');
   if (!box || box.childElementCount) { if (box) box.hidden = false; return; }
   box.hidden = false;
   const cur = getMyCar();
+  if (cur) onPick?.(cur); // oldin tanlangan mashina serverga ham yetsin
   box.innerHTML = `<div class="cp">
     <div class="cp-h"><b>Mashinangni tanla</b><small>Poyga boshlanguncha almashtirsa bo'ladi</small></div>
     <div class="cp-grid" role="radiogroup" aria-label="Mashina">${Array.from({ length: CAR_COUNT }, (_, i) => i + 1).map((n) =>
@@ -32,6 +33,7 @@ export function ensurePicker(root) {
     b.onclick = () => {
       const n = Number(b.dataset.car);
       setMyCar(n);
+      onPick?.(n);
       box.querySelectorAll('[data-car]').forEach((x) => x.setAttribute('aria-checked', String(x === b)));
       document.querySelectorAll('.rc-lane--me .rc-img').forEach((im) => { im.src = carUrl(n); });
     };

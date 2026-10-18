@@ -2,6 +2,7 @@ import { query, withTransaction } from '../db.js';
 import { AppError } from '../errors.js';
 import { logger } from '../logger.js';
 import { joinRoomSchema, socketProgressPayload } from '../schemas/rooms.js';
+import { z } from 'zod';
 import {
   getRoom,
   setRoom,
@@ -16,6 +17,8 @@ const FINISHED_ROOM_TTL_MS = 5 * 60 * 1000;
 let tickTimer = null;
 
 const channel = (code) => `room:${code}`;
+// Mashina: 1–12 (frontend: public/cars/car-XX.webp)
+const carPayload = joinRoomSchema.extend({ car: z.number().int().min(1).max(12) });
 
 // ---------- Xatolarni standart formatga keltirish ----------
 
@@ -137,7 +140,7 @@ function snapshot(room) {
     targetLength: room.targetLength,
     players: [...room.players.values()]
       .filter((p) => !p.kicked)
-      .map((p) => ({ id: p.id, nickname: p.nickname, correct: p.correct, finished: p.finished }))
+      .map((p) => ({ id: p.id, nickname: p.nickname, correct: p.correct, finished: p.finished, car_id: p.carId ?? null }))
       .sort((a, b) => b.correct - a.correct),
   };
 }
@@ -145,6 +148,17 @@ function snapshot(room) {
 // ---------- Event handlerlar ----------
 
 export function registerRoomHandlers(socket) {
+  // room:car: o'yinchi mashinasini tanlaydi (faqat kutish vaqtida). Xotirada saqlanadi, snapshot orqali hammaga boradi.
+  wrapHandler(socket, 'room:car', async (s, payload) => {
+    const user = requireUser(s);
+    const { code, car } = carPayload.parse(payload);
+    const room = await loadRoom(code);
+    const player = room.players.get(user.id);
+    if (!player || player.kicked) throw new AppError(403, 'NOT_A_PARTICIPANT', "Bu xonaga qo'shilmagansiz");
+    if (room.status !== 'waiting') throw new AppError(409, 'ROOM_NOT_WAITING', "Mashinani faqat poyga boshlanguncha almashtirish mumkin");
+    if (player.carId !== car) { player.carId = car; markDirty(code); }
+    return { car };
+  });
   // room:join: xonaning jonli kanaliga ulanish (faqat host yoki o'yinchi)
   wrapHandler(socket, 'room:join', async (s, payload) => {
     const user = requireUser(s);
@@ -297,6 +311,6 @@ export async function closeTypingRoom(io, room) {
   if (room.status === 'finished') return;
   await finishRoom(room);
   io.to(channel(room.code)).emit('room:finished', {
-    players: rankPlayers(room).map((p) => ({ nickname: p.nickname, correct: p.correct, finished: p.finished, rank: p.rank, kicked: p.kicked === true })),
+    players: rankPlayers(room).map((p) => ({ nickname: p.nickname, correct: p.correct, finished: p.finished, rank: p.rank, kicked: p.kicked === true, car_id: p.carId ?? null })),
   });
 }

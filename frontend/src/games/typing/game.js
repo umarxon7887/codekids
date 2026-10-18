@@ -264,7 +264,7 @@ export async function mountTyping(root, { mode = 'solo', contentId, language = '
       renderBoard($('#t-board'), snap, { meId: me?.id, meNick: me?.nickname, compact: true });
       if (snap.status === 'active') beginRound();
       else if (snap.status === 'finished') finish().finally(() => showEnd(snap.players));
-      else if (!roundStarted) { msg.hidden = false; msg.textContent = 'Ustoz boshlashini kuting...'; ensurePicker(root); }
+      else if (!roundStarted) { msg.hidden = false; msg.textContent = 'Ustoz boshlashini kuting...'; ensurePicker(root, (n) => emitAck('room:car', { code, car: n }).catch(() => {})); }
     };
     const onFinished = (d) => finish().finally(() => showEnd(d?.players));
     const onKicked = () => showKicked();
