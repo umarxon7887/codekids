@@ -42,6 +42,12 @@ export async function mountHost(root, { code, game }) {
     o.querySelector('button').onclick = () => { if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); o.remove(); };
   };
   const socket = connectSocket();
+  const setSt = (t) => { const e = root.querySelector('#hs-st'); if (e) e.textContent = t; };
+  if (!socket.connected) setSt('Serverga ulanmoqda…');
+  const onConn = () => setSt("Ulandi · o'quvchilarni kutyapmiz");
+  const onConnErr = (e) => setSt(`Ulanish xatosi: ${e?.message || "noma'lum"}`);
+  socket.on('connect', onConn);
+  socket.on('connect_error', onConnErr);
   let lastSnap = null, ended = false;
 
   $('#codecard').onclick = async () => {
@@ -70,7 +76,13 @@ export async function mountHost(root, { code, game }) {
   socket.on('room:snapshot', onSnap);
   socket.on('room:finished', onFinished);
 
-  $('#start').onclick = async () => { try { await emitAck('room:start', { code }); } catch (e) { showError(e); } };
+  $('#start').onclick = async () => {
+    const b = $('#start'); const t0 = b.textContent;
+    b.disabled = true; b.textContent = 'Boshlanmoqda…';
+    try { await emitAck('room:start', { code }); }
+    catch (e) { showError(e); setSt(e.code === 'NO_PLAYERS' ? "Hali o'quvchi yo'q — avval kod bilan kirsin" : `Xato: ${e.message} (${e.code || '?'})`); }
+    finally { b.disabled = false; b.textContent = t0; }
+  };
   $('#close').onclick = async () => {
     if (!confirm(t('host.confirmClose'))) return;
     try {
@@ -88,5 +100,5 @@ export async function mountHost(root, { code, game }) {
   try { await emitAck('room:join', { code }); } catch (e) { showError(e); }
   const rejoin = () => emitAck('room:join', { code }).catch(() => {}); // ulanish tiklansa xonaga qayta qo'shilish
   socket.on('connect', rejoin);
-  return () => { socket.off('room:snapshot', onSnap); socket.off('room:finished', onFinished); socket.off('connect', rejoin); };
+  return () => { socket.off('room:snapshot', onSnap); socket.off('room:finished', onFinished); socket.off('connect', rejoin); socket.off('connect', onConn); socket.off('connect_error', onConnErr); };
 }
