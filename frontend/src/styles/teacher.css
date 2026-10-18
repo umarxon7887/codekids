@@ -91,3 +91,10 @@ body:has(.tp) #settings { display: none; }
   .qe-meta { grid-template-columns: 2fr 2fr 1fr; }
   .qe-bar .btn { flex: none; padding: 0 28px; }
 }
+/* tuzatish: kartochka joylashuvi, tugma yozuvlari, savol maydoni */
+.ct-grid { grid-template-columns: minmax(0, 1fr); }
+.ct-card { flex-direction: row; justify-content: flex-start; align-items: center; text-align: left; width: 100%; box-sizing: border-box; }
+.ct-txt { flex: 1; align-items: flex-start; }
+.ct-acts .btn, .ct-bulk-b .btn { white-space: nowrap; font-size: 16px; gap: 6px; padding: 0 10px; }
+.qe-h textarea { field-sizing: content; min-height: 48px; resize: none; }
+@media (min-width: 900px) { .ct-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
