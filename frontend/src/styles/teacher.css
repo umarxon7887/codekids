@@ -27,3 +27,9 @@ body:has(.tp) #settings { display: none; }
   .tp-out { display: none; }
   .tp-out--top { display: inline-flex; width: auto; }
 }
+/* tuzatish: bo'limlar telefonda 4 ta teng ustun */
+.tp, .tp-tabs, #tab { min-width: 0; }
+@media (max-width: 899px) {
+  .tp-tabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; overflow: visible; }
+  .tp-tabs .tab { padding: 11px 4px; font-size: 15px; }
+}
