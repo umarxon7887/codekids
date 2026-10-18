@@ -8,6 +8,9 @@ import { t } from '../i18n/index.js';
 import { renderBoard } from '../games/typing/board.js';
 import { renderEndScreen, fromPlayers } from '../ui/endscreen.js';
 
+const BACK = '<svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>';
+const ST = { waiting: 'Kutilmoqda', active: "O'yin ketmoqda", finished: 'Tugadi' };
+
 /**
  * @param {HTMLElement} root
  * @param {{code:string, game:'typing'|'labyrinth'}} opts
@@ -19,7 +22,7 @@ export async function mountHost(root, { code, game }) {
   }
   root.replaceChildren(html(`
     <section class="hs">
-      <div class="hs-top"><a href="#/teacher" class="qe-back" aria-label="Orqaga"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></a>
+      <div class="hs-top"><a href="#/teacher" class="qe-back" aria-label="Orqaga">${BACK}</a>
         <div><b>Typing xonasi</b><small id="hs-st">Kutilmoqda</small></div></div>
       <div class="hs-code">
         <span class="hs-lbl">XONA KODI</span>
@@ -32,17 +35,19 @@ export async function mountHost(root, { code, game }) {
       <div id="h-end" hidden></div>
     </section>`));
   const $ = (s) => root.querySelector(s);
- h-chip').hidden = true;#hs-copy').onclick = async () => {
+  const setSt = (txt) => { const e = $('#hs-st'); if (e) e.textContent = txt; };
+
+  $('#hs-copy').onclick = async () => {
     try { await navigator.clipboard.writeText(code); toast('Kod nusxalandi', 'success'); } catch { toast(`Kod: ${code}`); }
   };
- h-chip').hidden = true;#hs-board').onclick = () => {
+  $('#hs-board').onclick = () => {
     const o = html(`<div class="hs-full" role="dialog" aria-label="Xona kodi"><span>Xona kodi</span><b>${esc(code)}</b><small>Bosh sahifa → «Xonaga kirish»</small><button class="btn">Yopish</button></div>`);
     document.body.appendChild(o);
     o.requestFullscreen?.().catch(() => {});
     o.querySelector('button').onclick = () => { if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); o.remove(); };
   };
+
   const socket = connectSocket();
-  const setSt = (t) => { const e = root.querySelector('#hs-st'); if (e) e.textContent = t; };
   if (!socket.connected) setSt('Serverga ulanmoqda…');
   const onConn = () => setSt("Ulandi · o'quvchilarni kutyapmiz");
   const onConnErr = (e) => setSt(`Ulanish xatosi: ${e?.message || "noma'lum"}`);
@@ -50,36 +55,33 @@ export async function mountHost(root, { code, game }) {
   socket.on('connect_error', onConnErr);
   let lastSnap = null, ended = false;
 
-
   function showEnd(players, title) {
     if (ended) return;
     ended = true;
-   h-chip').hidden = true;#board').hidden = true; $('#start').hidden = true; $('#close').hidden = true; $('#h-chip').hidden = true;
+    $('#board').hidden = true; $('#start').hidden = true; $('#close').hidden = true;
     renderEndScreen($('#h-end'), { title, players: fromPlayers(players, 'correct'), backHref: '#/teacher', scoreLabel: t('score.letters') });
   }
 
   const onSnap = (snap) => {
     lastSnap = snap;
-    const stEl = root.querySelector('#hs-st');
-    if (stEl) stEl.textContent = ({ waiting: 'Kutilmoqda', active: "O'yin ketmoqda", finished: 'Tugadi' }[snap.status] || '') + ` · ${(snap.players || []).length} o'quvchi`;
+    setSt(`${ST[snap.status] || ''} · ${(snap.players || []).length} o'quvchi`);
     if (ended) return;
     renderBoard($('#board'), snap, { kickable: true });
-   h-chip').hidden = true;#start').hidden = snap.status !== 'waiting';
-   h-chip').hidden = true;#h-chip').textContent = snap.status === 'active' ? `🏎️ Poyga ketmoqda · ${n} ta o'quvchi` : `👥 ${n} ta o'quvchi qo'shildi`;
+    $('#start').hidden = snap.status !== 'waiting';
     if (snap.status === 'finished') showEnd(snap.players);
   };
   const onFinished = (d) => showEnd(d?.players || lastSnap?.players || []);
   socket.on('room:snapshot', onSnap);
   socket.on('room:finished', onFinished);
 
- h-chip').hidden = true;#start').onclick = async () => {
-    const b =h-chip').hidden = true;#start'); const t0 = b.textContent;
+  $('#start').onclick = async () => {
+    const b = $('#start'); const t0 = b.textContent;
     b.disabled = true; b.textContent = 'Boshlanmoqda…';
     try { await emitAck('room:start', { code }); }
     catch (e) { showError(e); setSt(e.code === 'NO_PLAYERS' ? "Hali o'quvchi yo'q — avval kod bilan kirsin" : `Xato: ${e.message} (${e.code || '?'})`); }
     finally { b.disabled = false; b.textContent = t0; }
   };
- h-chip').hidden = true;#close').onclick = async () => {
+  $('#close').onclick = async () => {
     if (!confirm(t('host.confirmClose'))) return;
     try {
       await closeRoom(code);
@@ -87,7 +89,7 @@ export async function mountHost(root, { code, game }) {
       setTimeout(() => showEnd(lastSnap?.players || [], t('end.closed')), 1200); // server event kelmasa ham
     } catch (e) { showError(e); }
   };
- h-chip').hidden = true;#board').addEventListener('click', async (ev) => {
+  $('#board').addEventListener('click', async (ev) => {
     const b = ev.target.closest('[data-kick]');
     if (!b || !confirm(t('host.confirmKick'))) return;
     try { await kickPlayer(code, b.dataset.kick); toast(t('host.kicked'), 'success'); } catch (e) { showError(e); }
@@ -96,5 +98,8 @@ export async function mountHost(root, { code, game }) {
   try { await emitAck('room:join', { code }); } catch (e) { showError(e); }
   const rejoin = () => emitAck('room:join', { code }).catch(() => {}); // ulanish tiklansa xonaga qayta qo'shilish
   socket.on('connect', rejoin);
-  return () => { socket.off('room:snapshot', onSnap); socket.off('room:finished', onFinished); socket.off('connect', rejoin); socket.off('connect', onConn); socket.off('connect_error', onConnErr); };
+  return () => {
+    socket.off('room:snapshot', onSnap); socket.off('room:finished', onFinished);
+    socket.off('connect', rejoin); socket.off('connect', onConn); socket.off('connect_error', onConnErr);
+  };
 }
