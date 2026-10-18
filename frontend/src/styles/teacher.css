@@ -98,3 +98,46 @@ body:has(.tp) #settings { display: none; }
 .ct-acts .btn, .ct-bulk-b .btn { white-space: nowrap; font-size: 16px; gap: 6px; padding: 0 10px; }
 .qe-h textarea { field-sizing: content; min-height: 48px; resize: none; }
 @media (min-width: 900px) { .ct-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+/* Xona bo'limi */
+.rm-new, .rm-act { background: var(--white); border: 1.5px solid var(--line); border-radius: 30px; padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+.rm-new h2, .rm-act h2 { margin: 0; font-size: 22px; }
+.rm-games { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.rm-games button { display: flex; align-items: center; gap: 10px; padding: 12px; border-radius: 22px; border: 2px solid var(--line); background: var(--milk); font: inherit; color: var(--ink); text-align: left; cursor: pointer; }
+.rm-games button[aria-pressed="true"] { border-color: var(--ink); background: var(--white); box-shadow: inset 0 0 0 1px var(--ink); }
+.rm-games b { display: block; font-size: 17px; }
+.rm-games small { font-size: 13px; color: var(--ink-2); }
+.rm-gi { width: 44px; height: 44px; flex: none; border-radius: 14px; display: grid; place-items: center; }
+.rm-f { display: flex; flex-direction: column; gap: 8px; }
+.rm-f > span { font-size: 15px; font-weight: 600; }
+.rm-f > small { font-size: 13px; color: var(--ink-2); }
+.rm-f select { margin: 0; min-height: 50px; }
+.rm-pills { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 8px; }
+.rm-pills label { position: relative; }
+.rm-pills input { position: absolute; opacity: 0; pointer-events: none; }
+.rm-pills span { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 52px; padding: 6px; border-radius: 18px; background: var(--milk); border: 1.5px solid var(--line); font-weight: 600; font-size: 15px; cursor: pointer; text-align: center; }
+.rm-pills small { font-weight: 400; font-size: 12px; color: var(--ink-2); }
+.rm-pills input:checked + span { background: var(--ink); color: var(--milk); border-color: var(--ink); }
+.rm-pills input:checked + span small { color: #E8DCCF; }
+.rm-pills input:focus-visible + span { outline: 3px solid var(--butter); }
+.rm-step { display: flex; align-items: center; justify-content: space-between; background: var(--milk); border: 1.5px solid var(--line); border-radius: 999px; padding: 4px; }
+.rm-step button { width: 46px; height: 46px; border: 0; border-radius: 999px; background: var(--white); font: inherit; font-size: 22px; color: var(--ink); cursor: pointer; }
+.rm-step b { font-weight: 600; font-size: 17px; }
+.rm-go { width: 100%; min-height: 58px; font-size: 18px; }
+.rm-ah { display: flex; align-items: center; gap: 10px; }
+.rm-ah i { width: 10px; height: 10px; border-radius: 999px; background: #D9482B; }
+.rm-ah span { margin-left: auto; background: var(--peach); border-radius: 999px; padding: 2px 12px; font-weight: 600; }
+#rooms-list { display: flex; flex-direction: column; gap: 10px; }
+.rm-card { border: 1.5px solid var(--line); border-radius: 24px; padding: 14px; display: flex; flex-direction: column; gap: 12px; background: var(--milk); }
+.rm-ch { display: flex; align-items: center; gap: 12px; }
+.rm-ch > div { min-width: 0; }
+.rm-ch b { display: block; font-size: 18px; letter-spacing: 1px; }
+.rm-ch small { font-size: 14px; color: var(--ink-2); }
+.rm-st { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; background: #FFF1C9; color: #7A5A00; border-radius: 999px; padding: 4px 10px; white-space: nowrap; }
+.rm-st i { width: 8px; height: 8px; border-radius: 999px; background: currentColor; }
+.rm-st.is-on { background: var(--mint); color: #1F5C41; }
+.rm-cb { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.rm-cb .btn { min-height: 46px; }
+.rm-note { color: var(--ink-2); font-size: 13px; text-align: center; }
+@media (min-width: 900px) {
+  #tab:has(.rm-new) { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); align-items: start; gap: 20px; }
+}

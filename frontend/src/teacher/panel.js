@@ -274,61 +274,72 @@ async function contents(box) {
 
 async function rooms(box) {
   const GAME = { typing: 'Typing', labyrinth: 'Labirint' };
-  const ST = { waiting: 'kutilmoqda', active: 'faol', finished: 'tugagan' };
+  const ST = { waiting: 'Kutilmoqda', active: "O'yin ketmoqda", finished: 'Tugagan' };
+  const SV = (p) => `<svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+  const MAZE = SV('<path d="M3 3h18v18H3zM8 3v8h8M16 21v-6M3 14h5"/>');
+  const KB = SV('<rect x="2" y="6" width="20" height="12" rx="3"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/>');
   const isLive = (x) => x.status !== 'finished' && new Date(x.expires_at) > Date.now();
-  const card = (x, live) => `<div class="row2 room-card">
-      <span><b>${esc(x.code)}</b> ${esc(GAME[x.game_type] || x.game_type)} · ${esc(ST[x.status] || x.status)} · o'yinchi: ${esc(x.players)}</span>
-      <button class="btn" data-open="${esc(x.code)}" data-game="${esc(x.game_type)}">${live ? 'Kuzatish' : "Ko'rish"}</button>
-      ${live ? `<button class="btn btn--ghost" data-close="${esc(x.code)}">Yopish</button>` : ''}
-    </div>`;
+  let game = 'labyrinth', minutes = 10;
+  const pills = (name, items, sel) => `<div class="rm-pills" role="radiogroup">${items.map(([v, l, s]) => `<label><input type="radio" name="${name}" value="${v}"${v === sel ? ' checked' : ''}><span>${l}${s ? `<small>${s}</small>` : ''}</span></label>`).join('')}</div>`;
+  box.innerHTML = `
+    <section class="rm-new" id="nr-form">
+      <h2>Yangi xona</h2>
+      <div class="rm-games" role="group" aria-label="O'yin">
+        <button type="button" data-game="labyrinth" aria-pressed="true"><span class="rm-gi" style="background:var(--mint);color:#1F5C41">${MAZE}</span><span><b>Labirint</b><small>savollar bilan</small></span></button>
+        <button type="button" data-game="typing" aria-pressed="false"><span class="rm-gi" style="background:var(--sky);color:#1F5C8A">${KB}</span><span><b>Typing</b><small>tez yozish</small></span></button>
+      </div>
+      <label class="rm-f lab-only"><span>Savollar to'plami</span><select id="nr-content"><option value="">yuklanmoqda…</option></select><small>Faqat nashr etilgan to'plamlar chiqadi</small></label>
+      <div class="rm-f lab-only"><span>Labirint o'lchami</span>${pills('sz', [['11', '11×11', 'kichik'], ['15', '15×15', "o'rta"], ['21', '21×21', 'katta']], '15')}</div>
+      <div class="rm-f lab-only"><span>Rejim</span>${pills('md', [['standard', 'Standart', '3 ta jon'], ['kids', 'Bolalar', 'jonsiz']], 'standard')}</div>
+      <div class="rm-f typ-only" hidden><span>Matn tili</span>${pills('lng', [['uz', "O'zbekcha", ''], ['ru', 'Русский', '']], 'uz')}<small>Ustoz matn qo'shmaydi — matnni tizim tanlaydi</small></div>
+      <div class="rm-f"><span>Davomiyligi</span><div class="rm-step"><button type="button" id="mnm" aria-label="Kamaytirish">−</button><b id="mn">10 daqiqa</b><button type="button" id="mnp" aria-label="Ko'paytirish">+</button></div></div>
+      <button class="btn rm-go" id="nr-go">Xona yaratish</button>
+    </section>
+    <section class="rm-act">
+      <div class="rm-ah"><i></i><h2>Faol xonalar</h2><span id="nr-cnt">0</span></div>
+      <div id="rooms-list"></div>
+      <small class="rm-note">Xona 2 soatdan keyin o'zi yopiladi</small>
+    </section>`;
+  const $ = (s) => box.querySelector(s);
+  const $list = $('#rooms-list');
+  const val = (n) => box.querySelector(`input[name="${n}"]:checked`)?.value;
 
+  const card = (x) => {
+    const t = x.game_type === 'typing';
+    return `<div class="rm-card">
+      <div class="rm-ch"><span class="rm-gi" style="background:var(${t ? '--sky' : '--mint'});color:${t ? '#1F5C8A' : '#1F5C41'}">${t ? KB : MAZE}</span>
+        <div><b>${esc(x.code)}</b><small>${esc(GAME[x.game_type] || x.game_type)} · ${esc(x.players ?? 0)} o'yinchi</small></div>
+        <span class="rm-st ${x.status === 'active' ? 'is-on' : ''}"><i></i>${esc(ST[x.status] || x.status)}</span></div>
+      <div class="rm-cb"><button class="btn" data-open="${esc(x.code)}" data-game="${esc(x.game_type)}">Kuzatish</button><button class="btn btn--ghost" data-close="${esc(x.code)}">Yopish</button></div>
+    </div>`;
+  };
   async function load() {
     const r = await api.get('/rooms/mine');
-    const items = r.items || [];
-    const live = items.filter(isLive);
-    const done = items.filter((x) => !isLive(x)).slice(0, 15);
-    $list.innerHTML = `<h3>Faol xonalar (${live.length})</h3>${live.map((x) => card(x, true)).join('') || '<p class="muted">Faol xona yo\'q</p>'}
-`;
+    const live = (r.items || []).filter(isLive);
+    $('#nr-cnt').textContent = live.length;
+    $list.innerHTML = live.map(card).join('') || `<p class="ct-empty">Faol xona yo'q</p>`;
   }
-
-  box.innerHTML = `<button id="nr-toggle" class="btn">+ Yangi xona</button>
-    <div id="nr-form" class="row2" hidden>
-      <select id="nr-game"><option value="labyrinth">Labirint</option><option value="typing">Typing</option></select>
-      <select id="nr-lang" class="typ-only" aria-label="Til"><option value="uz">O'zbekcha</option><option value="ru">Русский</option><option value="en">English</option></select>
-      <select id="nr-content" class="lab-only"><option value="">yuklanmoqda…</option></select>
-      <select id="nr-mode" class="lab-only"><option value="standard">Standart (3 jon)</option><option value="kids">Bolalar (jonsiz)</option></select>
-      <input id="nr-min" type="number" min="20" max="120" value="20" placeholder="daqiqa">
-      <button id="nr-go" class="btn">Yaratish</button>
-    </div>
-    <div id="rooms-list"></div>`;
-  const $list = box.querySelector('#rooms-list');
-
   const fillContent = async () => {
-    const type = box.querySelector('#nr-game').value === 'typing' ? 'typing_text' : 'questions';
-    const r = await api.get('/contents', { query: { type, limit: 50 } });
+    const r = await api.get('/contents', { query: { type: 'questions', limit: 50 } });
     const items = (r.items || []).filter((c) => c.is_published);
-    box.querySelector('#nr-content').innerHTML = items.length
-      ? groupOpts(items)
-      : '<option value="">Nashr etilgan kontent yo\'q</option>';
-    box.querySelectorAll('.lab-only').forEach((el) => { el.hidden = box.querySelector('#nr-game').value !== 'labyrinth'; });
-    box.querySelectorAll('.typ-only').forEach((el) => { el.hidden = box.querySelector('#nr-game').value !== 'typing'; });
+    $('#nr-content').innerHTML = items.length ? groupOpts(items) : `<option value="">Nashr etilgan to'plam yo'q</option>`;
   };
-
-  box.querySelector('#nr-toggle').onclick = async () => {
-    const f = box.querySelector('#nr-form');
-    f.hidden = !f.hidden;
-    if (!f.hidden) await fillContent();
+  const sync = () => {
+    box.querySelectorAll('[data-game]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.game === game)));
+    box.querySelectorAll('.lab-only').forEach((el) => { el.hidden = game !== 'labyrinth'; });
+    box.querySelectorAll('.typ-only').forEach((el) => { el.hidden = game !== 'typing'; });
   };
-  box.querySelector('#nr-game').onchange = fillContent;
+  box.querySelectorAll('[data-game]').forEach((b) => { b.onclick = () => { game = b.dataset.game; sync(); }; });
+  const setMin = (d) => { minutes = Math.min(120, Math.max(1, minutes + d)); $('#mn').textContent = `${minutes} daqiqa`; };
+  $('#mnm').onclick = () => setMin(minutes > 10 ? -5 : -1);
+  $('#mnp').onclick = () => setMin(minutes >= 10 ? 5 : 1);
 
-  box.querySelector('#nr-go').onclick = async () => {
-    const game = box.querySelector('#nr-game').value;
-    const content_id = box.querySelector('#nr-content').value;
-    if (game === 'labyrinth' && !content_id) { toast('Avval nashr etilgan savollar to\'plamini tanlang', 'error'); return; }
-    const body = { game_type: game, max_players: 30, duration_minutes: Math.max(20, Number(box.querySelector('#nr-min').value) || 20) };
-    if (game === 'labyrinth') body.content_id = content_id;
-    else body.language = box.querySelector('#nr-lang').value;
-    if (game === 'labyrinth') { body.mode = box.querySelector('#nr-mode').value; }
+  $('#nr-go').onclick = async () => {
+    const content_id = $('#nr-content').value;
+    if (game === 'labyrinth' && !content_id) { toast("Avval nashr etilgan savollar to'plamini tanlang", 'error'); return; }
+    const body = { game_type: game, max_players: 30, duration_minutes: minutes };
+    if (game === 'labyrinth') { body.content_id = content_id; body.mode = val('md'); body.labyrinth = { size: Number(val('sz')) }; }
+    else body.language = val('lng');
     try {
       const r = await api.post('/rooms', body);
       toast('Xona yaratildi: ' + r.room.code, 'success');
@@ -347,43 +358,8 @@ async function rooms(box) {
     }
   });
 
-  await load();
-}
-
-
-async function roomsOld(box) {
-  const items = list(await api.get('/contents', { query: { limit: 50 } }), 'contents');
-  const opts = (type) => items.filter((c) => c.type === type).map((c) => `<option value="${esc(c.id)}">${esc(c.title)}</option>`).join('');
-  box.innerHTML = `
-    <select id="gt"><option value="typing">Typing</option><option value="labyrinth">Labirint</option></select>
-    <select id="ci"></select>
-    <input id="mp" type="number" min="1" placeholder="Maks. o'yinchi">
-    <input id="dm" type="number" min="1" placeholder="Davomiyligi (daqiqa)">
-    <div id="lab" hidden>
-      <select id="md"><option value="kids">Kids (jon yo'q)</option><option value="standard">Standard (jon bor)</option></select>
-      <input id="sz" type="number" min="5" max="41" step="2" value="11" placeholder="Labirint o'lchami (toq 5–41)">
-    </div>
-    <button id="mk" class="btn btn--big">Xona yaratish</button>`;
-  const $ = (s) => box.querySelector(s);
-  const sync = () => {
-    const lab = $('#gt').value === 'labyrinth';
-    $('#lab').hidden = !lab;
-    $('#ci').innerHTML = opts(lab ? 'questions' : 'typing_text');
-  };
-  $('#gt').onchange = sync;
   sync();
-  $('#mk').onclick = async () => {
-    const game = $('#gt').value;
-    const body = { game_type: game, content_id: $('#ci').value };
-    if ($('#mp').value) body.max_players = Number($('#mp').value);
-    if ($('#dm').value) body.duration_minutes = Number($('#dm').value);
-    if (game === 'labyrinth') { body.mode = $('#md').value; body.labyrinth = { size: Number($('#sz').value) }; }
-    try {
-      const r = await api.post('/rooms', body);
-      const room = r.room || r;
-      location.hash = `#/host/${room.code}?game=${game}`;
-    } catch (e) { showError(e); }
-  };
+  await Promise.all([fillContent(), load()]);
 }
 
 function groupOpts(items) {
