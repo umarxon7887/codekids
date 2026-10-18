@@ -141,3 +141,9 @@ body:has(.tp) #settings { display: none; }
 @media (min-width: 900px) {
   #tab:has(.rm-new) { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); align-items: start; gap: 20px; }
 }
+/* tuzatish: o'yin turi tugmalari telefonga sig'adi */
+.rm-games { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.rm-games button { min-width: 0; }
+@media (max-width: 899px) {
+  .rm-games button { flex-direction: column; align-items: flex-start; gap: 8px; }
+}
