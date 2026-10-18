@@ -16,6 +16,7 @@ import { html, esc } from '../../utils/dom.js';
 import { formatTime, round } from '../../utils/format.js';
 import { t } from '../../i18n/index.js';
 import { renderBoard } from './board.js';
+import { ensurePicker } from './cars.js';
 import { renderEndScreen, renderKicked, fromPlayers } from '../../ui/endscreen.js';
 
 const RUN_KEY = 'ck_typing_run';
@@ -52,6 +53,7 @@ export async function mountTyping(root, { mode = 'solo', contentId, language = '
       <div id="t-board" class="board" ${mode === 'room' ? '' : 'hidden'}></div>
       <div class="stats"><a href="#/" class="ty-back" aria-label="Orqaga"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></a><span id="t-time">00:00</span><span id="t-wpm">0 WPM</span></div>
       <div id="t-msg" class="banner" hidden></div>
+      <div id="t-pick" hidden></div>
       <label class="typing" id="t-wrap">
         <div id="t-text" class="typing__text"><div class="skeleton"></div></div>
         <input id="t-input" class="typing__input" style="${HIDDEN_INPUT_STYLE}" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Matn terish maydoni" disabled />
@@ -185,6 +187,7 @@ export async function mountTyping(root, { mode = 'solo', contentId, language = '
         await createRound();
       }
       msg.hidden = true;
+      root.querySelector('#t-pick')?.setAttribute('hidden', '');
       input.disabled = false;
       if (resume?.typed) { input.value = resume.typed; startTimers(resume.startWall); tick(); }
       paint(input.value);
@@ -261,7 +264,7 @@ export async function mountTyping(root, { mode = 'solo', contentId, language = '
       renderBoard($('#t-board'), snap, { meId: me?.id, meNick: me?.nickname, compact: true });
       if (snap.status === 'active') beginRound();
       else if (snap.status === 'finished') finish().finally(() => showEnd(snap.players));
-      else if (!roundStarted) { msg.hidden = false; msg.textContent = 'Ustoz boshlashini kuting...'; }
+      else if (!roundStarted) { msg.hidden = false; msg.textContent = 'Ustoz boshlashini kuting...'; ensurePicker(root); }
     };
     const onFinished = (d) => finish().finally(() => showEnd(d?.players));
     const onKicked = () => showKicked();

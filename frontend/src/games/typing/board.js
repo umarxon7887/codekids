@@ -12,6 +12,7 @@ const MANUAL_MS = 4000; // qo'lda scroll qilgandan keyin avto-markazlash to'xtab
 const COLORS = ['#E5383B', '#2EC4B6', '#3A86FF', '#FFB703', '#9D4EDD', '#FF6FB5', '#80ED99', '#FB8500'];
 const hash = (s) => { let h = 0; for (const c of String(s)) h = (h * 31 + c.charCodeAt(0)) >>> 0; return h; };
 
+import { carSrc } from './cars.js';
 const CAR = `<svg viewBox="0 0 100 42" aria-hidden="true">
   <ellipse cx="50" cy="40" rx="42" ry="2.6" fill="#0006"/>
   <path d="M2 11h9v3H8v7H2z" style="fill:var(--car)" stroke="#000" stroke-opacity=".5" stroke-width="1"/>
@@ -29,7 +30,7 @@ const CAR = `<svg viewBox="0 0 100 42" aria-hidden="true">
 </svg>`;
 
 const LANE_HTML = `<div class="rc-lane__head"><span class="rc-rank"></span><span class="rc-name"></span><b class="rc-pct"></b></div>
-<div class="rc-road"><i class="rc-start"></i><i class="rc-finish"></i><i class="rc-trail"></i><div class="rc-car">${CAR}</div></div>`;
+<div class="rc-road"><i class="rc-start"></i><i class="rc-finish"></i><i class="rc-trail"></i><div class="rc-car"><img class="rc-img" alt="" decoding="async"><span class="rc-num" hidden></span></div></div>`;
 
 /**
  * @param {HTMLElement} el
@@ -94,6 +95,7 @@ export function renderBoard(el, snap, { meId = null, meNick = '', kickable = fal
     const pct = pctOf(p);
     lane.style.setProperty('--i', i);
     lane.classList.toggle('rc-lane--me', isMe(p));
+    { const im = lane.querySelector('.rc-img'), s = carSrc(p, k, isMe(p)); if (im && im.getAttribute('src') !== s) im.setAttribute('src', s); }
     lane.classList.toggle('is-done', !!p.finished);
     const rk = lane.querySelector('.rc-rank');
     rk.textContent = i + 1;
