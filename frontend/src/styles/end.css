@@ -1,0 +1,17 @@
+/* Yakuniy reyting (typing + labirint) */
+.end { box-sizing: border-box; width: 100%; max-width: 560px; margin: 14px auto 0; background: var(--white); border: 1.5px solid var(--line); border-radius: 30px; padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+.modal .end { margin: 0; }
+.end-h { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.end-h h2 { margin: 0; font-size: 24px; }
+.end-n { font-size: 14px; color: var(--ink-2); white-space: nowrap; }
+.end-list { position: relative; list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; max-height: min(52vh, 460px); overflow-y: auto; overscroll-behavior: contain; }
+.end-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 18px; background: var(--milk); border: 1.5px solid var(--line); }
+.end-row.is-me { background: #FFF1C9; border-color: #E0A800; }
+.end-rk { width: 30px; flex: none; text-align: center; font-weight: 700; font-size: 17px; }
+.end-rk[data-m="1"], .end-rk[data-m="2"], .end-rk[data-m="3"] { font-size: 22px; }
+.end-car { width: 64px; height: 36px; flex: none; object-fit: contain; }
+.end-name { flex: 1; min-width: 0; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.end-name small { color: #7A5A00; font-weight: 500; }
+.end-sc { flex: none; font-weight: 700; font-size: 17px; text-align: right; line-height: 1.1; }
+.end-sc small { display: block; font-size: 11px; font-weight: 500; color: var(--ink-2); }
+.end-back { width: 100%; min-height: 56px; }

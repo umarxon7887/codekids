@@ -270,12 +270,19 @@ async function finishRoom(room) {
   room.endedAt = endedAt.getTime();
 }
 
+// Hamma (chiqarilmaganlar) tugatgan bo'lsa, oxirgisidan 1,5 s keyin poyga yopiladi
+function everyoneFinished(room, now) {
+  const ps = [...room.players.values()].filter((p) => !p.kicked);
+  if (ps.length === 0 || !ps.every((p) => p.finished)) return false;
+  return now - Math.max(...ps.map((p) => p.finishedAt ?? 0)) >= 1500;
+}
+
 async function tick(io) {
   const now = Date.now();
 
   for (const room of allRooms()) {
     if (room.gameType !== 'typing') continue;
-    if (room.status === 'active' && room.endsAt && now >= room.endsAt) {
+    if (room.status === 'active' && room.endsAt && (now >= room.endsAt || everyoneFinished(room, now))) {
       await closeTypingRoom(io, room);
       markDirty(room.code);
     } else if (room.status === 'finished' && room.endedAt && now - room.endedAt > FINISHED_ROOM_TTL_MS) {
@@ -311,6 +318,6 @@ export async function closeTypingRoom(io, room) {
   if (room.status === 'finished') return;
   await finishRoom(room);
   io.to(channel(room.code)).emit('room:finished', {
-    players: rankPlayers(room).map((p) => ({ nickname: p.nickname, correct: p.correct, finished: p.finished, rank: p.rank, kicked: p.kicked === true, car_id: p.carId ?? null })),
+    players: rankPlayers(room).map((p) => ({ id: p.id, nickname: p.nickname, correct: p.correct, finished: p.finished, rank: p.rank, kicked: p.kicked === true, car_id: p.carId ?? null })),
   });
 }

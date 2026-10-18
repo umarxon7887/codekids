@@ -63,6 +63,7 @@ export async function mountTyping(root, { mode = 'solo', contentId, language = '
       <div id="t-kick" hidden></div>
     </section>`));
   const $ = (s) => root.querySelector(s);
+  if (mode === 'room') { const h = root.querySelector('.game__bar h2'); if (h) h.textContent = `Poyga · xona ${code}`; }
   const textEl = $('#t-text'), input = $('#t-input'), timeEl = $('#t-time'), wpmEl = $('#t-wpm'), msg = $('#t-msg'), resEl = $('#t-result');
   let serverCorrect = 0;
   let meId = null;
@@ -226,6 +227,9 @@ export async function mountTyping(root, { mode = 'solo', contentId, language = '
   function showEnd(players, title) {
     if (endShown || mode !== 'room') return;
     endShown = true;
+    ['#t-wrap', '#t-msg', '#t-pick', '#t-board'].forEach((s) => { const e = $(s); if (e) e.hidden = true; });
+    root.querySelector('.stats')?.setAttribute('hidden', '');
+    window.scrollTo(0, 0);
     renderEndScreen($('#t-end'), {
       title, players: fromPlayers(players || lastSnap?.players, 'correct'), meId: me?.id, meNick: me?.nickname,
       backHref: '#/', scoreLabel: t('score.letters'),
