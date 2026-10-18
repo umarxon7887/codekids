@@ -108,135 +108,63 @@ async function classDetail(box, id) {
 }
 
 async function contents(box) {
-  const SAMPLE = 'question,option_a,option_b,option_c,option_d,correct\n'
-    + '2+2 nechta?,3,4,5,,B\n'
-    + 'Suv qaysi formulada yoziladi?,H2O,CO2,O2,,A';
-  box.innerHTML = `
-    <div class="row2">
-      <button id="cbulk" class="btn">+ CSV yuklash</button>
-      <button id="csample" class="btn btn--ghost">Namuna CSV</button>
-    </div>
-    <details class="ct-fmt"><summary>CSV formati</summary>
-      <p>Ustunlar aynan shu tartibda: <code>question,option_a,option_b,option_c,option_d,correct</code></p>
-      <p>correct: A, B, C yoki D. option_c va option_d bo'sh bo'lishi mumkin. Bir faylda 1–100 savol, har biriga kamida 2 variant.</p>
-      <pre>${esc(SAMPLE)}</pre>
-    </details>
-    <div id="cform"></div><div id="cbody"></div>`;
+  const SAMPLE = 'question,option_a,option_b,option_c,option_d,correct\n2+2 nechta?,3,4,5,,B\nSuv qaysi formulada yoziladi?,H2O,CO2,O2,,A';
+  const IC = {
+    plus: '<path d="M12 5v14M5 12h14"/>', up: '<path d="M12 16V4M7 9l5-5 5 5M4 20h16"/>',
+    doc: '<path d="M6 3h9l4 4v14H6zM14 3v5h5M9 13h6M9 17h4"/>', back: '<path d="M15 5l-7 7 7 7"/>',
+    x: '<path d="M6 6l12 12M18 6L6 18"/>', ok: '<path d="M5 12l5 5 9-10"/>', clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  };
+  const ic = (k, s = 18) => `<svg aria-hidden="true" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${IC[k]}</svg>`;
+  const COLORS = ['var(--sky)', 'var(--mint)', 'var(--lav)', 'var(--peach)', 'var(--butter)'];
   const $ = (s) => box.querySelector(s);
   let sets = [];
 
-  const load = async () => { const r = await api.get('/contents/mine'); sets = r.items || []; showList(); };
+  const load = async () => {
+    const r = await api.get('/contents/mine');
+    sets = (r.items || []).filter((s) => s.type !== 'typing_text');
+    showList();
+  };
 
   function showList() {
     const g = {};
     sets.forEach((s) => { const k = s.topic || 'Mavzusiz'; (g[k] = g[k] || []).push(s); });
     const keys = Object.keys(g).sort();
-    $('#cbody').innerHTML = keys.length ? keys.map((k) => `
-      <h3 class="ct-topic">${esc(k)}</h3>
-      <div class="ct-grid">${g[k].map((s) => `
-        <div class="ct-card" data-open="${esc(s.id)}" role="button" tabindex="0">
-          <b>${esc(s.title)}</b>
-          <small>${esc(s.level || 1)}-daraja · savollar: ${(s.data?.questions || []).length}</small>
-          <span class="ct-badge">${s.is_published ? '✅ nashr etilgan' : '⏳ nashr qilinmagan'}</span>
-        </div>`).join('')}</div>`).join('')
-      : '<p class="muted">Hali savollar to\'plami yo\'q. CSV yuklang.</p>';
-    $('#cbody').querySelectorAll('[data-open]').forEach((el) => {
-      el.onclick = () => showSet(el.dataset.open);
-      el.onkeydown = (e) => { if (e.key === 'Enter') showSet(el.dataset.open); };
-    });
+    box.innerHTML = `
+      <div class="ct-acts">
+        <button class="btn" id="cnew">${ic('plus')}Yangi to'plam</button>
+        <button class="btn btn--ghost" id="cbulk">${ic('up')}CSV yuklash</button>
+      </div>
+      <div id="cform"></div>
+      <details class="ct-fmt"><summary>CSV fayl qanday bo'lishi kerak?</summary>
+        <p>Ustunlar aynan shu tartibda: <code>question,option_a,option_b,option_c,option_d,correct</code></p>
+        <p>correct: A, B, C yoki D. option_c va option_d bo'sh bo'lishi mumkin. Bir faylda 1–100 savol.</p>
+        <pre>${esc(SAMPLE)}</pre>
+        <button class="btn btn--ghost" id="csample">Namuna CSV yuklab olish</button>
+      </details>
+      ${keys.length ? keys.map((k, i) => `<section class="ct-sec">
+        <div class="ct-sh"><i style="background:${COLORS[i % 5]}"></i><h2>${esc(k)}</h2><span>${g[k].length} ta to'plam</span></div>
+        <div class="ct-grid">${g[k].map((s) => `<button class="ct-card" data-open="${esc(s.id)}">
+          <span class="ct-ic" style="background:${COLORS[i % 5]}">${ic('doc', 22)}</span>
+          <span class="ct-txt"><b>${esc(s.title)}</b><span class="ct-meta">
+            <span>${esc(s.level || 1)}-daraja · ${(s.data?.questions || []).length} ta savol</span>
+            <span class="ct-badge ${s.is_published ? 'is-pub' : ''}">${s.is_published ? ic('ok', 14) + 'Nashr etilgan' : ic('clock', 14) + 'Nashr qilinmagan'}</span>
+          </span></span></button>`).join('')}</div></section>`).join('')
+      : `<p class="ct-empty">Hali savollar to'plami yo'q. «Yangi to'plam» yoki «CSV yuklash» bilan boshlang.</p>`}`;
+    box.querySelectorAll('[data-open]').forEach((el) => { el.onclick = () => showSet(sets.find((x) => x.id === el.dataset.open)); });
+    $('#cnew').onclick = () => showSet(null);
+    $('#cbulk').onclick = bulkForm;
+    $('#csample').onclick = downloadSample;
   }
 
-  function showSet(id) {
-    const s = sets.find((x) => x.id === id);
-    if (!s) return;
-    let qs = (s.data?.questions || []).map((q) => ({
-      text: q.text || '',
-      raw: [0, 1, 2, 3].map((j) => (q.options || [])[j] || ''),
-      pick: q.answer ?? -1,
-    }));
-    const collect = () => [...$('#qlist').querySelectorAll('.ct-q')].map((card) => {
-      const c = card.querySelector('input[type=radio]:checked');
-      return {
-        text: card.querySelector('[data-qtext]').value.trim(),
-        raw: [...card.querySelectorAll('[data-o]')].map((i) => i.value.trim()),
-        pick: c ? Number(c.value) : -1,
-      };
-    });
-    const qhtml = (q, i) => `<div class="ct-q">
-      <div class="row2"><b>${i + 1}.</b><input data-qtext value="${esc(q.text)}" placeholder="Savol matni">
-        <button class="btn btn--ghost" data-qdel="${i}" aria-label="Savolni o'chirish">✕</button></div>
-      ${q.raw.map((v, j) => `<label class="ct-opt"><input type="radio" name="ans${i}" value="${j}" ${q.pick === j ? 'checked' : ''}>
-        <input data-o value="${esc(v)}" placeholder="Variant ${'ABCD'[j]}"></label>`).join('')}
+  function bulkForm() {
+    $('#cform').innerHTML = `<div class="ct-bulk">
+      <label><span>To'plam sarlavhasi</span><input id="bt" placeholder="Kamida 3 belgi"></label>
+      <label><span>Mavzu</span><input id="bg" placeholder="Masalan: Matematika"></label>
+      <label><span>Daraja</span><select id="bl">${[1, 2, 3, 4].map((n) => `<option value="${n}">${n}-daraja</option>`).join('')}</select></label>
+      <label><span>CSV fayl</span><input id="bf" type="file" accept=".csv"></label>
+      <div class="ct-bulk-b"><button class="btn" id="bsave">Yuklash</button><button class="btn btn--ghost" id="bx">Bekor qilish</button></div>
     </div>`;
-    const parse = (rows) => {
-      const out = [];
-      for (let k = 0; k < rows.length; k++) {
-        const r = rows[k];
-        const filled = r.raw.map((v, j) => ({ v, j })).filter((o) => o.v);
-        const ans = filled.findIndex((o) => o.j === r.pick);
-        if (!r.text || filled.length < 2 || ans < 0) return { error: `${k + 1}-savol: matn, kamida 2 variant va to'g'ri javob kerak` };
-        out.push({ text: r.text, options: filled.map((o) => o.v), answer: ans });
-      }
-      return { questions: out };
-    };
-    const save = async () => {
-      const rows = collect();
-      if (!rows.length) return toast('Kamida bitta savol kerak', 'error');
-      const res = parse(rows);
-      if (res.error) return toast(res.error, 'error');
-      try {
-        await api.put(`/contents/${s.id}`, {
-          title: $('#et').value.trim(), topic: $('#eg').value.trim() || undefined,
-          level: Number($('#el').value), data: { questions: res.questions },
-        });
-        toast('Saqlandi', 'success'); await load();
-      } catch (e) { showError(e); }
-    };
-    const publish = async () => {
-      try { await api.post(`/contents/${s.id}/publish`, {}); toast('Nashr etildi', 'success'); await load(); }
-      catch (e) { showError(e); }
-    };
-    const removeSet = async () => {
-      if (!confirm("To'plam o'chirilsinmi?")) return;
-      try { await api.del(`/contents/${s.id}`); toast("O'chirildi", 'success'); await load(); }
-      catch (e) { showError(e); }
-    };
-    const draw = () => {
-      $('#cbody').innerHTML = `
-        <button id="back" class="btn btn--ghost">← Orqaga</button>
-        <div class="ct-edit">
-          <input id="et" value="${esc(s.title)}" aria-label="Sarlavha">
-          <input id="eg" value="${esc(s.topic || '')}" placeholder="Mavzu" aria-label="Mavzu">
-          <select id="el" aria-label="Daraja">${[1, 2, 3, 4].map((n) => `<option value="${n}"${Number(s.level) === n ? ' selected' : ''}>${n}-daraja</option>`).join('')}</select>
-        </div>
-        <div id="qlist">${qs.map(qhtml).join('') || "<p class=\"muted\">Savol yo'q. Qo'shing.</p>"}</div>
-        <div class="row2">
-          <button id="qadd" class="btn btn--ghost">+ Savol qo'shish</button>
-          <button id="qsave" class="btn">Saqlash</button>
-          ${s.is_published ? '' : '<button id="qpub" class="btn">Nashr</button>'}
-          <button id="qdel" class="btn btn--ghost">To'plamni o'chirish</button>
-        </div>`;
-      $('#back').onclick = showList;
-      $('#qadd').onclick = () => { qs = collect(); qs.push({ text: '', raw: ['', '', '', ''], pick: -1 }); draw(); };
-      $('#qlist').onclick = (e) => {
-        const b = e.target.closest('[data-qdel]');
-        if (!b) return;
-        qs = collect(); qs.splice(Number(b.dataset.qdel), 1); draw();
-      };
-      $('#qsave').onclick = save;
-      $('#qpub')?.addEventListener('click', publish);
-      $('#qdel').onclick = removeSet;
-    };
-    draw();
-  }
-
-  $('#cbulk').onclick = () => {
-    $('#cform').innerHTML = `<div class="row2">
-      <input id="bt" placeholder="To'plam sarlavhasi (3+ belgi)">
-      <input id="bg" placeholder="Mavzu (masalan: Matematika)">
-      <select id="bl" aria-label="Daraja">${[1, 2, 3, 4].map((n) => `<option value="${n}">${n}-daraja</option>`).join('')}</select>
-      <input id="bf" type="file" accept=".csv">
-      <button id="bsave" class="btn">Yuklash</button></div>`;
+    $('#bx').onclick = () => { $('#cform').innerHTML = ''; };
     $('#bsave').onclick = async () => {
       const f = $('#bf').files[0];
       if (!f) return toast('CSV fayl tanlang', 'error');
@@ -245,22 +173,104 @@ async function contents(box) {
       fd.append('title', $('#bt').value.trim());
       fd.append('topic', $('#bg').value.trim() || 'Mavzusiz');
       fd.append('level', $('#bl').value);
-      try { await api.post('/contents/bulk-upload', fd); toast('Yuklandi. Nashr qiling.', 'success'); $('#cform').innerHTML = ''; await load(); }
+      try { await api.post('/contents/bulk-upload', fd); toast('Yuklandi. Endi nashr qiling.', 'success'); await load(); }
       catch (e) { showError(e); }
     };
-  };
+  }
 
-  $('#csample').onclick = () => {
+  function downloadSample() {
     const blob = new Blob(['\ufeff' + SAMPLE + '\n'], { type: 'text/csv;charset=utf-8' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = 'savollar-namuna.csv';
     document.body.appendChild(a); a.click(); a.remove();
-  };
+  }
+
+  function showSet(s) {
+    const isNew = !s;
+    const blank = () => ({ text: '', raw: ['', '', '', ''], pick: -1 });
+    let qs = isNew ? [blank()] : (s.data?.questions || []).map((q) => ({
+      text: q.text || '', raw: [0, 1, 2, 3].map((j) => (q.options || [])[j] || ''), pick: q.answer ?? -1,
+    }));
+    const meta = { title: s?.title || '', topic: s?.topic || '', level: Number(s?.level) || 1 };
+    const collect = () => {
+      meta.title = $('#et').value.trim(); meta.topic = $('#eg').value.trim(); meta.level = Number($('#el').value);
+      qs = [...box.querySelectorAll('.qe')].map((c) => {
+        const r = c.querySelector('input[type=radio]:checked');
+        return { text: c.querySelector('textarea').value.trim(), raw: [...c.querySelectorAll('[data-o]')].map((i) => i.value.trim()), pick: r ? Number(r.value) : -1 };
+      });
+    };
+    const parse = () => {
+      const out = [];
+      for (let k = 0; k < qs.length; k++) {
+        const r = qs[k];
+        const filled = r.raw.map((v, j) => ({ v, j })).filter((o) => o.v);
+        const ans = filled.findIndex((o) => o.j === r.pick);
+        if (!r.text || filled.length < 2 || ans < 0) return { error: `${k + 1}-savol: matn, kamida 2 variant va to'g'ri javob kerak` };
+        out.push({ text: r.text, options: filled.map((o) => o.v), answer: ans });
+      }
+      return { questions: out };
+    };
+    const qhtml = (q, i) => `<div class="qe">
+      <div class="qe-h"><span class="qe-n">${i + 1}</span>
+        <textarea rows="2" placeholder="Savol matni" aria-label="${i + 1}-savol matni">${esc(q.text)}</textarea>
+        <button class="qe-del" data-qdel="${i}" aria-label="${i + 1}-savolni o'chirish">${ic('x')}</button></div>
+      ${q.raw.map((v, j) => `<label class="qe-o${q.pick === j ? ' is-ok' : ''}"><input type="radio" name="ans${i}" value="${j}"${q.pick === j ? ' checked' : ''} aria-label="${'ABCD'[j]} to'g'ri javob"><span>${'ABCD'[j]}</span><input data-o value="${esc(v)}" placeholder="Variant ${'ABCD'[j]}${j > 1 ? ' (ixtiyoriy)' : ''}"></label>`).join('')}
+      ${q.pick < 0 ? `<div class="qe-hint">To'g'ri javobni belgilang</div>` : ''}
+    </div>`;
+    const draw = () => {
+      const pub = s?.is_published;
+      box.innerHTML = `
+        <div class="qe-top"><button class="qe-back" id="back" aria-label="Kontentlarga qaytish">${ic('back', 20)}</button>
+          <div><b>${isNew ? "Yangi to'plam" : "To'plamni tahrirlash"}</b><small>${qs.length} ta savol${isNew ? '' : ` · <span class="${pub ? 'ok' : 'wait'}">${pub ? 'nashr etilgan' : 'nashr qilinmagan'}</span>`}</small></div></div>
+        <div class="qe-meta">
+          <label><span>Sarlavha</span><input id="et" value="${esc(meta.title)}" placeholder="Masalan: Kompyuter qismlari"></label>
+          <label><span>Mavzu</span><input id="eg" value="${esc(meta.topic)}" placeholder="Masalan: Informatika"></label>
+          <label><span>Daraja</span><select id="el">${[1, 2, 3, 4].map((n) => `<option value="${n}"${meta.level === n ? ' selected' : ''}>${n}-daraja</option>`).join('')}</select></label>
+        </div>
+        <div id="qlist">${qs.map(qhtml).join('')}</div>
+        <button class="btn btn--ghost qe-add" id="qadd">${ic('plus')}Savol qo'shish</button>
+        <div class="qe-bar"><button class="btn" id="qsave">Saqlash</button>${!isNew && !pub ? '<button class="btn qe-pub" id="qpub">Nashr qilish</button>' : ''}</div>
+        ${isNew ? '' : `<button class="qe-rm" id="qrm">To'plamni o'chirish</button>`}`;
+      $('#back').onclick = showList;
+      $('#qadd').onclick = () => { collect(); qs.push(blank()); draw(); };
+      $('#qlist').addEventListener('click', (e) => {
+        const b = e.target.closest('[data-qdel]');
+        if (!b) return;
+        collect(); qs.splice(Number(b.dataset.qdel), 1); draw();
+      });
+      $('#qlist').addEventListener('change', (e) => {
+        if (e.target.type !== 'radio') return;
+        const card = e.target.closest('.qe');
+        card.querySelectorAll('.qe-o').forEach((l) => l.classList.toggle('is-ok', l.contains(e.target)));
+        card.querySelector('.qe-hint')?.remove();
+      });
+      $('#qsave').onclick = async () => {
+        collect();
+        if (meta.title.length < 3) return toast('Sarlavha kamida 3 belgi', 'error');
+        if (!qs.length) return toast('Kamida bitta savol kerak', 'error');
+        const res = parse();
+        if (res.error) return toast(res.error, 'error');
+        const body = { title: meta.title, topic: meta.topic || undefined, level: meta.level, data: { questions: res.questions } };
+        try {
+          if (isNew) await api.post('/contents', { type: 'questions', ...body });
+          else await api.put(`/contents/${s.id}`, body);
+          toast('Saqlandi', 'success'); await load();
+        } catch (e) { showError(e); }
+      };
+      $('#qpub')?.addEventListener('click', async () => {
+        try { await api.post(`/contents/${s.id}/publish`, {}); toast('Nashr etildi', 'success'); await load(); } catch (e) { showError(e); }
+      });
+      $('#qrm')?.addEventListener('click', async () => {
+        if (!confirm("To'plam o'chirilsinmi?")) return;
+        try { await api.del(`/contents/${s.id}`); toast("O'chirildi", 'success'); await load(); } catch (e) { showError(e); }
+      });
+    };
+    draw();
+  }
 
   await load();
 }
-
 
 async function rooms(box) {
   const GAME = { typing: 'Typing', labyrinth: 'Labirint' };
