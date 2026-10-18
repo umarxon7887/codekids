@@ -32,10 +32,10 @@ export async function mountHost(root, { code, game }) {
       <div id="h-end" hidden></div>
     </section>`));
   const $ = (s) => root.querySelector(s);
-  $('#hs-copy').onclick = async () => {
+ h-chip').hidden = true;#hs-copy').onclick = async () => {
     try { await navigator.clipboard.writeText(code); toast('Kod nusxalandi', 'success'); } catch { toast(`Kod: ${code}`); }
   };
-  $('#hs-board').onclick = () => {
+ h-chip').hidden = true;#hs-board').onclick = () => {
     const o = html(`<div class="hs-full" role="dialog" aria-label="Xona kodi"><span>Xona kodi</span><b>${esc(code)}</b><small>Bosh sahifa → «Xonaga kirish»</small><button class="btn">Yopish</button></div>`);
     document.body.appendChild(o);
     o.requestFullscreen?.().catch(() => {});
@@ -50,14 +50,11 @@ export async function mountHost(root, { code, game }) {
   socket.on('connect_error', onConnErr);
   let lastSnap = null, ended = false;
 
-  $('#codecard').onclick = async () => {
-    try { await navigator.clipboard.writeText(code); toast('Kod nusxalandi', 'success'); } catch { /* clipboard ruxsat bermasa jim */ }
-  };
 
   function showEnd(players, title) {
     if (ended) return;
     ended = true;
-    $('#board').hidden = true; $('#start').hidden = true; $('#close').hidden = true; $('#h-chip').hidden = true;
+   h-chip').hidden = true;#board').hidden = true; $('#start').hidden = true; $('#close').hidden = true; $('#h-chip').hidden = true;
     renderEndScreen($('#h-end'), { title, players: fromPlayers(players, 'correct'), backHref: '#/teacher', scoreLabel: t('score.letters') });
   }
 
@@ -67,23 +64,22 @@ export async function mountHost(root, { code, game }) {
     if (stEl) stEl.textContent = ({ waiting: 'Kutilmoqda', active: "O'yin ketmoqda", finished: 'Tugadi' }[snap.status] || '') + ` · ${(snap.players || []).length} o'quvchi`;
     if (ended) return;
     renderBoard($('#board'), snap, { kickable: true });
-    $('#start').hidden = snap.status !== 'waiting';
-    const n = (snap.players || []).length;
-    $('#h-chip').textContent = snap.status === 'active' ? `🏎️ Poyga ketmoqda · ${n} ta o'quvchi` : `👥 ${n} ta o'quvchi qo'shildi`;
+   h-chip').hidden = true;#start').hidden = snap.status !== 'waiting';
+   h-chip').hidden = true;#h-chip').textContent = snap.status === 'active' ? `🏎️ Poyga ketmoqda · ${n} ta o'quvchi` : `👥 ${n} ta o'quvchi qo'shildi`;
     if (snap.status === 'finished') showEnd(snap.players);
   };
   const onFinished = (d) => showEnd(d?.players || lastSnap?.players || []);
   socket.on('room:snapshot', onSnap);
   socket.on('room:finished', onFinished);
 
-  $('#start').onclick = async () => {
-    const b = $('#start'); const t0 = b.textContent;
+ h-chip').hidden = true;#start').onclick = async () => {
+    const b =h-chip').hidden = true;#start'); const t0 = b.textContent;
     b.disabled = true; b.textContent = 'Boshlanmoqda…';
     try { await emitAck('room:start', { code }); }
     catch (e) { showError(e); setSt(e.code === 'NO_PLAYERS' ? "Hali o'quvchi yo'q — avval kod bilan kirsin" : `Xato: ${e.message} (${e.code || '?'})`); }
     finally { b.disabled = false; b.textContent = t0; }
   };
-  $('#close').onclick = async () => {
+ h-chip').hidden = true;#close').onclick = async () => {
     if (!confirm(t('host.confirmClose'))) return;
     try {
       await closeRoom(code);
@@ -91,7 +87,7 @@ export async function mountHost(root, { code, game }) {
       setTimeout(() => showEnd(lastSnap?.players || [], t('end.closed')), 1200); // server event kelmasa ham
     } catch (e) { showError(e); }
   };
-  $('#board').addEventListener('click', async (ev) => {
+ h-chip').hidden = true;#board').addEventListener('click', async (ev) => {
     const b = ev.target.closest('[data-kick]');
     if (!b || !confirm(t('host.confirmKick'))) return;
     try { await kickPlayer(code, b.dataset.kick); toast(t('host.kicked'), 'success'); } catch (e) { showError(e); }
