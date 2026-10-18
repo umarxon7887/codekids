@@ -1,5 +1,9 @@
 /** @file Ustoz paneli: dashboard, sinflar (+analitika), kontent (matn + CSV), xona yaratish. */
-import { api } from '../core/api.js';
+import '../styles/home.css';
+import '../styles/teacher.css';
+import { api, auth } from '../core/api.js';
+import { disconnectSocket } from '../core/socket.js';
+import { getUser } from '../core/state.js';
 import { showError, toast } from '../core/toast.js';
 import { html, esc, table } from '../utils/dom.js';
 import { t } from '../i18n/index.js';
@@ -9,40 +13,61 @@ const list = (r, key) => r[key] || r.items || (Array.isArray(r) ? r : []);
 
 /** @param {HTMLElement} root @returns {Promise<()=>void>} */
 export async function mountTeacher(root) {
+  const name = getUser()?.nickname || 'Ustoz';
+  const LOGO = '<svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5M14 4l-4 16"/></svg>';
   const el = html(`
-    <section class="game">
-      <div class="game__bar"><a href="#/" class="btn btn--ghost">←</a><h2>Ustoz paneli</h2></div>
-      <nav class="tabs">${TABS.map(([k, l]) => `<button class="tab" data-t="${k}">${l}</button>`).join('')}</nav>
+    <section class="tp">
+      <header class="tp-top">
+        <div class="hm-brand"><span class="hm-logo">${LOGO}</span>CodeKids</div>
+        <div class="hm-right">
+          <button class="hm-me" id="tp-me"><span class="hm-ava">${esc(name[0].toUpperCase())}</span>${esc(name)}</button>
+          <button class="btn btn--ghost tp-out tp-out--top" data-out>Chiqish</button>
+        </div>
+      </header>
+      <div class="tp-hi"><h1>Ustoz paneli</h1><p>Salom, ${esc(name)}!</p></div>
+      <nav class="tp-tabs" aria-label="Bo'limlar">${TABS.map(([k, l]) => `<button class="tab" data-t="${k}">${l}</button>`).join('')}</nav>
       <div id="tab"></div>
+      <button class="btn btn--ghost tp-out" data-out>Chiqish</button>
     </section>`);
   root.replaceChildren(el);
   const box = el.querySelector('#tab');
   const views = { dash, classes, contents, rooms };
 
   async function open(k) {
-    el.querySelectorAll('.tab').forEach((b) => b.classList.toggle('is-on', b.dataset.t === k));
+    el.querySelectorAll('.tab').forEach((b) => {
+      b.classList.toggle('is-on', b.dataset.t === k);
+      if (b.dataset.t === k) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
+    });
     box.replaceChildren(html('<div class="skeleton"></div>'));
     try { await views[k](box); } catch (e) { showError(e); box.textContent = ''; }
   }
+  el._open = open;
   el.querySelectorAll('.tab').forEach((b) => b.addEventListener('click', () => open(b.dataset.t)));
+  el.querySelectorAll('[data-out]').forEach((b) => {
+    b.onclick = async () => { await auth.logout(); disconnectSocket(); location.hash = '#/'; window.dispatchEvent(new HashChangeEvent('hashchange')); };
+  });
+  el.querySelector('#tp-me').onclick = () => toast('Profil tez orada');
   open('dash');
   return () => {};
 }
 
-/** Dashboard: jami xonalar va faol xonalar alohida ko'rsatiladi (`active_rooms`, agar backend bersa). */
+/** Panel: faol xonalar, statistika, "Yangi xona". Kalit nomlari backend versiyasiga qarab farq qilishi mumkin. */
 async function dash(box) {
   const d = await api.get('/teacher/dashboard');
   const o = d.dashboard || d;
-  const LABELS = { contents: 'Kontentlar', classes: 'Sinflar', students: "O'quvchilar", total_rooms: t('dash.total_rooms'), active_rooms: t('dash.active_rooms') };
-  const order = (k) => (k === 'active_rooms' ? 0 : 1);
-  const entries = Object.entries(o).filter(([, v]) => typeof v !== 'object').sort((a, b) => order(a[0]) - order(b[0]));
-  const GO = { total_contents: 'contents', published_contents: 'contents', total_classes: 'classes', total_students: 'classes', total_rooms: 'rooms', active_rooms: 'rooms' };
-  box.innerHTML = `<div class="grid2">${entries.map(([k, v]) => `<div class="stat ${k === 'active_rooms' ? 'stat--live' : ''} stat--go" role="button" tabindex="0" data-go="${GO[k] || ''}"><b>${esc(v)}</b><span>${esc(LABELS[k] || k)}</span></div>`).join('')}</div>`;
-  box.querySelectorAll('[data-go]').forEach((el) => {
-    const go = () => { if (el.dataset.go) document.querySelector(`.tab[data-t="${el.dataset.go}"]`)?.click(); };
-    el.onclick = go;
-    el.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } };
-  });
+  const v = (...ks) => { for (const k of ks) if (o[k] != null) return o[k]; return 0; };
+  box.innerHTML = `
+    <button class="tp-live" data-go="rooms"><span><i></i>Faol xonalar</span><b>${esc(v('active_rooms'))}</b></button>
+    <div class="tp-stats">
+      <button class="tp-stat" data-go="rooms"><b>${esc(v('total_rooms', 'rooms'))}</b><span>Jami xonalar</span></button>
+      <button class="tp-stat" data-go="contents"><b>${esc(v('total_contents', 'contents'))}</b><span>Kontentlar</span></button>
+      <button class="tp-stat" data-go="classes"><b>${esc(v('total_classes', 'classes'))}</b><span>Sinflar</span></button>
+      <button class="tp-stat" data-go="classes"><b>${esc(v('total_students', 'students'))}</b><span>O'quvchilar</span></button>
+    </div>
+    <button class="btn tp-new" id="tp-new">＋ Yangi xona</button>`;
+  const panel = box.closest('.tp');
+  box.querySelectorAll('[data-go]').forEach((b) => { b.onclick = () => panel._open(b.dataset.go); });
+  box.querySelector('#tp-new').onclick = async () => { await panel._open('rooms'); box.querySelector('#nr-toggle')?.click(); };
 }
 
 async function classes(box) {

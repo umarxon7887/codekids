@@ -1,0 +1,29 @@
+/* Ustoz paneli */
+#app:has(.tp) { max-width: none; padding-top: 0; margin-top: 0; }
+body:has(.tp) #settings { display: none; }
+.tp { box-sizing: border-box; max-width: 1160px; margin: 0 auto; padding: 20px 20px 28px; display: flex; flex-direction: column; gap: 16px; }
+.tp-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; }
+.tp-hi h1 { margin: 0; font-size: 30px; }
+.tp-hi p { margin: 2px 0 0; font-size: 16px; color: var(--ink-2); }
+.tp-tabs { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
+.tp-tabs .tab { flex: none; padding: 11px 20px; min-height: 0; font-size: 16px; cursor: pointer; }
+#tab { display: flex; flex-direction: column; gap: 12px; }
+.tp-live { background: var(--peach); border: 0; border-radius: 30px; padding: 20px 22px; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; font: inherit; color: var(--ink); cursor: pointer; text-align: left; }
+.tp-live span { display: flex; align-items: center; gap: 8px; font-size: 16px; color: #5A4A40; }
+.tp-live i { width: 10px; height: 10px; border-radius: 999px; background: #D9482B; }
+.tp-live b { font-size: 40px; font-weight: 600; line-height: 1.1; }
+.tp-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.tp-stat { background: var(--white); border: 1.5px solid var(--line); border-radius: 26px; padding: 16px 18px; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; font: inherit; color: var(--ink); cursor: pointer; text-align: left; }
+.tp-stat b { font-size: 30px; font-weight: 600; }
+.tp-stat span { font-size: 15px; color: var(--ink-2); }
+.tp-new { width: 100%; min-height: 56px; }
+.tp-out { width: 100%; }
+.tp-out--top { display: none; }
+@media (min-width: 900px) {
+  .tp { padding: 24px 24px 56px; gap: 22px; }
+  .tp-hi h1 { font-size: 40px; }
+  .tp-stats { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .tp-new { width: auto; align-self: flex-start; padding: 0 28px; }
+  .tp-out { display: none; }
+  .tp-out--top { display: inline-flex; width: auto; }
+}
