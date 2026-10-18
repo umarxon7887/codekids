@@ -1,5 +1,5 @@
 /** @file Markaziy konfiguratsiya (API: /api/v1). Backend manzili .env orqali almashtiriladi. */
-const HOST = import.meta.env.VITE_BACKEND_URL || 'https://codekids-api.onrender.com';
+const HOST = import.meta.env.VITE_BACKEND_URL ?? 'https://codekids-api.onrender.com';
 
 export const BACKEND_URL = HOST;
 export const API_BASE = `${HOST}/api/v1`;
