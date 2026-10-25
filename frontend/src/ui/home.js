@@ -47,9 +47,8 @@ export function mountHome(root, user, reroute) {
       <button class="btn btn--ghost hm-out" data-out>Chiqish</button>
     </section>`);
   const $ = (s) => view.querySelector(s);
-  view.querySelectorAll('[data-out]').forEach((b) => {
-    b.onclick = async () => { await auth.logout(); disconnectSocket(); reroute(); };
-  });
+  const logout = async () => { await auth.logout(); disconnectSocket(); reroute(); };
+  view.querySelectorAll('[data-out]').forEach((b) => { b.onclick = logout; });
   $('#join').onsubmit = (e) => {
     e.preventDefault();
     const c = $('#code').value.trim().toUpperCase();
@@ -57,7 +56,17 @@ export function mountHome(root, user, reroute) {
     location.hash = `#/room/${c}`;
   };
   $('#it').onclick = () => toast('IT darslari tez orada ochiladi');
-  $('#me').onclick = () => toast('Profil tez orada');
+  $('#me').onclick = async () => {
+    const { openProfile } = await import('./profile.js');
+    openProfile({
+      onLogout: logout,
+      onChange: (u) => {
+        const n = u.nickname || "do'st";
+        $('#me').innerHTML = `<span class="hm-ava">${esc(n[0].toUpperCase())}</span>${esc(n)}`;
+        $('.hm-hi h1').textContent = `Salom, ${n}!`;
+      },
+    });
+  };
   root.replaceChildren(view);
   return () => {};
 }

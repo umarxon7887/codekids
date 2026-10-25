@@ -92,6 +92,13 @@ Xona kodi: 6 belgi, harf va raqam (O, I, 0, 1 yo'q). Xona 2 soat yashaydi.
 | GET | `/teacher/classes/:id/analytics?room_code=` | `summary`, `students`, `weak_topics` |
 | GET | `/teacher/dashboard` | kontent, sinf, o'quvchi, xona sonlari |
 
+## Profil (login talab qiladi)
+
+| Metod | Yo'l | Izoh |
+|---|---|---|
+| GET | `/profile` | `{ user, stats }`. Ustoz: `stats = { classes, students, rooms, contents }`. O'quvchi: `stats = { typing_games, best_wpm, avg_accuracy, typing_wins, lab_games, lab_correct, lab_best_level, lab_wins, classes: [{id,name,teacher}], recent: [...] }` |
+| PUT | `/profile` | faqat yuborilgan maydonlar o'zgaradi: `nickname`; ustoz uchun yana `full_name`, `school`, `subjects`, `experience_years`, `age_group` (bo'sh satr → `null`). O'quvchi ustoz maydonini yuborsa `403 TEACHER_ONLY_FIELDS`. Javob: GET bilan bir xil |
+
 ---
 
 ## Socket.io

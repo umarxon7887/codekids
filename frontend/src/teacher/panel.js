@@ -43,10 +43,19 @@ export async function mountTeacher(root) {
   }
   el._open = open;
   el.querySelectorAll('.tab').forEach((b) => b.addEventListener('click', () => open(b.dataset.t)));
-  el.querySelectorAll('[data-out]').forEach((b) => {
-    b.onclick = async () => { await auth.logout(); disconnectSocket(); location.hash = '#/'; window.dispatchEvent(new HashChangeEvent('hashchange')); };
-  });
-  el.querySelector('#tp-me').onclick = () => toast('Profil tez orada');
+  const logout = async () => { await auth.logout(); disconnectSocket(); location.hash = '#/'; window.dispatchEvent(new HashChangeEvent('hashchange')); };
+  el.querySelectorAll('[data-out]').forEach((b) => { b.onclick = logout; });
+  el.querySelector('#tp-me').onclick = async () => {
+    const { openProfile } = await import('../ui/profile.js');
+    openProfile({
+      onLogout: logout,
+      onChange: (u) => {
+        const n = u.nickname || 'Ustoz';
+        el.querySelector('#tp-me').innerHTML = `<span class="hm-ava">${esc(n[0].toUpperCase())}</span>${esc(n)}`;
+        el.querySelector('.tp-hi p').textContent = `Salom, ${n}!`;
+      },
+    });
+  };
   open('dash');
   return () => {};
 }

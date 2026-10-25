@@ -13,6 +13,7 @@ import typingRouter from './routes/typing.js';
 import roomsRouter from './routes/rooms.js';
 import teacherRouter from './routes/teacher.js';
 import guestRouter from './routes/guest.js';
+import profileRouter from './routes/profile.js';
 import { createSocketServer } from './socket/index.js';
 import { stopRoomTicker } from './socket/rooms.js';
 
@@ -48,6 +49,7 @@ app.use(`${API}/typing`, typingRouter);
 app.use(`${API}/guest`, guestRouter);
 app.use(`${API}/rooms`, roomsRouter);
 app.use(`${API}/teacher`, teacherRouter);
+app.use(`${API}/profile`, profileRouter);
 // Keyingi bosqichlarda bu yerga route'lar ulanadi:
 // app.use(`${API}/auth`, authRouter);
 // app.use(`${API}/contents`, contentsRouter);

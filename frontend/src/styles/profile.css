@@ -1,0 +1,100 @@
+/* ===== Profil oynasi (Soft Milk). Mobil: to'liq ekran; >=760px: markazdagi oyna ===== */
+html.pf-lock, html.pf-lock body { overflow: hidden; }
+.pf-wrap { position: fixed; inset: 0; z-index: 80; background: var(--milk); overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+.pf { box-sizing: border-box; width: 100%; max-width: 520px; margin: 0 auto; padding: max(20px, env(safe-area-inset-top)) 20px 28px; display: flex; flex-direction: column; gap: 18px; color: var(--ink); font-family: var(--font); }
+.pf-head { display: flex; align-items: center; justify-content: space-between; min-height: 44px; }
+.pf-head h1 { margin: 0; font-size: 28px; font-weight: 600; }
+.pf-x { box-sizing: border-box; width: 44px; height: 44px; flex-shrink: 0; border-radius: 999px; border: 1.5px solid var(--line); background: var(--white); color: var(--ink); display: grid; place-items: center; padding: 0; cursor: pointer; }
+.pf-x svg { stroke-width: 2.4; }
+.pf-x:focus-visible, .pf-actions .btn:focus-visible { outline: 3px solid var(--butter); outline-offset: 2px; }
+.pf-body { display: flex; flex-direction: column; gap: 18px; }
+.pf-skel { height: 420px; border-radius: 30px; }
+
+/* Bosh karta */
+.pf-hero { border-radius: 30px; padding: 24px 20px; display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; }
+.pf-hero--t { background: var(--lav); --pf-sub: #4A3D80; }
+.pf-hero--s { background: var(--mint); --pf-sub: #335646; }
+.pf-ava { width: 104px; height: 104px; flex-shrink: 0; border-radius: 999px; background: var(--butter); border: 6px solid var(--white); box-sizing: border-box; display: grid; place-items: center; font-size: 44px; font-weight: 700; }
+.pf-who { min-width: 0; display: flex; flex-direction: column; align-items: inherit; gap: 4px; }
+.pf-who h2 { margin: 6px 0 0; font-size: 28px; font-weight: 600; overflow-wrap: anywhere; }
+.pf-mail { font-size: 16px; color: var(--pf-sub); overflow-wrap: anywhere; }
+.pf-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 6px; }
+.pf-chips span { background: var(--white); border-radius: 999px; padding: 6px 14px; font-size: 14px; font-weight: 500; }
+
+/* Raqamlar */
+.pf-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.pf-tile { background: var(--white); border: 1.5px solid var(--line); border-radius: 24px; padding: 14px 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; text-align: center; }
+.pf-tile b { font-size: 26px; font-weight: 600; line-height: 1.15; }
+.pf-tile b small { display: block; font-size: 12px; font-weight: 500; color: var(--ink-2); }
+.pf-tile span { font-size: 14px; color: var(--ink-2); line-height: 1.2; }
+
+/* Kartalar */
+.pf-card { background: var(--white); border: 1.5px solid var(--line); border-radius: 30px; padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+.pf-card h3, .pf-form h2 { margin: 0; font-size: 18px; font-weight: 600; }
+.pf-rows { display: flex; flex-direction: column; gap: 16px; }
+.pf-row { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.pf-ri { width: 40px; height: 40px; flex-shrink: 0; border-radius: 999px; background: #F1EDFB; color: #5B45B0; display: grid; place-items: center; }
+.pf-hero--s ~ .pf-card .pf-ri { background: #E4F4EC; color: #1F5C41; }
+.pf-rt { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.pf-rt > span { font-size: 14px; color: var(--ink-2); }
+.pf-rt > b { font-size: 17px; font-weight: 600; overflow-wrap: anywhere; }
+.pf-none { color: #8A7A70; font-weight: 400; }
+.pf-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.pf-tags i { font-style: normal; background: var(--lav); border-radius: 999px; padding: 4px 12px; font-size: 15px; font-weight: 500; }
+.pf-tags--lg i { background: var(--mint); padding: 8px 14px; display: inline-flex; align-items: baseline; gap: 6px; font-size: 16px; font-weight: 600; }
+.pf-tags--lg i small { font-size: 13px; font-weight: 500; color: #335646; }
+.pf-empty { margin: 0; color: var(--ink-2); font-size: 15px; line-height: 1.4; }
+
+/* So'nggi o'yinlar */
+.pf-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.pf-item { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.pf-ii { width: 40px; height: 40px; flex-shrink: 0; border-radius: 14px; display: grid; place-items: center; }
+.pf-ii.is-kb { background: var(--sky); color: #1F5C8A; }
+.pf-ii.is-lab { background: var(--mint); color: #1F5C41; }
+.pf-it { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.pf-it b { font-size: 16px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pf-it span { font-size: 14px; color: var(--ink-2); }
+.pf-place { flex-shrink: 0; background: var(--milk); border: 1.5px solid var(--line); border-radius: 999px; padding: 4px 10px; font-size: 13px; font-weight: 600; }
+.pf-place.is-gold { background: var(--butter); border-color: var(--butter); }
+
+/* Tugmalar */
+.pf-actions { display: flex; flex-direction: column; gap: 10px; }
+.pf-actions .btn { width: 100%; }
+.pf-fail { align-items: center; text-align: center; }
+.pf-fail p { margin: 0; }
+
+/* Tahrirlash formasi */
+.pf-form { gap: 14px; }
+.pf-f { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.pf-f label { font-size: 15px; font-weight: 500; }
+.pf-f small { font-size: 13px; color: var(--ink-2); }
+.pf-in { position: relative; display: flex; align-items: center; }
+.pf-in svg { position: absolute; left: 16px; color: #8A7A70; pointer-events: none; }
+.pf-in input { width: 100%; padding: 0 16px 0 46px; }
+.pf-in input[aria-invalid="true"] { border-color: var(--bad); }
+.pf-two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
+.pf-form .pf-actions { margin-top: 4px; }
+
+@media (min-width: 760px) {
+  .pf-wrap { background: rgba(59, 47, 47, .5); display: flex; padding: 40px 24px; }
+  .pf { max-width: 640px; margin: auto; background: var(--white); border-radius: 36px; padding: 32px; }
+  .pf-head h1 { font-size: 30px; }
+  .pf-x { background: var(--milk); }
+  .pf-hero { flex-direction: row; align-items: center; text-align: left; gap: 20px; padding: 24px; }
+  .pf-ava { width: 96px; height: 96px; font-size: 40px; }
+  .pf-who { flex: 1; align-items: flex-start; }
+  .pf-who h2 { margin: 0; font-size: 30px; }
+  .pf-chips { justify-content: flex-start; margin-top: 8px; }
+  .pf-tiles { gap: 12px; }
+  .pf-tile { background: var(--milk); padding: 16px 8px; }
+  .pf-tile b { font-size: 30px; }
+  .pf-tile span { font-size: 15px; }
+  .pf-card { padding: 22px 24px; }
+  .pf-rows { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 24px; }
+  .pf-actions { flex-direction: row-reverse; justify-content: flex-start; }
+  .pf-actions .btn { width: auto; flex: 1; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .pf { animation: pf-in .18s ease-out; }
+  @keyframes pf-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+}
