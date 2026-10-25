@@ -58,7 +58,10 @@ export async function mountHost(root, { code, game }) {
   function showEnd(players, title) {
     if (ended) return;
     ended = true;
-    $('#board').hidden = true; $('#start').hidden = true; $('#close').hidden = true;
+    // Yakuniy ekranda kod kartasi va boshqaruv tugmalari kerak emas: faqat reyting qoladi
+    $('.hs').classList.add('is-ended');
+    setSt(`Yakunlandi · ${players.length} o'quvchi`);
+    $('#board').hidden = true; $('.hs-code').hidden = true; $('.hs-acts').hidden = true;
     renderEndScreen($('#h-end'), { title, players: fromPlayers(players, 'correct'), backHref: '#/teacher', scoreLabel: t('score.letters') });
   }
 
