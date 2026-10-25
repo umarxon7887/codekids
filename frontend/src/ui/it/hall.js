@@ -33,6 +33,10 @@ export async function mountItHall(root, sectionId, query = {}) {
   }
 
   const n = sec.lessons.length;
+  // Keng zalda bir qatorga 5 tagacha eshik; qatorlar teng bo'lishi uchun (6 → 3+3, 7 → 4+3)
+  const cols = Math.ceil(n / Math.ceil(n / 5)) || 1;
+  const bg = [['top', 'hall-top'], ['mid', 'hall-mid'], ['bot', 'hall-bottom'], ['wtop', 'hall-wide-top'], ['wmid', 'hall-wide-mid'], ['wbot', 'hall-wide-bottom']]
+    .map(([k, f]) => `--${k}:url('${asset(f)}')`).join(';');
   const unlockId = query.unlock && sec.lessons.some((l) => l.id === query.unlock && l.status !== 'locked') ? query.unlock : null;
   view.innerHTML = `
     <header class="hl-head">
@@ -41,16 +45,11 @@ export async function mountItHall(root, sectionId, query = {}) {
       <span class="hl-count" aria-label="${sec.done} ta mavzu tugatilgan, jami ${n} ta">${sec.done} / ${n}</span>
     </header>
     <div class="hl-wrap">
-      <div class="hl-hall" style="--top:url('${asset('hall-top')}');--mid:url('${asset('hall-mid')}');--bot:url('${asset('hall-bottom')}')">
-        <ul class="hl-doors" aria-label="Mavzular eshiklari">${sec.lessons.map((l, i) => door(l, i, l.id === unlockId)).join('')}</ul>
+      <div class="hl-hall" style="${bg}">
+        <ul class="hl-doors" style="--cols:${cols}" aria-label="Mavzular eshiklari">${sec.lessons.map((l, i) => door(l, i, l.id === unlockId)).join('')}</ul>
       </div>
     </div>`;
 
-  // Tojli eshikning ochiq rasmi hali bo'lmasa, oddiy ochiq eshik ko'rinadi
-  view.querySelectorAll('img.hd-img').forEach((img) => {
-    if (!img.src.includes('boss-ready')) return;
-    img.addEventListener('error', () => { img.src = asset('door-ready'); }, { once: true });
-  });
   // Qulflangan eshik bosilsa: silkinadi va nima qilish kerakligini aytadi
   view.querySelectorAll('.hd.is-locked').forEach((b) => {
     b.onclick = () => {
@@ -78,7 +77,10 @@ function door(l, i, unlocking) {
   const test = l.kind === 'test';
   const st = unlocking ? 'current' : l.status;
   const base = test ? (st === 'locked' ? 'boss-locked' : 'boss-ready') : st === 'locked' ? 'door-locked' : st === 'done' ? 'door-done' : 'door-ready';
-  const meta = st === 'done' ? 'Tugatildi' : st === 'locked' ? 'Qulf' : `${l.minutes} daqiqa · ${l.exercises} savol`;
+  const meta = st === 'done' ? 'Tugatildi' : st === 'locked' ? 'Qulf'
+    : test ? `${l.exercises} savol` : `${l.minutes} daqiqa · ${l.exercises} savol`;
+  // Nomida "test" so'zi bo'lmasa, bu bo'lim testi ekani yozib qo'yiladi
+  const tag = test && !/test/i.test(l.title) ? "Bo'lim testi · " : '';
   const label = `${i + 1}-mavzu: ${esc(l.title)}${st === 'done' ? ', tugatilgan' : st === 'locked' ? ', qulflangan' : ''}`;
   const badge = st === 'done' ? `<span class="it-badge is-ok" aria-hidden="true">${ic('check', 16)}</span>` : '';
   // Ochilayotgan eshik: tagida tayyor eshik, ustida qulflangan eshik + zanjir + qulf (keyin tushib ketadi)
@@ -90,7 +92,7 @@ function door(l, i, unlocking) {
     : `<img class="hd-img" src="${asset(base)}" alt="" draggable="false">`;
   const inner = `<span class="hd-pic">${layers}${badge}</span>
     ${st === 'current' ? '<span class="hd-now">Kirish</span>' : ''}
-    <b>${esc(l.title)}</b><small>${test ? `Bo'lim testi · ${meta}` : meta}</small>`;
+    <b>${esc(l.title)}</b><small>${tag}${meta}</small>`;
   const cls = `hd is-${st}${test ? ' is-test' : ''}${unlocking ? ' is-unlocking' : ''}`;
   return `<li>${st === 'locked'
     ? `<button type="button" class="${cls}" data-id="${l.id}" aria-label="${label}">${inner}</button>`

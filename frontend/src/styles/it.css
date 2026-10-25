@@ -240,4 +240,22 @@ a.hd:hover .hd-pic { transform: translateY(-3px); }
   .hd b { font-size: 16px; }
   .hd small { font-size: 13px; }
 }
+/* Keng ekran: yotiq zal (bayroqlar, mash'alalar, pastda pol), eshiklar qatorda turadi.
+   Eshiklar ko'payib qator qo'shilsa, o'rtadagi devor bo'lagi takrorlanib zal bo'yi o'sadi */
+@media (min-width: 900px) {
+  .hl-head, .hl-wrap { width: calc(100% - 48px); max-width: 1120px; }
+  .hl-head { padding-left: 0; padding-right: 0; }
+}
+@container (min-width: 820px) {
+  .hl-hall {
+    --u: calc(100cqw / 1024);
+    min-height: calc(572 * var(--u));
+    background: var(--wtop) top center / 100% auto no-repeat, var(--wbot) bottom center / 100% auto no-repeat, var(--wmid) center calc(270 * var(--u)) / 100% auto repeat-y, #F6E8CB;
+    padding: calc(170 * var(--u)) calc(80 * var(--u)) calc(100 * var(--u));
+    display: flex; flex-direction: column; justify-content: flex-end;
+  }
+  .hl-doors { display: flex; flex-wrap: wrap; justify-content: center; gap: calc(24 * var(--u)) calc(28 * var(--u)); width: 100%; margin: 0 auto;
+    max-width: calc((var(--cols) * 140 + (var(--cols) - 1) * 28) * var(--u)); }
+  .hl-doors > li { width: calc(140 * var(--u)); }
+}
 .ls-sub { margin: 0; font-size: 17px !important; color: #4A3D80; font-weight: 500; }
