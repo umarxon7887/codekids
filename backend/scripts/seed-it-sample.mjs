@@ -165,7 +165,7 @@ if (import.meta.url === pathToFileURL(process.argv[1] || '').href) {
       console.log("IT darslari namunasi o'chirildi.");
     } else {
       await seed(run);
-      console.log(`IT darslari namunasi yozildi: ${SECTIONS.length} bo'lim, ${LESSONS.length} qasr, ${TOOLS.length} fikrlash quroli.`);
+      console.log(`IT darslari namunasi yozildi: ${SECTIONS.length} bo'lim, ${LESSONS.length} mavzu, ${TOOLS.length} fikrlash quroli.`);
     }
   } finally {
     await client.end();

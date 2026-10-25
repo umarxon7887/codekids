@@ -102,7 +102,7 @@ Xona kodi: 6 belgi, harf va raqam (O, I, 0, 1 yo'q). Xona 2 soat yashaydi.
 
 ## IT darslari (login talab qiladi)
 
-Bo'lim → qasrlar (darslar). Admin bo'limlari hammaga, ustoz bo'limlari faqat o'z sinfidagi o'quvchilarga ko'rinadi; faqat nashr qilinganlar. O'quvchi uchun qasrlar ketma-ket ochiladi, ustoz va admin hammasini ochadi.
+Bo'lim (yo'ldagi qasr) → mavzular (qasr zalidagi eshiklar). Admin bo'limlari hammaga, ustoz bo'limlari faqat o'z sinfidagi o'quvchilarga ko'rinadi; faqat e'lon qilinganlar. O'quvchi uchun mavzular ketma-ket ochiladi, ustoz va admin hammasini ochadi.
 
 | Metod | Yo'l | Izoh |
 |---|---|---|
@@ -110,8 +110,32 @@ Bo'lim → qasrlar (darslar). Admin bo'limlari hammaga, ustoz bo'limlari faqat o
 | GET | `/it/lessons/:id` | `{ lesson: { ..., section, tool, content }, stats }`. Qulf bo'lsa `403 LESSON_LOCKED`, ko'rinmasa `404 LESSON_NOT_FOUND` |
 | POST | `/it/lessons/:id/complete` | `{ mistakes }` → `{ first, xp_gained, term, tool, next_lesson_id, next_section_id, section_done, stats }`. XP faqat birinchi marta |
 
-`content` = `{ story, helper: { title, text }, exercises: [...], term_text }`. Mashq turlari: `choice` (`kind`: predict/error/odd/analogy/general, `options`, `answer`), `order` (`items` to'g'ri tartibda), `match` (`pairs`).
+`content` = `{ story, video?: { id, title }, helper: { title, text }, exercises: [...], term_text }`. Mashq turlari: `choice` (`kind`: predict/error/odd/analogy/general, `options`, `answer`), `order` (`items` to'g'ri tartibda), `match` (`pairs`).
+`video.id` — faqat 11 belgili YouTube video ID; pleyer `youtube-nocookie.com/embed/<id>` dan quriladi, hikoyadan keyin chiqadi.
 Namuna kontent: `node scripts/seed-it-sample.mjs` (o'chirish: `--remove`).
+
+### Darslar muharriri (faqat `role: admin`)
+
+Admin umumiy (`is_global`) bo'limlarni boshqaradi. Yangi bo'lim va mavzu qoralama bo'lib yaratiladi (`is_published: false`).
+
+| Metod | Yo'l | Izoh |
+|---|---|---|
+| GET | `/it/manage` | `{ sections: [{ id, title, method, description, position, is_published, lessons: [{ id, title, kind, position, is_published, exercises, has_video, learners }] }], tools: [{ id, name, short, body, used }] }` |
+| POST | `/it/manage/sections` | `{ title, method?, description? }` → `201 { section }` (ro'yxat oxiriga) |
+| PUT | `/it/manage/sections/:id` | `{ title?, method?, description?, is_published? }` → `{ section }` |
+| DELETE | `/it/manage/sections/:id` | o'quvchi progressi bo'lsa `409 HAS_PROGRESS { learners }`; `?force=1` bilan bo'lim, mavzulari va progress o'chadi |
+| POST | `/it/manage/sections/:id/move` | `{ dir: 'up' \| 'down' }` → `{ moved }` |
+| POST | `/it/manage/sections/:id/lessons` | `{ title, kind? }` → `201 { lesson }` (bo'sh qoralama; `test` uchun 20 XP) |
+| GET | `/it/manage/lessons/:id` | `{ lesson: { ..., content, section_title, learners } }` (qoralama bo'lsa ham) |
+| PUT | `/it/manage/lessons/:id` | `{ title?, kind?, term?, tool_id?, minutes?, xp?, content?, is_published? }` → `{ lesson }`. Qoralama chala bo'lishi mumkin. E'lon qilingan (yoki hozir e'lon qilinayotgan) mavzu chala bo'lsa `422 LESSON_NOT_READY`, `details: [{ path, message }]` (masalan `exercises.0.options.1`), hech narsa saqlanmaydi |
+| DELETE | `/it/manage/lessons/:id` | progress bo'lsa `409 HAS_PROGRESS`; `?force=1` |
+| POST | `/it/manage/lessons/:id/move` | `{ dir }` (bo'lim ichida) |
+| POST | `/it/manage/tools` | `{ name, short?, body? }` → `201 { tool }` |
+| PUT | `/it/manage/tools/:id` | `{ name?, short?, body? }` → `{ tool }` |
+| DELETE | `/it/manage/tools/:id` | mavzuga biriktirilgan bo'lsa `409 TOOL_IN_USE { used }`; `?force=1` |
+
+Admin akkaunti ro'yxatdan o'tish orqali yaratilmaydi (u yerda faqat `student`/`teacher`), faqat skript bilan:
+`DATABASE_URL="..." node scripts/create-admin.mjs` — email, nikneym va parol (kamida 12 belgi, ekranda ko'rinmaydi) so'raladi. Email allaqachon admin bo'lsa, parolni yangilaydi va eski sessiyalarni yopadi.
 
 ---
 

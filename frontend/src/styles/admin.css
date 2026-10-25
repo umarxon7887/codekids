@@ -1,0 +1,225 @@
+/* ===== Admin paneli: IT darslari muharriri (Soft Milk). Kompyuter uchun: chap panel | muharrir | telefon ko'rinishi ===== */
+#app:has(.ad) { max-width: none; padding: 0; margin: 0; }
+body:has(.ad) #settings { display: none; }
+.ad { box-sizing: border-box; min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; background: var(--milk); color: var(--ink); font-family: var(--font); }
+.ad *, .ad *::before, .ad *::after { box-sizing: border-box; }
+.ad a:focus-visible, .ad button:focus-visible, .ad summary:focus-visible { outline: 3px solid var(--butter); outline-offset: 2px; }
+
+/* Tepa qator */
+.ad-top { position: sticky; top: 0; z-index: 20; height: 64px; display: flex; align-items: center; gap: 12px; padding: 0 20px; background: rgba(255, 249, 242, .94); backdrop-filter: blur(8px); border-bottom: 1.5px solid var(--line); }
+.ad-badge { background: var(--ink); color: var(--milk); border-radius: 999px; padding: 4px 12px; font-size: 13px; font-weight: 600; letter-spacing: .5px; }
+.ad-sp { flex: 1; }
+.ad-link { display: inline-flex; align-items: center; gap: 6px; color: var(--ink); text-decoration: none; font-size: 15px; font-weight: 500; padding: 8px 14px; border-radius: 999px; border: 1.5px solid var(--line); background: var(--white); }
+.ad-link:hover { border-color: #E5D5C3; }
+.ad-me { font-size: 15px; font-weight: 500; color: var(--ink-2); }
+.ad-out { min-height: 40px; padding: 0 16px; font-size: 15px; }
+
+.ad-body { flex: 1; display: grid; grid-template-columns: 300px minmax(0, 1fr); }
+.ad-main { min-width: 0; padding: 0 32px 72px; outline: none; }
+.ad-skel { height: 320px; border-radius: 24px; max-width: 860px; margin-top: 28px; }
+
+/* Chap panel: bo'limlar daraxti */
+.ad-side { position: sticky; top: 64px; height: calc(100dvh - 64px); overflow: auto; overscroll-behavior: contain; border-right: 1.5px solid var(--line); background: #FFFCF8; padding: 20px 14px 24px; display: flex; flex-direction: column; gap: 10px; }
+.ad-side-h { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0 4px 0 10px; }
+.ad-side-h h2 { margin: 0; font-size: 15px; font-weight: 600; color: var(--ink-2); letter-spacing: .4px; text-transform: uppercase; }
+.ad-side-empty { margin: 4px 10px; font-size: 14px; color: var(--ink-2); line-height: 1.4; }
+.ad-tree { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.ad-sec-a, .ad-les-a, .ad-tools-a { display: flex; align-items: center; gap: 8px; color: var(--ink); text-decoration: none; min-width: 0; }
+.ad-sec-a { padding: 9px 10px; border-radius: 14px; font-size: 15px; font-weight: 600; }
+.ad-sec-a small { margin-left: auto; flex-shrink: 0; min-width: 24px; text-align: center; font-size: 12px; font-weight: 600; color: var(--ink-2); background: #F2ECE4; border-radius: 999px; padding: 2px 7px; }
+.ad-les { list-style: none; margin: 2px 0 0 15px; padding: 0 0 0 10px; border-left: 2px solid var(--line); display: flex; flex-direction: column; gap: 2px; }
+.ad-les-a { padding: 7px 10px; border-radius: 12px; font-size: 14.5px; }
+.ad-sec-a:hover, .ad-les-a:hover, .ad-tools-a:hover { background: var(--white); }
+.ad-sec-a.is-on { background: var(--lav); }
+.ad-les-a.is-on { background: #FFF1C9; font-weight: 600; }
+.ad-t { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ad-dot { width: 9px; height: 9px; flex-shrink: 0; border-radius: 999px; background: #D9CBBB; }
+.ad-dot.is-pub { background: #2E9E6A; }
+.ad-crown { font-style: normal; flex-shrink: 0; background: #FFE9A8; color: #6B5A20; border-radius: 6px; padding: 1px 6px; font-size: 11px; font-weight: 700; }
+.ad-vid { flex-shrink: 0; color: #1F5C8A; display: inline-flex; }
+.ad-add-les { align-self: flex-start; margin: 2px 0 0 25px; display: inline-flex; align-items: center; gap: 4px; padding: 5px 10px; border: 0; border-radius: 10px; background: none; font: inherit; font-size: 13.5px; font-weight: 500; color: var(--ink-2); cursor: pointer; }
+.ad-add-les:hover { background: var(--white); color: var(--ink); }
+.ad-tools-a { margin-top: 10px; padding: 12px 10px; border-top: 1.5px solid var(--line); border-radius: 0; font-size: 15px; font-weight: 600; }
+.ad-tools-a b { margin-left: auto; font-size: 12px; color: var(--ink-2); background: #F2ECE4; border-radius: 999px; padding: 2px 8px; }
+.ad-tools-a.is-on { background: #FFF1C9; border-radius: 14px; }
+.ad-legend { margin: auto 10px 0; padding-top: 12px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 12.5px; color: var(--ink-2); }
+.ad-legend .ad-dot:not(:first-child) { margin-left: 8px; }
+
+/* Umumiy bloklar */
+.ad-page { max-width: 860px; display: flex; flex-direction: column; gap: 20px; padding-top: 28px; }
+.ad-ph { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; }
+.ad-ph h1 { margin: 2px 0 0; font-size: 30px; font-weight: 600; line-height: 1.15; }
+.ad-kicker { font-size: 13px; font-weight: 600; letter-spacing: .6px; color: #4A3D80; }
+.ad-card { background: var(--white); border: 1.5px solid var(--line); border-radius: 24px; padding: 22px 24px; display: flex; flex-direction: column; gap: 14px; }
+.ad-card h2 { margin: 0; font-size: 19px; font-weight: 600; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.ad-card h2 small { font-size: 14px; font-weight: 400; color: var(--ink-2); }
+.ad-card-h { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.ad-n { width: 28px; height: 28px; flex-shrink: 0; border-radius: 999px; background: var(--lav); color: #4A3D80; display: inline-grid; place-items: center; font-size: 14px; font-weight: 700; }
+.ad-muted { margin: 0; color: var(--ink-2); font-size: 15px; line-height: 1.45; }
+.ad-lead { max-width: 640px; }
+.ad-hint { margin: 0; font-size: 13.5px; color: var(--ink-2); line-height: 1.4; }
+.ad-hint.is-ok { color: #1F7A4D; font-weight: 500; }
+.ad-hint.is-bad { color: #B23A35; font-weight: 500; }
+.ad-meta { font-size: 13.5px; color: var(--ink-2); }
+.ad-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.ad-btn-sm { min-height: 42px; padding: 0 18px; font-size: 15px; }
+.ad-chip { flex-shrink: 0; display: inline-flex; align-items: center; gap: 4px; background: var(--sky); color: #1F5C8A; border-radius: 999px; padding: 3px 10px; font-size: 13px; font-weight: 600; }
+.ad-chip.is-test { background: #FFE9A8; color: #6B5A20; }
+.ad-chip.is-video { background: #E3F0FA; }
+.ad-status { flex-shrink: 0; border-radius: 999px; padding: 5px 12px; font-size: 13.5px; font-weight: 600; background: #F2ECE4; color: var(--ink-2); }
+.ad-status.is-pub { background: var(--mint); color: #1F5C41; }
+.ad-status--sm { padding: 3px 10px; font-size: 12.5px; }
+.ad-empty { align-items: flex-start; }
+.ad-empty h1 { margin: 0; font-size: 24px; }
+
+/* Maydonlar (muharrirda zichroq) */
+/* #app bilan: ilovaning eski umumiy input qoidalari (style.css, [data-theme]) bu yerga tushmasin */
+#app .ad :where(input:not([type="radio"]):not([type="checkbox"]), select, textarea) { width: 100%; min-height: 44px; margin: 0; padding: 10px 14px; font-family: inherit; font-size: 16px; line-height: 1.4; color: var(--ink); background: var(--white); border: 1.5px solid var(--line); border-radius: 14px; }
+#app .ad :where(textarea) { resize: vertical; min-height: 64px; }
+#app .ad :where(input):disabled { background: #F8F4EF; color: #A8968A; }
+#app .ad :where(input, select, textarea):focus { border-color: var(--ink); }
+.ad [aria-invalid="true"] { border-color: var(--bad) !important; background: #FFF5F4 !important; }
+.ad-f { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.ad-f > span { font-size: 15px; font-weight: 500; }
+.ad-f > span small { font-weight: 400; color: var(--ink-2); font-size: 13px; }
+.ad-f > span small a { color: inherit; }
+.ad-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 16px; }
+.ad-count { align-self: flex-end; margin-top: -8px; font-size: 12.5px; color: var(--ink-2); }
+.ad-count:empty { display: none; }
+.ad-seg { border: 0; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.ad-seg legend { width: 100%; padding: 0; margin-bottom: 6px; font-size: 15px; font-weight: 500; }
+.ad-seg label { position: relative; cursor: pointer; }
+.ad-seg input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.ad-seg span { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px; border-radius: 999px; border: 1.5px solid var(--line); background: var(--white); font-size: 15px; font-weight: 500; }
+.ad-seg input:checked + span { background: var(--ink); border-color: var(--ink); color: var(--milk); }
+.ad-seg input:focus-visible + span { outline: 3px solid var(--butter); outline-offset: 2px; }
+
+/* Kichik tugmalar */
+.ad-mini { align-self: flex-start; display: inline-flex; align-items: center; gap: 5px; padding: 6px 12px; border: 1.5px dashed #E5D5C3; border-radius: 999px; background: transparent; font: inherit; font-size: 14px; font-weight: 600; color: var(--ink); cursor: pointer; }
+.ad-mini:hover:not(:disabled) { background: var(--white); border-style: solid; }
+.ad-mini:disabled { opacity: .4; cursor: default; }
+.ad-ib { width: 36px; height: 36px; flex-shrink: 0; display: grid; place-items: center; padding: 0; border: 1.5px solid var(--line); border-radius: 12px; background: var(--white); color: var(--ink); cursor: pointer; }
+.ad-ib:hover:not(:disabled) { border-color: #CDBBA8; }
+.ad-ib:disabled { opacity: .3; cursor: default; }
+.ad-ib.is-danger:hover:not(:disabled) { color: var(--bad); border-color: #F4C7C3; background: #FFF5F4; }
+.ad-danger h2 { color: #9B2C27; }
+.ad-danger-btn { color: #B23A35 !important; border-color: #F4C7C3 !important; }
+.ad-danger-btn:hover { background: #FFF5F4 !important; }
+
+/* Bosh sahifa */
+.ad-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.ad-stat { background: var(--white); border: 1.5px solid var(--line); border-radius: 20px; padding: 16px; display: flex; flex-direction: column; gap: 2px; }
+.ad-stat b { font-size: 30px; font-weight: 600; line-height: 1.1; }
+.ad-stat span { font-size: 14px; color: var(--ink-2); }
+.ad-stat.is-pub { background: var(--mint); border-color: var(--mint); }
+.ad-howto ol { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 8px; font-size: 16px; line-height: 1.45; }
+.ad-howto p { margin: 0; color: var(--ink-2); }
+.ad-cta { align-self: flex-start; }
+
+/* Bo'lim sahifasi: mavzular ro'yxati */
+.ad-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.ad-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 0; border-bottom: 1.5px solid var(--line); }
+.ad-row:last-child { border-bottom: 0; }
+.ad-row-t { flex: 1; min-width: 160px; font-weight: 600; color: var(--ink); text-decoration: none; }
+.ad-row-t:hover { text-decoration: underline; }
+.ad-num { width: 28px; height: 28px; flex-shrink: 0; border-radius: 999px; background: #F2ECE4; display: grid; place-items: center; font-size: 13px; font-weight: 700; color: var(--ink-2); }
+.ad-move { display: flex; gap: 4px; }
+
+/* ---------- Mavzu muharriri ---------- */
+.ad-ed { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 32px; align-items: start; max-width: 1340px; }
+.ad-ed-main { min-width: 0; display: flex; flex-direction: column; gap: 18px; padding-bottom: 24px; }
+.ad-ed-head { position: sticky; top: 64px; z-index: 6; background: var(--milk); padding: 18px 0 14px; display: flex; flex-direction: column; gap: 6px; border-bottom: 1.5px solid var(--line); }
+.ad-crumb { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 14px; color: var(--ink-2); }
+.ad-crumb a { display: inline-flex; align-items: center; gap: 6px; color: #4A3D80; font-weight: 600; text-decoration: none; }
+.ad-crumb a:hover { text-decoration: underline; }
+#app .ad .ad-title-in { font-size: 28px; font-weight: 600; min-height: 52px; padding: 4px 10px; margin-left: -11px; border-color: transparent; background: transparent; }
+#app .ad .ad-title-in:hover { border-color: var(--line); }
+#app .ad .ad-title-in:focus { background: var(--white); border-color: var(--ink); }
+.ad-ed-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.ad-save-st { font-size: 14px; color: var(--ink-2); }
+.ad-save-st.is-dirty { color: #8A3A12; font-weight: 500; }
+.ad-issues { background: #FDECEA; border: 1.5px solid #F4C7C3; border-radius: 20px; padding: 14px 18px; display: flex; flex-direction: column; gap: 8px; color: #7A211D; }
+.ad-issues ul { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 4px; }
+.ad-issue { border: 0; background: none; padding: 0; font: inherit; font-size: 15px; color: inherit; text-align: left; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.ad-issues .btn { align-self: flex-start; }
+.ad-note { margin: 0; display: flex; align-items: center; gap: 8px; background: #FFF1C9; border-radius: 16px; padding: 10px 14px; font-size: 14.5px; }
+
+/* Video */
+.ad-video { display: grid; grid-template-columns: minmax(0, 1fr) 240px; gap: 16px; align-items: start; }
+.ad-video-f { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.ad-thumb { display: flex; flex-direction: column; gap: 8px; }
+.ad-thumb img { width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 14px; background: #2A2320; }
+
+/* Mashqlar */
+.ad-ex-list { display: flex; flex-direction: column; gap: 14px; }
+.ad-ex { border: 1.5px solid var(--line); border-radius: 20px; padding: 16px; display: flex; flex-direction: column; gap: 12px; background: #FFFCF8; }
+.ad-ex:focus-within { border-color: #CDBBA8; box-shadow: 0 0 0 3px rgba(255, 217, 138, .35); }
+.ad-ex-h { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ad-ex-h b { font-size: 16px; }
+#app .ad .ad-sel-sm { width: auto; min-height: 36px; padding: 4px 32px 4px 12px; font-size: 14px; border-radius: 999px; }
+.ad-ex-empty { padding: 4px 0; }
+.ad-ex-add { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding-top: 4px; }
+.ad-ex-add > span { font-size: 15px; font-weight: 500; margin-right: 4px; }
+.ad-rows { border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.ad-rows legend { padding: 0; margin-bottom: 6px; font-size: 15px; font-weight: 500; }
+.ad-rows legend small { font-weight: 400; color: var(--ink-2); font-size: 13px; }
+.ad-rowf { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.ad-rowf > input { flex: 1; min-width: 0; }
+.ad-link-ic { flex-shrink: 0; color: var(--ink-2); font-weight: 700; }
+.ad-right { position: relative; flex-shrink: 0; cursor: pointer; }
+.ad-right input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
+.ad-right span { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 999px; border: 2px solid #E5D5C3; background: var(--white); color: transparent; }
+.ad-right input:checked + span { background: #2E9E6A; border-color: #2E9E6A; color: #fff; }
+.ad-right input:focus-visible + span { outline: 3px solid var(--butter); outline-offset: 2px; }
+.ad-right:hover span { border-color: #2E9E6A; }
+
+/* Jonli ko'rinish (telefon) */
+.ad-pv { position: sticky; top: 82px; display: flex; flex-direction: column; gap: 10px; align-items: center; padding-top: 18px; }
+.ad-pv-h { width: 100%; max-width: 360px; display: flex; align-items: center; gap: 10px; }
+.ad-pv-h b { flex: 1; font-size: 15px; }
+.ad-pv-h .ad-mini { align-self: auto; }
+.ad-pv-x { display: none; }
+.ad-pv-btn { display: none; }
+.ad-pv > .ad-hint { max-width: 340px; text-align: center; }
+.ad-phone { width: 360px; height: min(740px, calc(100dvh - 180px)); min-height: 520px; border-radius: 44px; padding: 11px; background: #2A2320; box-shadow: 0 20px 44px rgba(59, 47, 47, .22); }
+.ad-screen { width: 100%; height: 100%; border-radius: 34px; overflow: auto; overscroll-behavior: contain; background: var(--milk); scrollbar-width: thin; }
+.ls--preview { min-height: 100%; max-width: none; }
+.ls--preview .ls-top { padding-top: 16px; }
+.ls--preview .ls-foot { padding-bottom: 16px; }
+
+/* Kichik oyna */
+.ad-dlg { border: 0; border-radius: 28px; padding: 0; width: min(480px, calc(100vw - 32px)); color: var(--ink); background: var(--white); box-shadow: 0 24px 60px rgba(59, 47, 47, .25); font-family: var(--font); }
+.ad-dlg::backdrop { background: rgba(59, 47, 47, .45); }
+.ad-dlg-f { padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+.ad-dlg-f h2 { margin: 0; font-size: 22px; font-weight: 600; }
+.ad-dlg-f .ad-muted { margin-top: -10px; }
+
+/* O'rta ekran: ko'rinish o'ngdan chiqadigan panel */
+@media (max-width: 1279px) {
+  .ad-ed { grid-template-columns: minmax(0, 1fr); }
+  .ad-pv { display: none; }
+  .ad-pv-btn { display: inline-flex; }
+  .ad-ed.is-pv-open .ad-pv { display: flex; position: fixed; top: 0; right: 0; bottom: 0; z-index: 40; width: min(400px, 100vw); padding: 16px; overflow: auto; background: var(--milk); box-shadow: -12px 0 32px rgba(59, 47, 47, .2); }
+  .ad-ed.is-pv-open .ad-pv-x { display: grid; }
+  .ad-phone { width: min(360px, 100%); }
+}
+/* Telefon/planshet: chap panel tepada */
+@media (max-width: 899px) {
+  .ad-body { grid-template-columns: minmax(0, 1fr); }
+  .ad-side { position: static; height: auto; border-right: 0; border-bottom: 1.5px solid var(--line); }
+  .ad-legend { margin-top: 4px; }
+  .ad-main { padding: 0 16px 56px; }
+  .ad-me { display: none; }
+  .ad-link { padding: 8px 10px; font-size: 0; gap: 0; }
+  .ad-link svg { width: 20px; height: 20px; }
+  .ad-grid, .ad-video { grid-template-columns: minmax(0, 1fr); }
+  .ad-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ad-ph h1 { font-size: 26px; }
+  .ad-card { padding: 18px 16px; }
+}
+@media (max-width: 599px) {
+  .ad-top { gap: 8px; padding: 0 12px; }
+  .ad-top .hm-brand { font-size: 0; gap: 0; }
+  .ad-out { padding: 0 12px; }
+  #app .ad .ad-title-in { font-size: 22px; }
+}

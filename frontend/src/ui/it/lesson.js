@@ -1,11 +1,11 @@
-/** @file IT darslari: qasr ichi — hikoya, yordamchi karta, fikrlash quroli, mashqlar, termin va yakun. */
+/** @file IT darslari: mavzu ichi — hikoya, video, yordamchi karta, fikrlash quroli, mashqlar, termin va yakun. */
 import '../../styles/it.css';
 import { api } from '../../core/api.js';
 import { showError } from '../../core/toast.js';
 import { html, esc } from '../../utils/dom.js';
-import { ic, castleSrc, asset, kindLabel, shuffle } from './common.js';
+import { ic, castleSrc, asset, kindLabel, shuffle, youtubeEmbed } from './common.js';
 
-/** @param {HTMLElement} root @param {string} id qasr ID @returns {Promise<()=>void>} */
+/** @param {HTMLElement} root @param {string} id mavzu ID @returns {Promise<()=>void>} */
 export async function mountItLesson(root, id) {
   const view = html('<section class="ls"><div class="skeleton it-skel" aria-busy="true"></div></section>');
   root.replaceChildren(view);
@@ -20,12 +20,25 @@ export async function mountItLesson(root, id) {
       <a class="btn" href="#/it">Qasrlar yo'liga</a></div>`;
     return () => {};
   }
+  runLesson(view, data.lesson, { complete: (mistakes) => api.post(`/it/lessons/${id}/complete`, { mistakes }) });
+  return () => {};
+}
 
-  const L = data.lesson;
+/**
+ * Mavzuni ko'rsatadi. O'quvchi darsi ham, muharrirdagi jonli ko'rinish ham shu funksiyadan foydalanadi.
+ * @param {HTMLElement} view `.ls` elementi
+ * @param {object} L mavzu (GET /it/lessons/:id dagi `lesson` shaklida)
+ * @param {{complete?:(mistakes:number)=>Promise<any>, preview?:boolean, start?:string|number, onRestart?:()=>void}} [opts]
+ *   preview: serverga hech narsa yuborilmaydi; start: 'story'|'video'|'helper'|'tool'|'finish' yoki mashq raqami (0 dan)
+ */
+export function runLesson(view, L, opts = {}) {
+  const preview = Boolean(opts.preview);
   const c = L.content || {};
+  const id = L.id;
   const exercises = (c.exercises || []).map((e, i) => ({ ...e, i }));
-  const intro = [c.story && 'story', c.helper?.text && 'helper', L.tool && 'tool'].filter(Boolean);
-  const queue = exercises.slice(); // xato javob berilgan mashq oxiriga qaytadi
+  const video = youtubeEmbed(c.video?.id);
+  const intro = [c.story && 'story', video && 'video', c.helper?.text && 'helper', L.tool && 'tool'].filter(Boolean);
+  let queue = exercises.slice(); // xato javob berilgan mashq oxiriga qaytadi
   const solved = new Set();
   let mistakes = 0;
   let finished = false;
@@ -43,8 +56,10 @@ export async function mountItLesson(root, id) {
   const btns = view.querySelector('.ls-btns');
 
   view.querySelector('.ls-x').onclick = () => {
+    if (preview) { opts.onRestart?.(); return; }
     if (finished || confirm("Darsdan chiqasanmi? Bu mavzu hali tugamaydi.")) location.hash = `#/it/section/${L.section.id}`;
   };
+  if (preview) view.querySelector('.ls-x').setAttribute('aria-label', 'Boshidan ko\'rish');
 
   const progress = () => {
     const n = solved.size;
@@ -79,6 +94,14 @@ export async function mountItLesson(root, id) {
         <span class="ls-kicker">${esc(L.section.title)} · ${L.kind === 'test' ? "bo'lim testi" : `${L.section.index + 1}-mavzu`}</span>
         <h1>${esc(L.title)}</h1><p>${esc(c.story)}</p></div>`);
       actions([{ label: L.kind === 'test' ? 'Testni boshlash' : 'Boshladik', onClick: nextIntro }]);
+    } else if (k === 'video') {
+      const t = c.video.title || 'Video';
+      show(`<div class="ls-card ls-video"><span class="ls-chip">${ic('play', 16)}Video</span>
+        ${c.video.title ? `<h2>${esc(c.video.title)}</h2>` : ''}
+        <div class="ls-player"><iframe src="${video}" title="${esc(t)}" loading="lazy"
+          allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+          allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div></div>`);
+      actions([{ label: "Ko'rdim, davom etamiz", onClick: nextIntro }]);
     } else if (k === 'helper') {
       show(`<div class="ls-card ls-helper"><span class="ls-chip">${ic('bulb', 16)}Yordamchi karta</span>
         ${c.helper.title ? `<h2>${esc(c.helper.title)}</h2>` : ''}<p>${esc(c.helper.text)}</p></div>`);
@@ -262,8 +285,16 @@ export async function mountItLesson(root, id) {
     show('<div class="ls-card ls-wait"><div class="skeleton" aria-busy="true"></div><p>Qasr ochilmoqda...</p></div>');
     actions([]);
     let r;
+    if (preview) {
+      // Ko'rinish: natija serverga yuborilmaydi, birinchi marta o'tgandek ko'rsatiladi
+      r = { first: true, xp_gained: L.xp, tool: L.tool, section_done: false, next_lesson_id: null, stats: { streak: 1, today: 1, goal: 2 } };
+      finished = true;
+      showWin(r);
+      actions([{ label: "Boshidan ko'rish", onClick: () => opts.onRestart?.() }]);
+      return;
+    }
     try {
-      r = await api.post(`/it/lessons/${id}/complete`, { mistakes });
+      r = await opts.complete(mistakes);
     } catch (e) {
       showError(e);
       show(`<div class="ls-card"><h2>Natijani saqlab bo'lmadi</h2><p>Internetni tekshirib, qayta urinib ko'r.</p></div>`);
@@ -271,8 +302,19 @@ export async function mountItLesson(root, id) {
       return;
     }
     finished = true;
-    const next = r.next_lesson_id && r.next_lesson_id !== id ? r.next_lesson_id : null;
-    const sameNext = next && r.next_section_id === L.section.id;
+    showWin(r);
+    const next = nextOf(r);
+    const hall = `#/it/section/${L.section.id}`;
+    actions(next && r.next_section_id === L.section.id
+      ? [{ label: 'Keyingi eshik', href: `${hall}?unlock=${next}` }, { label: 'Zalga qaytish', href: hall, ghost: true }]
+      : next
+        ? [{ label: 'Keyingi qasr', href: `#/it?opened=${r.next_section_id}` }, { label: 'Zalga qaytish', href: hall, ghost: true }]
+        : [{ label: "Qasrlar yo'liga qaytish", href: '#/it' }]);
+  }
+
+  const nextOf = (r) => (r.next_lesson_id && r.next_lesson_id !== id ? r.next_lesson_id : null);
+  function showWin(r) {
+    const sameNext = nextOf(r) && r.next_section_id === L.section.id;
     const gains = [
       r.first ? `<span class="it-pill is-xp">${ic('star', 16)}<b>+${r.xp_gained} XP</b></span>` : '<span class="it-pill">Takrorlash</span>',
       `<span class="it-pill is-fire">${ic('fire', 16)}<b>${r.stats.streak}</b>&nbsp;kun</span>`,
@@ -289,17 +331,23 @@ export async function mountItLesson(root, id) {
       ${mistakes === 0 ? '<p class="ls-perfect">Bitta ham xatosiz!</p>' : ''}
       ${r.stats.today >= r.stats.goal ? '<p class="ls-goal">Bugungi maqsad bajarildi!</p>' : ''}
     </div>`);
-    const hall = `#/it/section/${L.section.id}`;
-    actions(sameNext
-      ? [{ label: 'Keyingi eshik', href: `${hall}?unlock=${next}` }, { label: 'Zalga qaytish', href: hall, ghost: true }]
-      : next
-        ? [{ label: 'Keyingi qasr', href: `#/it?opened=${r.next_section_id}` }, { label: 'Zalga qaytish', href: hall, ghost: true }]
-        : [{ label: "Qasrlar yo'liga qaytish", href: '#/it' }]);
   }
 
-  if (!exercises.length) {
+  if (!exercises.length && !preview) {
     show('<div class="it-empty"><p>Bu mavzuda hali mashq yo\'q.</p></div>');
     actions([{ label: 'Zalga qaytish', href: `#/it/section/${L.section.id}` }]);
-  } else nextIntro();
-  return () => {};
+    return;
+  }
+  // Ko'rinishda kerakli joydan boshlanadi (muharrirda qaysi maydon tahrirlanayotgan bo'lsa)
+  const s = opts.start;
+  if (s === 'finish') finish();
+  else if (typeof s === 'number' && exercises[s]) {
+    for (let k = 0; k < s; k++) solved.add(k);
+    queue = exercises.slice(s);
+    step = intro.length;
+    nextExercise();
+  } else {
+    if (typeof s === 'string' && intro.includes(s)) step = intro.indexOf(s);
+    nextIntro();
+  }
 }

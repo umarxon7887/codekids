@@ -108,6 +108,9 @@ a.it-art:focus-visible { outline: 3px solid var(--butter); outline-offset: 4px; 
 .ls-kicker { font-size: 14px; font-weight: 600; color: var(--ink-2); letter-spacing: .3px; }
 .ls-helper { background: var(--lav); border-color: var(--lav); }
 .ls-tool { background: #FFF1C9; border-color: #FFF1C9; }
+.ls-video { background: var(--sky); border-color: var(--sky); gap: 12px; }
+.ls-player { position: relative; width: 100%; aspect-ratio: 16 / 9; border-radius: 20px; overflow: hidden; background: #2A2320; }
+.ls-player iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
 .ls-chip { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; background: var(--white); border-radius: 999px; padding: 6px 12px; font-size: 14px; font-weight: 600; }
 .ls-q { display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
 .ls-q .ls-chip { background: var(--sky); color: #1F5C8A; }
