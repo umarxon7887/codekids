@@ -18,6 +18,9 @@ const P = {
   maze: '<path d="M3 3h18v18H3zM8 3v8h8M16 21v-6M3 14h5"/>',
   target: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
   trophy: '<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0zM17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/>',
+  star: '<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>',
+  castle: '<path d="M4 21V9l2-1V5h2v2h2V5h4v2h2V5h2v3l2 1v12zM10 21v-4a2 2 0 0 1 4 0v4"/>',
+  fire: '<path d="M12 3c1 4 5 5 5 10a5 5 0 0 1-10 0c0-3 2-4 2-7 2 1 3 2 3 4"/>',
 };
 const ic = (k, s = 20) => `<svg aria-hidden="true" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${P[k]}</svg>`;
 
@@ -224,6 +227,7 @@ function studentView(s) {
         ${row('maze', 'Labirintda eng yuqori daraja', s.lab_best_level != null ? `${s.lab_best_level}-daraja` : notYet)}
       </div>
     </section>
+    ${itCard(s.it)}
     <section class="pf-card">
       <h3>Sinflarim</h3>
       ${classes}
@@ -232,6 +236,24 @@ function studentView(s) {
       <h3>So'nggi o'yinlar</h3>
       ${s.recent.length ? `<ul class="pf-list">${s.recent.map(recentItem).join('')}</ul>`
         : '<p class="pf-empty">Hali o\'yin o\'ynamading. Typing Race yoki ustoz xonasidan boshla!</p>'}
+    </section>`;
+}
+
+function itCard(it) {
+  if (!it) return '';
+  const tools = it.tools.length
+    ? `<div class="pf-bag">${it.tools.map((t) => `<span class="pf-tool"><b>${esc(t.name)}</b>${t.short ? `<small>${esc(t.short)}</small>` : ''}</span>`).join('')}</div>`
+    : '<p class="pf-empty">Hali qurol yo\'q. IT darslarida qasr ochib, fikrlash qurollarini yig\'.</p>';
+  return `
+    <section class="pf-card pf-itc">
+      <h3>IT darslari</h3>
+      <div class="pf-rows">
+        ${row('star', 'XP', it.xp)}
+        ${row('castle', 'Ochilgan qasrlar', it.done)}
+        ${row('fire', 'Ketma-ket kunlar', it.streak)}
+      </div>
+      <h3 class="pf-sub">Qurollar sumkasi</h3>
+      ${tools}
     </section>`;
 }
 

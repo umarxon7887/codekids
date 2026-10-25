@@ -292,3 +292,85 @@ ALTER TABLE game_players ADD COLUMN IF NOT EXISTS rank SMALLINT;
 ALTER TABLE contents ADD COLUMN IF NOT EXISTS language VARCHAR(5);
 UPDATE contents SET language = CASE WHEN title LIKE '%(RU)%' THEN 'ru' ELSE 'uz' END
  WHERE type = 'typing_text' AND language IS NULL;
+
+-- =====================================================================
+-- IT darslari: bo'limlar -> qasrlar (darslar), fikrlash qurollari, progress
+-- Kontentni admin (umumiy, hamma ko'radi) yoki ustoz (o'z sinflari ko'radi) yozadi.
+-- =====================================================================
+ALTER TYPE user_role ADD VALUE IF NOT EXISTS 'admin';
+
+-- Fikrlash qurollari (o'xshatish, sabab -> oqibat, ...): o'quvchining "qurollar sumkasi"
+CREATE TABLE IF NOT EXISTS it_tools (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  author_id   UUID REFERENCES users(id) ON DELETE SET NULL,
+  name        VARCHAR(80) NOT NULL,
+  short       VARCHAR(160) NOT NULL DEFAULT '',   -- bir qatorli tavsif (sumkada ko'rinadi)
+  body        TEXT NOT NULL DEFAULT '',           -- karta matni (darsda ko'rinadi)
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS it_sections (
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  author_id     UUID REFERENCES users(id) ON DELETE SET NULL,
+  is_global     BOOLEAN NOT NULL DEFAULT false,   -- admin bo'limi: hamma ko'radi
+  position      INTEGER NOT NULL DEFAULT 0,
+  title         VARCHAR(120) NOT NULL,            -- "Kompyuter bilan tanishuv"
+  method        VARCHAR(120) NOT NULL DEFAULT '', -- fikrlash usuli: "Ketma-ketlik"
+  description   TEXT NOT NULL DEFAULT '',
+  is_published  BOOLEAN NOT NULL DEFAULT false,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS it_lessons (
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  section_id    UUID NOT NULL REFERENCES it_sections(id) ON DELETE CASCADE,
+  position      INTEGER NOT NULL DEFAULT 0,
+  kind          VARCHAR(10) NOT NULL DEFAULT 'lesson' CHECK (kind IN ('lesson', 'test')),
+  title         VARCHAR(120) NOT NULL,
+  term          VARCHAR(80),                      -- dars oxirida aytiladigan termin
+  tool_id       UUID REFERENCES it_tools(id) ON DELETE SET NULL,
+  minutes       SMALLINT NOT NULL DEFAULT 5 CHECK (minutes BETWEEN 1 AND 60),
+  xp            SMALLINT NOT NULL DEFAULT 10 CHECK (xp BETWEEN 0 AND 1000),
+  content       JSONB NOT NULL DEFAULT '{}'::jsonb, -- hikoya, yordamchi karta, mashqlar, termin matni
+  is_published  BOOLEAN NOT NULL DEFAULT false,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS it_lessons_section_idx ON it_lessons (section_id, position);
+CREATE INDEX IF NOT EXISTS it_sections_author_idx ON it_sections (author_id);
+
+-- Tugatilgan qasrlar (XP faqat birinchi marta beriladi)
+CREATE TABLE IF NOT EXISTS it_progress (
+  user_id       UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  lesson_id     UUID NOT NULL REFERENCES it_lessons(id) ON DELETE CASCADE,
+  xp            SMALLINT NOT NULL DEFAULT 0,
+  best_mistakes SMALLINT,
+  attempts      INTEGER NOT NULL DEFAULT 1,
+  completed_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (user_id, lesson_id)
+);
+
+-- Kunlik faollik: ketma-ket kunlar va "bugungi maqsad" uchun (kun Toshkent vaqti bilan)
+CREATE TABLE IF NOT EXISTS it_days (
+  user_id  UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  day      DATE NOT NULL,
+  lessons  SMALLINT NOT NULL DEFAULT 0,
+  PRIMARY KEY (user_id, day)
+);
+
+DO $$
+DECLARE
+  t TEXT;
+BEGIN
+  FOREACH t IN ARRAY ARRAY['it_tools', 'it_sections', 'it_lessons']
+  LOOP
+    EXECUTE format('DROP TRIGGER IF EXISTS %I_set_updated_at ON %I', t, t);
+    EXECUTE format(
+      'CREATE TRIGGER %I_set_updated_at BEFORE UPDATE ON %I
+       FOR EACH ROW EXECUTE FUNCTION set_updated_at()', t, t
+    );
+  END LOOP;
+END $$;

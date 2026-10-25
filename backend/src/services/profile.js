@@ -1,5 +1,6 @@
 import { AppError } from '../errors.js';
 import { TEACHER_FIELDS } from '../schemas/profile.js';
+import { getItSummary } from './it.js';
 
 // Labirint natijalari game_players.state ichida saqlanadi (socket/labyrinth.js savePlayer).
 // Faqat son bo'lgan qiymatlar o'qiladi, eski o'yinlarda bu kalitlar bo'lmasligi mumkin.
@@ -100,12 +101,13 @@ export async function getProfile(run, userId) {
     return { user, stats: s[0] };
   }
 
-  const [stats, classes, recent] = await Promise.all([
+  const [stats, classes, recent, it] = await Promise.all([
     run(STUDENT_STATS_SQL, [userId]),
     run(STUDENT_CLASSES_SQL, [userId]),
     run(STUDENT_RECENT_SQL, [userId]),
+    getItSummary(run, userId),
   ]);
-  return { user, stats: { ...stats.rows[0], classes: classes.rows, recent: recent.rows } };
+  return { user, stats: { ...stats.rows[0], classes: classes.rows, recent: recent.rows, it } };
 }
 
 /**

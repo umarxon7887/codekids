@@ -55,7 +55,7 @@ export function mountHome(root, user, reroute) {
     if (c.length !== 6) { toast('Kod 6 ta belgidan iborat', 'error'); $('#code').focus(); return; }
     location.hash = `#/room/${c}`;
   };
-  $('#it').onclick = () => toast('IT darslari tez orada ochiladi');
+  $('#it').onclick = () => { location.hash = '#/it'; };
   $('#me').onclick = async () => {
     const { openProfile } = await import('./profile.js');
     openProfile({

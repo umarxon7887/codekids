@@ -64,9 +64,14 @@ async function render({ path, query }) {
   if (teacherOnly && user.role !== 'teacher') { location.hash = '#/'; return () => {}; }
 
   if (path === '/typing') return (await import('./games/typing/lobby.js')).mountTypingLobby(app);
+  if (path === '/it') return (await import('./ui/it/path.js')).mountItPath(app, query);
   if (path === '/teacher') return (await import('./teacher/panel.js')).mountTeacher(app);
 
   let m = path.match(/^\/room\/([A-Za-z0-9]+)$/);
+  const it = path.match(/^\/it\/lesson\/([0-9a-fA-F-]{36})$/);
+  if (it) return (await import('./ui/it/lesson.js')).mountItLesson(app, it[1]);
+  const hall = path.match(/^\/it\/section\/([0-9a-fA-F-]{36})$/);
+  if (hall) return (await import('./ui/it/hall.js')).mountItHall(app, hall[1], query);
   if (m) return (await import('./ui/room.js')).mountRoom(app, m[1]);
   m = path.match(/^\/host\/([A-Za-z0-9]+)$/);
   if (m) return (await import('./teacher/host.js')).mountHost(app, { code: m[1], game: query.game || 'typing' });

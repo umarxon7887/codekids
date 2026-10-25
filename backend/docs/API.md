@@ -96,8 +96,22 @@ Xona kodi: 6 belgi, harf va raqam (O, I, 0, 1 yo'q). Xona 2 soat yashaydi.
 
 | Metod | Yo'l | Izoh |
 |---|---|---|
-| GET | `/profile` | `{ user, stats }`. Ustoz: `stats = { classes, students, rooms, contents }`. O'quvchi: `stats = { typing_games, best_wpm, avg_accuracy, typing_wins, lab_games, lab_correct, lab_best_level, lab_wins, classes: [{id,name,teacher}], recent: [...] }` |
+| GET | `/profile` | `{ user, stats }`. Ustoz: `stats = { classes, students, rooms, contents }`. O'quvchi: `stats = { typing_games, best_wpm, avg_accuracy, typing_wins, lab_games, lab_correct, lab_best_level, lab_wins, classes: [{id,name,teacher}], recent: [...], it: { xp, done, streak, tools } }` |
 | PUT | `/profile` | faqat yuborilgan maydonlar o'zgaradi: `nickname`; ustoz uchun yana `full_name`, `school`, `subjects`, `experience_years`, `age_group` (bo'sh satr → `null`). O'quvchi ustoz maydonini yuborsa `403 TEACHER_ONLY_FIELDS`. Javob: GET bilan bir xil |
+
+
+## IT darslari (login talab qiladi)
+
+Bo'lim → qasrlar (darslar). Admin bo'limlari hammaga, ustoz bo'limlari faqat o'z sinfidagi o'quvchilarga ko'rinadi; faqat nashr qilinganlar. O'quvchi uchun qasrlar ketma-ket ochiladi, ustoz va admin hammasini ochadi.
+
+| Metod | Yo'l | Izoh |
+|---|---|---|
+| GET | `/it/path` | `{ sections: [{ id, title, method, done, lessons: [{ id, kind, title, minutes, xp, exercises, status }] }], stats: { xp, streak, today, goal, current_lesson_id } }`. `status`: `done`, `current`, `open`, `locked` |
+| GET | `/it/lessons/:id` | `{ lesson: { ..., section, tool, content }, stats }`. Qulf bo'lsa `403 LESSON_LOCKED`, ko'rinmasa `404 LESSON_NOT_FOUND` |
+| POST | `/it/lessons/:id/complete` | `{ mistakes }` → `{ first, xp_gained, term, tool, next_lesson_id, next_section_id, section_done, stats }`. XP faqat birinchi marta |
+
+`content` = `{ story, helper: { title, text }, exercises: [...], term_text }`. Mashq turlari: `choice` (`kind`: predict/error/odd/analogy/general, `options`, `answer`), `order` (`items` to'g'ri tartibda), `match` (`pairs`).
+Namuna kontent: `node scripts/seed-it-sample.mjs` (o'chirish: `--remove`).
 
 ---
 
