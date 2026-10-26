@@ -1,6 +1,7 @@
 /** @file IT darslari muharriri: bo'limlar, mavzular va fikrlash qurollarini boshqarish. */
 import { AppError } from '../errors.js';
 import { draftContentSchema, lessonContentSchema } from '../schemas/it.js';
+import { analyzeMaze } from '../utils/maze.js';
 
 /**
  * Kim qaysi bo'limlarni boshqaradi:
@@ -199,7 +200,10 @@ export function publishIssues({ title, content }) {
   const out = [];
   const add = (path, message) => out.push({ path, message });
   const blank = (s) => !String(s ?? '').trim();
-  const dup = (list) => new Set(list.map((s) => s.trim().toLowerCase())).size !== list.length;
+  // Takror: matn (katta-kichik harfsiz) va rasm birga bir xil bo'lsa
+  // (bo'sh variant alohida xabar bilan aytiladi, shuning uchun bu yerda hisobga olinmaydi)
+  const dup = (keys) => { const k = keys.filter((x) => x !== '|'); return new Set(k).size !== k.length; };
+  const key = (t, img) => `${String(t ?? '').trim().toLowerCase()}|${img || ''}`;
 
   if (blank(title)) add('title', "Mavzu nomi bo'sh");
   const ex = content.exercises || [];
@@ -209,33 +213,66 @@ export function publishIssues({ title, content }) {
     const p = `exercises.${i}`;
     if (blank(e.prompt)) add(`${p}.prompt`, `${n}: savol matni bo'sh`);
     if (e.type === 'choice') {
+      const im = e.option_images || [];
       if (e.options.length < 2) add(`${p}.options`, `${n}: kamida 2 ta javob varianti kerak`);
-      e.options.forEach((o, k) => { if (blank(o)) add(`${p}.options.${k}`, `${n}: ${k + 1}-variant bo'sh`); });
+      e.options.forEach((o, k) => { if (blank(o) && !im[k]) add(`${p}.options.${k}`, `${n}: ${k + 1}-variant bo'sh (matn yoki rasm qo'ying)`); });
       if (e.answer >= e.options.length) add(`${p}.answer`, `${n}: to'g'ri javob belgilanmagan`);
-      else if (e.options.length > 1 && dup(e.options)) add(`${p}.options`, `${n}: bir xil variantlar bor`);
+      else if (e.options.length > 1 && dup(e.options.map((o, k) => key(o, im[k])))) add(`${p}.options`, `${n}: bir xil variantlar bor`);
     } else if (e.type === 'order') {
+      const im = e.item_images || [];
       if (e.items.length < 3) add(`${p}.items`, `${n}: kamida 3 ta qadam kerak`);
-      e.items.forEach((o, k) => { if (blank(o)) add(`${p}.items.${k}`, `${n}: ${k + 1}-qadam bo'sh`); });
-      if (e.items.length > 1 && dup(e.items)) add(`${p}.items`, `${n}: bir xil qadamlar bor (tartibni tekshirib bo'lmaydi)`);
+      e.items.forEach((o, k) => { if (blank(o) && !im[k]) add(`${p}.items.${k}`, `${n}: ${k + 1}-qadam bo'sh (matn yoki rasm qo'ying)`); });
+      if (e.items.length > 1 && dup(e.items.map((o, k) => key(o, im[k])))) add(`${p}.items`, `${n}: bir xil qadamlar bor (tartibni tekshirib bo'lmaydi)`);
     } else if (e.type === 'match') {
+      const im = e.pair_images || [];
       if (e.pairs.length < 2) add(`${p}.pairs`, `${n}: kamida 2 ta juftlik kerak`);
-      e.pairs.forEach(([a, b], k) => { if (blank(a) || blank(b)) add(`${p}.pairs.${k}`, `${n}: ${k + 1}-juftlik to'liq emas`); });
-      if (e.pairs.length > 1 && (dup(e.pairs.map((x) => x[0])) || dup(e.pairs.map((x) => x[1])))) {
-        add(`${p}.pairs`, `${n}: bir xil so'zlar bor (juftlikni ajratib bo'lmaydi)`);
+      e.pairs.forEach(([a, b], k) => {
+        if ((blank(a) && !im[k]?.[0]) || (blank(b) && !im[k]?.[1])) add(`${p}.pairs.${k}`, `${n}: ${k + 1}-juftlik to'liq emas`);
+      });
+      const side = (j) => e.pairs.map((x, k) => key(x[j], im[k]?.[j]));
+      if (e.pairs.length > 1 && (dup(side(0)) || dup(side(1)))) add(`${p}.pairs`, `${n}: bir xil so'zlar bor (juftlikni ajratib bo'lmaydi)`);
+    } else if (e.type === 'typing') {
+      if (blank(e.text)) add(`${p}.text`, `${n}: yoziladigan matn bo'sh`);
+    } else if (e.type === 'maze') {
+      const { errors, shortest } = analyzeMaze(e.grid);
+      errors.forEach((m) => add(`${p}.grid`, `${n}: ${m}`));
+      if (shortest != null && e.mode === 'program' && e.max_commands != null && e.max_commands < shortest) {
+        add(`${p}.max_commands`, `${n}: buyruqlar chegarasi juda kam (eng qisqa yo'l ${shortest} qadam)`);
       }
     }
   });
   return out;
 }
 
-/** Bo'sh yordamchi karta va bo'sh izohlarni olib tashlaydi (o'quvchiga keraksiz). */
+/** Kontentdagi barcha rasm ID'lari. */
+export function contentImages(c) {
+  const ids = [c.story_image, c.helper?.image, c.term_image];
+  for (const e of c.exercises || []) {
+    ids.push(e.image, ...(e.option_images || []), ...(e.item_images || []), ...(e.pair_images || []).flat());
+  }
+  return [...new Set(ids.filter(Boolean))];
+}
+
+/** Bo'sh yordamchi karta, bo'sh izohlar va keraksiz rasm ro'yxatlarini olib tashlaydi. */
 function tidy(content) {
   const c = { ...content };
-  if (c.helper && !c.helper.title && !c.helper.text) delete c.helper;
+  if (c.helper && !c.helper.title && !c.helper.text && !c.helper.image) delete c.helper;
+  // Rasm ro'yxati variantlar soniga moslanadi; birorta rasm bo'lmasa, ro'yxat umuman saqlanmaydi
+  const fit = (list, n, pair = false) => {
+    if (!list) return undefined;
+    const one = (x) => (pair ? [x?.[0] || null, x?.[1] || null] : x || null);
+    const cut = Array.from({ length: n }, (_, k) => one(list[k]));
+    return cut.flat().some(Boolean) ? cut : undefined;
+  };
   c.exercises = c.exercises.map((e) => {
-    if (e.explain) return e;
-    const { explain, ...rest } = e;
-    return rest;
+    const x = { ...e };
+    if (!x.explain) delete x.explain;
+    if (!x.image) delete x.image;
+    const set = (k, v) => { if (v) x[k] = v; else delete x[k]; };
+    if (x.type === 'choice') set('option_images', fit(x.option_images, x.options.length));
+    if (x.type === 'order') set('item_images', fit(x.item_images, x.items.length));
+    if (x.type === 'match') set('pair_images', fit(x.pair_images, x.pairs.length, true));
+    return x;
   });
   return c;
 }
@@ -256,6 +293,11 @@ export async function updateLesson(run, user, id, data) {
     const t = ownTool(user, 2);
     const { rows } = await run(`SELECT 1 FROM it_tools t WHERE t.id = $1 AND ${t.sql}`, [data.tool_id, ...t.args]);
     if (!rows[0]) throw new AppError(400, 'TOOL_NOT_FOUND', 'Fikrlash quroli topilmadi');
+  }
+  const ids = contentImages(content);
+  if (ids.length) {
+    const { rows } = await run('SELECT id FROM it_images WHERE id = ANY($1::uuid[])', [ids]);
+    if (rows.length !== ids.length) throw new AppError(400, 'IMAGE_NOT_FOUND', "Rasmlardan biri topilmadi. Uni qayta yuklang.");
   }
   if (next.is_published) {
     const issues = publishIssues({ title: next.title, content });

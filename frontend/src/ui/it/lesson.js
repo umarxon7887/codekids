@@ -3,7 +3,8 @@ import '../../styles/it.css';
 import { api } from '../../core/api.js';
 import { showError } from '../../core/toast.js';
 import { html, esc } from '../../utils/dom.js';
-import { ic, castleSrc, asset, kindLabel, shuffle, youtubeEmbed } from './common.js';
+import { ic, castleSrc, asset, kindLabel, shuffle, youtubeEmbed, imgTag } from './common.js';
+import { typingUi, mazeUi } from './games.js';
 
 /** @param {HTMLElement} root @param {string} id mavzu ID @returns {Promise<()=>void>} */
 export async function mountItLesson(root, id) {
@@ -37,7 +38,7 @@ export function runLesson(view, L, opts = {}) {
   const id = L.id;
   const exercises = (c.exercises || []).map((e, i) => ({ ...e, i }));
   const video = youtubeEmbed(c.video?.id);
-  const intro = [c.story && 'story', video && 'video', c.helper?.text && 'helper', L.tool && 'tool'].filter(Boolean);
+  const intro = [(c.story || c.story_image) && 'story', video && 'video', (c.helper?.text || c.helper?.image) && 'helper', L.tool && 'tool'].filter(Boolean);
   let queue = exercises.slice(); // xato javob berilgan mashq oxiriga qaytadi
   const solved = new Set();
   let mistakes = 0;
@@ -92,7 +93,7 @@ export function runLesson(view, L, opts = {}) {
       show(`<div class="ls-card ls-story">
         <img class="ls-castle" src="${L.kind === 'test' ? castleSrc('boss') : asset('door-ready')}" alt="" width="112" height="112">
         <span class="ls-kicker">${esc(L.section.title)} · ${L.kind === 'test' ? "bo'lim testi" : `${L.section.index + 1}-mavzu`}</span>
-        <h1>${esc(L.title)}</h1><p>${esc(c.story)}</p></div>`);
+        <h1>${esc(L.title)}</h1>${imgTag(c.story_image)}<p>${esc(c.story)}</p></div>`);
       actions([{ label: L.kind === 'test' ? 'Testni boshlash' : 'Boshladik', onClick: nextIntro }]);
     } else if (k === 'video') {
       const t = c.video.title || 'Video';
@@ -104,7 +105,7 @@ export function runLesson(view, L, opts = {}) {
       actions([{ label: "Ko'rdim, davom etamiz", onClick: nextIntro }]);
     } else if (k === 'helper') {
       show(`<div class="ls-card ls-helper"><span class="ls-chip">${ic('bulb', 16)}Yordamchi karta</span>
-        ${c.helper.title ? `<h2>${esc(c.helper.title)}</h2>` : ''}<p>${esc(c.helper.text)}</p></div>`);
+        ${c.helper.title ? `<h2>${esc(c.helper.title)}</h2>` : ''}${imgTag(c.helper.image)}${c.helper.text ? `<p>${esc(c.helper.text)}</p>` : ''}</div>`);
       actions([{ label: 'Tushundim', onClick: nextIntro }]);
     } else {
       show(`<div class="ls-card ls-tool"><span class="ls-chip">${ic('tool', 16)}Fikrlash quroli</span>
@@ -120,15 +121,16 @@ export function runLesson(view, L, opts = {}) {
     const ex = queue[0];
     if (!ex) return finish();
     const again = ex.wrong ? '<span class="ls-again">Yana bir bor</span>' : '';
-    const q = `<div class="ls-q"><span class="ls-chip">${esc(kindLabel(ex))}</span>${again}<h2>${esc(ex.prompt)}</h2></div>`;
-    const ui = ex.type === 'order' ? orderUi(ex) : ex.type === 'match' ? matchUi(ex) : choiceUi(ex);
+    const q = `<div class="ls-q"><span class="ls-chip">${esc(kindLabel(ex))}</span>${again}<h2>${esc(ex.prompt)}</h2>${imgTag(ex.image, 'ls-img ls-q-img')}</div>`;
+    const ui = { order: orderUi, match: matchUi, typing: typingUi, maze: mazeUi }[ex.type]?.(ex) || choiceUi(ex);
     show(q + ui.markup);
     const checkBtn = actions([{ label: 'Tekshirish', disabled: true, onClick: () => check(ex, ui) }]);
     ui.mount(stage, (ready) => { checkBtn.disabled = !ready; });
   }
 
-  function check(ex, ui) {
-    const right = ui.evaluate();
+  async function check(ex, ui) {
+    btns.querySelectorAll('button').forEach((b) => { b.disabled = true; });
+    const right = await ui.evaluate();
     ui.lock();
     if (right) {
       solved.add(ex.i);
@@ -153,9 +155,11 @@ export function runLesson(view, L, opts = {}) {
     const order = shuffle(ex.options.map((_, k) => k));
     let pick = null;
     let root2;
+    const im = ex.option_images || [];
+    const withImg = im.some(Boolean);
     return {
-      markup: `<div class="ls-opts" role="radiogroup" aria-label="Javoblar">${order.map((k) =>
-        `<button type="button" class="ls-opt" role="radio" aria-checked="false" data-k="${k}">${esc(ex.options[k])}</button>`).join('')}</div>`,
+      markup: `<div class="ls-opts${withImg ? ' ls-opts--img' : ''}" role="radiogroup" aria-label="Javoblar">${order.map((k) =>
+        `<button type="button" class="ls-opt" role="radio" aria-checked="false" data-k="${k}"${ex.options[k] ? '' : ` aria-label="${k + 1}-rasm"`}>${imgTag(im[k], 'ls-opt-img')}${ex.options[k] ? `<span>${esc(ex.options[k])}</span>` : ''}</button>`).join('')}</div>`,
       mount(el, ready) {
         root2 = el;
         el.querySelectorAll('.ls-opt').forEach((b) => {
@@ -176,6 +180,8 @@ export function runLesson(view, L, opts = {}) {
   }
 
   function orderUi(ex) {
+    const im = ex.item_images || [];
+    const lbl = (k) => `${imgTag(im[k], 'ls-chip-img')}${esc(ex.items[k])}`;
     const pool = shuffle(ex.items.map((_, k) => k));
     const ans = [];
     let el;
@@ -183,10 +189,10 @@ export function runLesson(view, L, opts = {}) {
     let locked = false;
     const draw = () => {
       el.querySelector('.ls-slots').innerHTML = ex.items.map((_, idx) => (ans[idx] != null
-        ? `<li><button type="button" class="ls-chipbtn is-placed" data-a="${idx}" aria-label="${idx + 1}-qadam: ${esc(ex.items[ans[idx]])}. Qaytarish uchun bosing"><i>${idx + 1}</i>${esc(ex.items[ans[idx]])}</button></li>`
+        ? `<li><button type="button" class="ls-chipbtn is-placed" data-a="${idx}" aria-label="${idx + 1}-qadam: ${esc(ex.items[ans[idx]] || 'rasm')}. Qaytarish uchun bosing"><i>${idx + 1}</i>${lbl(ans[idx])}</button></li>`
         : `<li><span class="ls-slot"><i>${idx + 1}</i></span></li>`)).join('');
       el.querySelector('.ls-pool').innerHTML = pool.map((k) =>
-        `<button type="button" class="ls-chipbtn" data-p="${k}">${esc(ex.items[k])}</button>`).join('')
+        `<button type="button" class="ls-chipbtn" data-p="${k}"${ex.items[k] ? '' : ` aria-label="Rasmli qadam"`}>${lbl(k)}</button>`).join('')
         || '<span class="ls-pool-done">Hammasi joyida. Tekshirib ko\'r!</span>';
       el.querySelectorAll('[data-p]').forEach((b) => { b.onclick = () => { if (locked) return; const k = Number(b.dataset.p); pool.splice(pool.indexOf(k), 1); ans.push(k); draw(); }; });
       el.querySelectorAll('[data-a]').forEach((b) => { b.onclick = () => { if (locked) return; const idx = Number(b.dataset.a); pool.push(ans[idx]); ans.splice(idx, 1); draw(); }; });
@@ -211,6 +217,7 @@ export function runLesson(view, L, opts = {}) {
   }
 
   function matchUi(ex) {
+    const pim = ex.pair_images || [];
     const n = ex.pairs.length;
     const rights = shuffle(ex.pairs.map((_, k) => k));
     const pairOf = new Map(); // chap k -> o'ng k
@@ -237,8 +244,8 @@ export function runLesson(view, L, opts = {}) {
     return {
       markup: `<p class="ls-hint">Chapdan birini, keyin o'ngdan unga mosini bos.</p>
         <div class="ls-match">
-          <div class="ls-col">${ex.pairs.map((p, k) => `<button type="button" class="ls-mt" data-l="${k}"><i></i>${esc(p[0])}</button>`).join('')}</div>
-          <div class="ls-col">${rights.map((k) => `<button type="button" class="ls-mt" data-r="${k}"><i></i>${esc(ex.pairs[k][1])}</button>`).join('')}</div>
+          <div class="ls-col">${ex.pairs.map((p, k) => `<button type="button" class="ls-mt" data-l="${k}"${p[0] ? '' : ` aria-label="Chap, ${k + 1}-rasm"`}><i></i>${imgTag(pim[k]?.[0], 'ls-chip-img')}${esc(p[0])}</button>`).join('')}</div>
+          <div class="ls-col">${rights.map((k) => `<button type="button" class="ls-mt" data-r="${k}"${ex.pairs[k][1] ? '' : ` aria-label="O'ng, rasm"`}><i></i>${imgTag(pim[k]?.[1], 'ls-chip-img')}${esc(ex.pairs[k][1])}</button>`).join('')}</div>
         </div>`,
       mount(root2, r) {
         el = root2; ready = r;
@@ -325,6 +332,7 @@ export function runLesson(view, L, opts = {}) {
       ${r.section_done ? `<p class="ls-sub">«${esc(L.section.title)}» bo'limi to'liq tugatildi.</p>`
         : sameNext ? '<p class="ls-sub">Keyingi eshikning qulfi ochildi!</p>' : ''}
       ${L.term ? `<span class="ls-kicker">Bugun o'rgangan so'zing</span><div class="ls-term">${esc(L.term)}</div>` : ''}
+      ${imgTag(c.term_image)}
       ${c.term_text ? `<p>${esc(c.term_text)}</p>` : ''}
       <div class="ls-gains">${gains}</div>
       ${r.tool ? `<div class="ls-newtool">${ic('tool', 18)}<span>Sumkangga yangi qurol: <b>${esc(r.tool.name)}</b></span></div>` : ''}

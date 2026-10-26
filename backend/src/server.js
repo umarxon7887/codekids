@@ -5,7 +5,7 @@ import express from 'express';
 import cookieParser from 'cookie-parser';
 import { logger } from './logger.js';
 import { query, closeDb } from './db.js';
-import { helmetMiddleware, corsMiddleware, apiLimiter } from './middleware/security.js';
+import { helmetMiddleware, corsMiddleware, apiLimiter, imageLimiter } from './middleware/security.js';
 import authRouter from './routes/auth.js';
 import { notFound, errorHandler } from './errors.js';
 import contentsRouter from './routes/contents.js';
@@ -16,6 +16,7 @@ import guestRouter from './routes/guest.js';
 import profileRouter from './routes/profile.js';
 import itRouter from './routes/it.js';
 import itManageRouter from './routes/itManage.js';
+import itImagesRouter from './routes/itImages.js';
 import { createSocketServer } from './socket/index.js';
 import { stopRoomTicker } from './socket/rooms.js';
 
@@ -33,6 +34,8 @@ app.use(helmetMiddleware);
 app.use(corsMiddleware);
 app.use(express.json({ limit: '100kb' }));
 app.use(cookieParser());
+// Dars rasmlari: o'z limiti va uzoq keshi bor, shuning uchun umumiy "no-store" va limitdan oldin
+app.use(`${API}/it/images`, imageLimiter, itImagesRouter);
 app.use(API, (req, res, next) => { res.set('Cache-Control', 'no-store'); next(); });
 app.use(API, apiLimiter);
 

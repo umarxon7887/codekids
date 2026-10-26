@@ -8,7 +8,7 @@ import { showError, toast } from '../core/toast.js';
 import { html, esc } from '../utils/dom.js';
 import { ic } from '../ui/it/common.js';
 import { mountLessonEditor } from './lessonEditor.js';
-import { removeWithProgress } from './common.js';
+import { removeWithProgress, folds } from './common.js';
 
 const LOGO = '<svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5M14 4l-4 16"/></svg>';
 
@@ -73,15 +73,22 @@ export async function mountAdmin(root, sub = '/') {
   // ---------- Chap panel: bo'limlar va mavzular daraxti ----------
   function renderSide() {
     const on = (p) => (current === p ? ' is-on" aria-current="page' : '');
+    // Hozir ochiq bo'lim doim ochiq; qolganlari foydalanuvchi ochgan bo'lsa ochiq (shu brauzerda eslab qolinadi)
+    const curSec = current.startsWith('/section/') ? current.slice(9)
+      : data.sections.find((s) => s.lessons.some((l) => current === `/lesson/${l.id}`))?.id;
+    const isOpen = (s) => s.id === curSec || !folds.get(`side:${s.id}`, data.sections.length > 3);
     const dot = (pub) => `<span class="ad-dot ${pub ? 'is-pub' : ''}" title="${pub ? "E'lon qilingan" : 'Qoralama'}"></span>`;
     side.innerHTML = `
       <div class="ad-side-h"><h2>Bo'limlar</h2>
         <button type="button" class="ad-mini" data-new-section>${ic('plus', 16)}Bo'lim</button></div>
       ${data.sections.length ? '' : '<p class="ad-side-empty">Hali bo\'lim yo\'q. Birinchi qasrni yarating.</p>'}
       <ol class="ad-tree">${data.sections.map((s, i) => `
-        <li>
-          <a class="ad-sec-a${on(`/section/${s.id}`)}" href="#/admin/section/${s.id}" data-go="/section/${s.id}">
-            ${dot(s.is_published)}<span class="ad-t">${i + 1}. ${esc(s.title)}</span><small>${s.lessons.length}</small></a>
+        <li class="ad-sec${isOpen(s) ? '' : ' is-folded'}">
+          <div class="ad-sec-row">
+            <button type="button" class="ad-sec-tg" data-side-tg="${s.id}" aria-expanded="${isOpen(s)}" aria-label="${esc(s.title)}: mavzular ro'yxati">${ic('down', 14)}</button>
+            <a class="ad-sec-a${on(`/section/${s.id}`)}" href="#/admin/section/${s.id}" data-go="/section/${s.id}">
+              ${dot(s.is_published)}<span class="ad-t">${i + 1}. ${esc(s.title)}</span><small>${s.lessons.length}</small></a>
+          </div>
           <ol class="ad-les">${s.lessons.map((l) => `
             <li><a class="ad-les-a${on(`/lesson/${l.id}`)}" href="#/admin/lesson/${l.id}" data-go="/lesson/${l.id}">
               ${dot(l.is_published)}<span class="ad-t">${esc(l.title)}</span>${l.kind === 'test' ? '<em class="ad-crown" title="Bo\'lim testi">test</em>' : ''}${l.has_video ? `<span class="ad-vid" title="Video bor">${ic('play', 14)}</span>` : ''}</a></li>`).join('')}
@@ -100,6 +107,15 @@ export async function mountAdmin(root, sub = '/') {
       if (e.metaKey || e.ctrlKey || e.shiftKey) return; // yangi oynada ochish
       e.preventDefault();
       go(a.dataset.go);
+      return;
+    }
+    const tg = e.target.closest('[data-side-tg]');
+    if (tg) {
+      const li = tg.closest('.ad-sec');
+      const folded = !li.classList.contains('is-folded');
+      li.classList.toggle('is-folded', folded);
+      tg.setAttribute('aria-expanded', String(!folded));
+      folds.set(`side:${tg.dataset.sideTg}`, folded);
       return;
     }
     if (e.target.closest('[data-new-section]')) { e.preventDefault(); newSection(); return; }
@@ -166,7 +182,7 @@ export async function mountAdmin(root, sub = '/') {
           ...ctx,
         });
       } else if (path === '/tools') toolsView(main, ctx);
-      else homeView(main, ctx);
+      else await homeView(main, ctx);
     } catch (e) {
       if (e.code === 'LESSON_NOT_FOUND' || e.code === 'SECTION_NOT_FOUND') {
         main.innerHTML = `<div class="ad-page"><div class="ad-card ad-empty"><h1>Topilmadi</h1><p>Bu bo'lim yoki mavzu o'chirilgan bo'lishi mumkin.</p><a class="btn" href="#/admin" data-go="/">Bosh sahifa</a></div></div>`;
@@ -196,7 +212,11 @@ export async function mountAdmin(root, sub = '/') {
 }
 
 // ---------- Bosh sahifa ----------
-function homeView(main, { data }) {
+const mb = (b) => (b >= 1024 * 1024 ? `${(b / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(b / 1024))} KB`);
+async function homeView(main, ctx) {
+  const { data } = ctx;
+  let img = null;
+  try { img = await api.get('/it/manage/images/stats'); } catch { /* rasmlar kartasi chiqmaydi */ }
   const lessons = data.sections.flatMap((s) => s.lessons);
   const pub = lessons.filter((l) => l.is_published).length;
   main.innerHTML = `
@@ -217,8 +237,24 @@ function homeView(main, { data }) {
         </ol>
         <p>O'ng tomonda mavzu bola telefonida qanday ko'rinishini darhol ko'rasiz.</p>
       </section>
+      ${img ? `<section class="ad-card ad-imgs">
+        <div class="ad-card-h"><h2>Rasmlar</h2><span class="ad-meta">${img.total} ta · ${mb(img.bytes)} / ${mb(img.limit)}</span></div>
+        <div class="ad-bar" role="progressbar" aria-label="Rasmlar uchun joy" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round((img.bytes / img.limit) * 100)}"><i style="width:${Math.min(100, (img.bytes / img.limit) * 100)}%"></i></div>
+        <p class="ad-muted">${img.unused
+          ? `${img.unused} ta rasm hech bir mavzuda ishlatilmayapti (${mb(img.unused_bytes)}). Ularni o'chirsangiz, joy bo'shaydi.`
+          : "Ishlatilmagan rasm yo'q. Mavzudan olib tashlangan rasm bir soatdan keyin shu yerda tozalashga chiqadi."}</p>
+        ${img.unused ? '<div class="ad-actions"><button type="button" class="btn btn--ghost ad-btn-sm" data-clean>Ishlatilmaganlarni tozalash</button></div>' : ''}
+      </section>` : ''}
       <button type="button" class="btn ad-cta" data-new-section>${ic('plus', 18)}Yangi bo'lim</button>
     </div>`;
+  main.querySelector('[data-clean]')?.addEventListener('click', async () => {
+    if (!confirm(`${img.unused} ta ishlatilmagan rasm o'chirilsinmi?`)) return;
+    try {
+      const r = await api.del('/it/manage/images/unused');
+      ctx.toast(`${r.deleted} ta rasm o'chirildi`);
+      ctx.go('/', { push: false, force: true });
+    } catch (e) { showError(e); }
+  });
 }
 
 // ---------- Bo'lim sahifasi ----------

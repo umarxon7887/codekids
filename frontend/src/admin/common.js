@@ -19,3 +19,12 @@ export async function removeWithProgress(path) {
   }
 }
 
+
+// Yig'ilgan/ochilgan bo'limlar shu brauzerda eslab qolinadi (localStorage bo'lmasa ham ishlaydi)
+const FOLD_KEY = 'ck.ad.fold';
+const readFolds = () => { try { return JSON.parse(localStorage.getItem(FOLD_KEY) || '{}') || {}; } catch { return {}; } };
+export const folds = {
+  /** @param {string} k @param {boolean} def true = yig'ilgan */
+  get(k, def = false) { const v = readFolds()[k]; return typeof v === 'boolean' ? v : def; },
+  set(k, v) { try { const o = readFolds(); o[k] = v; localStorage.setItem(FOLD_KEY, JSON.stringify(o)); } catch { /* xotira yopiq */ } },
+};

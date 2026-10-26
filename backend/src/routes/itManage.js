@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import multer from 'multer';
 import { query, withTransaction } from '../db.js';
 import { validate } from '../middleware/validate.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
@@ -8,6 +9,7 @@ import {
   toolCreateSchema, toolUpdateSchema,
 } from '../schemas/it.js';
 import * as m from '../services/itManage.js';
+import { saveImage, imageStats, deleteUnusedImages, IMAGE_MAX_BYTES } from '../services/itImages.js';
 
 // IT darslari muharriri. Hozircha faqat admin; ustoz muharriri keyingi bosqichda shu yerga qo'shiladi
 // (servis allaqachon rolga qarab o'z bo'limlarini ajratadi).
@@ -51,6 +53,19 @@ router.delete('/lessons/:id', validate({ params: idParams, query: forceQuery }),
 });
 router.post('/lessons/:id/move', validate({ params: idParams, body: moveSchema }), async (req, res) => {
   res.json(await m.moveLesson(query, withTransaction, req.user, id(req), req.validated.body.dir));
+});
+
+// ---------- Rasmlar ----------
+// Brauzer rasmni oldindan kichraytirib yuboradi; server faqat WebP/JPEG/PNG ni qabul qiladi
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: IMAGE_MAX_BYTES, files: 1 } });
+router.post('/images', upload.single('file'), async (req, res) => {
+  res.status(201).json({ image: await saveImage(query, req.user, req.file?.buffer, req.body || {}) });
+});
+router.get('/images/stats', async (req, res) => {
+  res.json(await imageStats(query));
+});
+router.delete('/images/unused', async (req, res) => {
+  res.json(await deleteUnusedImages(query));
 });
 
 // ---------- Fikrlash qurollari ----------

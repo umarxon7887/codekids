@@ -223,3 +223,95 @@ body:has(.ad) #settings { display: none; }
   .ad-out { padding: 0 12px; }
   #app .ad .ad-title-in { font-size: 22px; }
 }
+
+/* ---------- Yig'iladigan kartalar ---------- */
+.ad-fold { gap: 0; padding: 0; }
+.ad-fold-h { width: 100%; display: flex; align-items: center; gap: 10px; padding: 18px 24px; border: 0; background: none; font: inherit; color: var(--ink); text-align: left; cursor: pointer; border-radius: 24px; }
+.ad-fold-h:hover { background: #FFFCF8; }
+.ad-fold-t { font-size: 19px; font-weight: 600; flex: 0 1 auto; min-width: 0; }
+.ad-fold-t small { font-size: 14px; font-weight: 400; color: var(--ink-2); }
+.ad-fold-sum { flex: 1; min-width: 0; font-size: 14px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: right; opacity: 0; transition: opacity .15s; }
+.ad-fold.is-folded .ad-fold-sum { opacity: 1; }
+.ad-fold-ic { flex-shrink: 0; display: inline-flex; color: var(--ink-2); transition: transform .2s ease; }
+.ad-fold.is-folded > .ad-fold-h .ad-fold-ic, .ad-ex.is-folded .ad-ex-tg .ad-fold-ic, .ad-sec.is-folded .ad-sec-tg svg { transform: rotate(-90deg); }
+.ad-card-b { display: flex; flex-direction: column; gap: 14px; padding: 0 24px 22px; }
+.ad-fold.is-folded > .ad-card-b { display: none; }
+.ad-foldall span { white-space: nowrap; }
+
+/* Mashq kartasi yig'ilganda: sarlavha va savolning boshi */
+.ad-ex.is-folded { padding: 10px 12px; }
+.ad-ex.is-folded .ad-ex-b { display: none; }
+.ad-ex-b { display: flex; flex-direction: column; gap: 12px; }
+.ad-ex-tg { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; padding: 4px 6px; margin: -4px -6px; border: 0; border-radius: 12px; background: none; font: inherit; color: var(--ink); text-align: left; cursor: pointer; }
+.ad-ex-tg:hover { background: var(--white); }
+.ad-ex-tg b { font-size: 16px; flex-shrink: 0; }
+.ad-ex-sum { flex: 1; min-width: 0; font-size: 14px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ad-chip.is-game { background: var(--peach); color: #8A3A12; }
+.ad-ex-games { font-size: 15px; font-weight: 500; margin-left: 8px; }
+.ad-f-inline { flex-direction: row; align-items: center; gap: 10px; }
+
+/* Chap panel: bo'lim mavzularini yig'ish */
+.ad-sec-row { display: flex; align-items: center; gap: 2px; }
+.ad-sec-row .ad-sec-a { flex: 1; }
+.ad-sec-tg { width: 26px; height: 26px; flex-shrink: 0; display: grid; place-items: center; padding: 0; border: 0; border-radius: 8px; background: none; color: var(--ink-2); cursor: pointer; }
+.ad-sec-tg:hover { background: var(--white); color: var(--ink); }
+.ad-sec-tg svg { transition: transform .2s ease; }
+.ad-sec.is-folded .ad-les, .ad-sec.is-folded .ad-add-les { display: none; }
+
+/* ---------- Rasm joylari ---------- */
+.ad-img { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+.ad-img > img { max-width: 100%; max-height: 200px; object-fit: contain; border-radius: 16px; border: 1.5px solid var(--line); background: #FFFCF8; }
+.ad-img-acts { display: flex; flex-wrap: wrap; gap: 8px; }
+.ad-img-acts .ad-mini { align-self: auto; }
+.ad-img-busy { font-size: 14px; color: var(--ink-2); padding: 6px 2px; }
+.ad-img.is-sm { position: relative; flex-shrink: 0; width: 44px; height: 44px; display: block; }
+.ad-img-sm { width: 44px; height: 44px; display: grid; place-items: center; padding: 0; overflow: hidden; border: 1.5px dashed #E5D5C3; border-radius: 12px; background: var(--white); color: var(--ink-2); cursor: pointer; }
+.ad-img-sm:hover { border-style: solid; color: var(--ink); }
+.ad-img-sm.has { border-style: solid; }
+.ad-img-sm img { width: 100%; height: 100%; object-fit: cover; }
+.ad-img-x { position: absolute; top: -7px; right: -7px; width: 20px; height: 20px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 999px; background: var(--ink); color: var(--milk); cursor: pointer; }
+.ad-img.is-sm .ad-img-busy { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border-radius: 12px; background: #F2ECE4; }
+.ad-pair .ad-img.is-sm { width: 44px; }
+
+/* ---------- Typing ---------- */
+.ad-check { display: flex; align-items: center; gap: 10px; align-self: end; min-height: 44px; font-size: 15px; cursor: pointer; }
+.ad-check input { width: 20px; height: 20px; margin: 0; accent-color: var(--ink); }
+
+/* ---------- Labirint xaritasi ---------- */
+.ad-mz { display: flex; flex-direction: column; gap: 10px; }
+.ad-mz-bar { display: flex; flex-wrap: wrap; gap: 10px 20px; align-items: center; justify-content: space-between; }
+.ad-mz-tools { display: flex; flex-wrap: wrap; gap: 6px; }
+.ad-mz-tool { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 12px; border: 1.5px solid var(--line); border-radius: 999px; background: var(--white); font: inherit; font-size: 14px; font-weight: 500; color: var(--ink); cursor: pointer; }
+.ad-mz-tool[aria-pressed="true"] { border-color: var(--ink); background: var(--ink); color: var(--milk); }
+.ad-mz-tool i { width: 16px; height: 16px; border-radius: 5px; flex-shrink: 0; }
+.ad-mz-tool.t-wall i { background: #4F8A2E; }
+.ad-mz-tool.t-path i { background: #EADBC0; border: 1px solid #D5C2A0; }
+.ad-mz-tool.t-s i { background: #FFD98A; border-radius: 999px; }
+.ad-mz-tool.t-g i { background: #B7A8E8; }
+.ad-mz-size { display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--ink-2); }
+.ad-mz-size b { min-width: 18px; text-align: center; color: var(--ink); }
+.ad-mz-size span:not(:first-child) { margin-left: 8px; }
+.ad-mz-size .ad-ib { width: 30px; height: 30px; font-size: 18px; }
+.ad-mz-grid { display: grid; grid-template-columns: repeat(var(--cols), 40px); gap: 2px; padding: 4px; width: max-content; max-width: 100%; border-radius: 14px; background: #5E8C3A; touch-action: none; user-select: none; }
+.ad-mz-grid.is-bad { outline: 3px solid var(--bad); outline-offset: 2px; }
+.ad-mz-c { width: 40px; height: 40px; padding: 0; border: 0; border-radius: 6px; cursor: crosshair; }
+.ad-mz-c.is-wall { background: #4F8A2E; }
+.ad-mz-c.is-path { background: #EADBC0; }
+.ad-mz-c.is-s { background: var(--hero) center / 80% auto no-repeat, #FFE9A8; }
+.ad-mz-c.is-g { background: var(--castle) center / 88% auto no-repeat, #E6DEFA; }
+.ad-mz-c:hover { box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .8); }
+.ad-mz-c:focus-visible { outline: 3px solid var(--butter); outline-offset: 1px; position: relative; z-index: 1; }
+.ad-mz-max { max-width: 320px; }
+@media (max-width: 599px) { .ad-mz-grid { grid-template-columns: repeat(var(--cols), 30px); } .ad-mz-c { width: 30px; height: 30px; } }
+
+/* Bosh sahifa: rasmlar joyi */
+.ad-bar { height: 10px; border-radius: 999px; background: #F2ECE4; overflow: hidden; }
+.ad-bar i { display: block; height: 100%; background: #2E9E6A; border-radius: 999px; }
+.ad-ed-tools { display: flex; justify-content: flex-end; margin: -6px 0 -8px; }
+.ad-ex:not(.is-folded) .ad-ex-sum { display: none; }
+@media (max-width: 599px) {
+  .ad-fold-h { padding: 16px; }
+  .ad-card-b { padding: 0 16px 18px; }
+  .ad-fold-t small { display: none; }
+  .ad-ex-add { gap: 6px; }
+}
