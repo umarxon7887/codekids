@@ -6,6 +6,8 @@ import { html, esc } from '../../utils/dom.js';
 import { coinPill } from './coin.js';
 import { ic, starsRow } from './common.js';
 
+const LANGS = { uz: "O'zbekcha", ru: 'Ruscha' };
+
 /**
  * @param {HTMLElement} root
  * @param {{opened?:string}} [query] opened = yangi ochilgan daraja raqami (animatsiya)
@@ -13,9 +15,14 @@ import { ic, starsRow } from './common.js';
 export async function mountTypingMap(root, query = {}) {
   const view = html('<section class="tl"><div class="skeleton tl-skel" aria-busy="true"></div></section>');
   root.replaceChildren(view);
+  // Til: manzildan, bo'lmasa oxirgi tanlangan (shu brauzerda)
+  let lang = query.lang;
+  if (!LANGS[lang]) { try { lang = localStorage.getItem('tl-lang'); } catch { lang = null; } }
+  if (!LANGS[lang]) lang = 'uz';
+  try { localStorage.setItem('tl-lang', lang); } catch { /* ixtiyoriy */ }
   let data;
   try {
-    data = await api.get('/typing-lessons');
+    data = await api.get('/typing-lessons', { query: { lang } });
   } catch (e) {
     showError(e);
     view.innerHTML = `<div class="tl-empty"><p>Darslarni yuklab bo'lmadi.</p><a class="btn btn--ghost" href="#/">Orqaga</a></div>`;
@@ -25,7 +32,7 @@ export async function mountTypingMap(root, query = {}) {
   return () => {};
 }
 
-function render(view, { levels, stats }, opened) {
+function render(view, { levels, stats, lang }, opened) {
   const cur = levels.find((l) => l.status === 'current') || levels[levels.length - 1];
   const curLesson = stats.current_lesson_id;
   const pct = Math.round((stats.done / stats.total) * 100);
@@ -36,8 +43,10 @@ function render(view, { levels, stats }, opened) {
       <h1>Typing darslari</h1>
       ${coinPill(stats.coins)}
     </div>
+    <div class="tl-langs" role="tablist" aria-label="Darslar tili">${Object.entries(LANGS).map(([k, v]) =>
+      `<a class="tab${k === lang ? ' is-on' : ''}" role="tab" aria-selected="${k === lang}" href="#/typing-lessons?lang=${k}">${v}</a>`).join('')}</div>
     <div class="tl-hero">
-      <div class="tl-hero-t"><span>${cur.n}-DARAJA</span><b>${esc(cur.title)}</b><small>${esc(cur.desc)}</small></div>
+      <div class="tl-hero-t"><span>${cur.n}-DARAJA</span><b>${esc(cur.title)}</b><small>${esc(cur.desc)}</small>${lang === 'ru' ? '<small>Rus klaviaturasi (ЙЦУКЕН) kerak</small>' : ''}</div>
       <div class="tl-prog"><div class="tl-bar"><i style="width:${pct}%"></i></div><span>${stats.done} / ${stats.total} dars</span></div>
       <div class="tl-hero-f">
         <span class="tl-stars-total">${ic('star', 18)}<b>${stats.stars}</b> / ${stats.max_stars}</span>
@@ -45,7 +54,7 @@ function render(view, { levels, stats }, opened) {
           : '<span class="tl-alldone">Hamma darslar tugadi! Yulduzlarni 3 taga yetkazib ko\'r.</span>'}
       </div>
     </div>
-    <div class="tl-levels">${levels.map((lv) => level(lv, opened === lv.n)).join('')}</div>`;
+    <div class="tl-levels" lang="${lang}">${levels.map((lv) => level(lv, opened === lv.n)).join('')}</div>`;
   const focus = view.querySelector('.tl-lv.is-opening') || view.querySelector('.tl-lv.is-current');
   if (focus && (opened || started)) focus.scrollIntoView({ block: 'center' });
 }

@@ -165,8 +165,8 @@ Ulanish: `io(URL, { auth: { token } })`. Mehmon: `auth: { guest: true, deviceId:
 - Bir vaqtda bitta server instance.
 
 ## Typing darslari (`/api/v1/typing-lessons`, auth kerak)
-Darslar matni: `src/data/typingCourse.js` (6 daraja × 4 dars + imtihon). Bazada progress, urinishlar, coinlar.
-- `GET /` — darajalar, dars holati (done/current/open/locked), yulduzlar, `stats.coins`.
+Darslar matni: `src/data/typingCourse.js` va ruscha `typingCourseRu.js` (id'lar `r1-1`) (6 daraja × 4 dars + imtihon). Bazada progress, urinishlar, coinlar.
+- `GET /?lang=uz|ru` — darajalar, dars holati (done/current/open/locked), yulduzlar, `stats.coins`.
 - `POST /attempts` `{lesson_id:"1-1"}` — darsni boshlash, mashq matnlari. Qulf: 403 `LESSON_LOCKED`.
 - `POST /attempts/:id/steps/:i/begin` — mashqning birinchi tugmasi bosildi (vaqt serverda).
 - `POST /attempts/:id/steps/:i` `{typed, errors}` — mashq tugadi; oxirgisida `result` (wpm, accuracy, stars, coins, next_lesson_id, level_unlocked).

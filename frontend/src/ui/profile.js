@@ -241,13 +241,22 @@ function studentView(s) {
     </section>`;
 }
 
+/** Bitta til bo'yicha qator: daraja, darslar, yulduzlar. */
+function langRow(lang, name, x) {
+  if (!x) return '';
+  const value = x.done
+    ? `${x.course_done ? 'Hammasi tugadi' : `${x.level}-daraja`} · ${x.done}/${x.total} dars · ${x.stars}★`
+    : '<span class="pf-none">Boshlanmagan</span>';
+  return row(lang === 'ru' ? 'book' : 'trophy', `${name} kurs`, value);
+}
+
 function lessonsCard(tl) {
   if (!tl) return '';
   const stars = (n) => `<span class="pf-stars" aria-label="${n} yulduz">${'★'.repeat(n)}<i>${'★'.repeat(3 - n)}</i></span>`;
   const recent = tl.recent.length
     ? `<ul class="pf-list">${tl.recent.map((r) => `<li class="pf-item">
         <span class="pf-ii is-kb">${ic(r.kind === 'exam' ? 'trophy' : 'kb')}</span>
-        <div class="pf-it"><b>${r.level}-daraja · ${esc(r.kind === 'exam' ? 'Imtihon' : r.title)}</b>
+        <div class="pf-it"><b>${r.lang === 'ru' ? 'Ruscha · ' : ''}${r.level}-daraja · ${esc(r.kind === 'exam' ? 'Imtihon' : r.title)}</b>
           <span>${esc(day(r.at))} · ${r.wpm} so'z/daq · ${r.accuracy}%</span></div>
         ${r.stars ? stars(r.stars) : '<span class="pf-place">O\'tmadi</span>'}</li>`).join('')}</ul>`
     : '<p class="pf-empty">Hali dars o\'tmading. Bosh sahifadagi "Typing darslari"dan boshla!</p>';
@@ -255,9 +264,8 @@ function lessonsCard(tl) {
     <section class="pf-card pf-tlc">
       <div class="pf-tlh"><h3>Typing darslari</h3><span class="pf-coins">${coinSvg(26)}<b>${tl.coins}</b> coin</span></div>
       <div class="pf-rows">
-        ${row('trophy', 'Daraja', tl.course_done ? `Hammasi tugadi (${tl.levels}/${tl.levels})` : `${tl.level} / ${tl.levels}`)}
-        ${row('book', "O'tilgan darslar", `${tl.done} / ${tl.total}`)}
-        ${row('star', 'Yulduzlar', `${tl.stars} / ${tl.max_stars}`)}
+        ${langRow('uz', "O'zbekcha", tl.langs?.uz)}
+        ${langRow('ru', 'Ruscha', tl.langs?.ru)}
         ${row('kb', 'Darsdagi eng yaxshi tezlik', tl.best_wpm != null ? `${tl.best_wpm} so'z/daq` : '<span class="pf-none">Hali yo\'q</span>')}
         ${row('target', "O'rtacha aniqlik", tl.avg_accuracy != null ? `${tl.avg_accuracy}%` : '<span class="pf-none">Hali yo\'q</span>')}
       </div>

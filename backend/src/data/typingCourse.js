@@ -1,12 +1,14 @@
+import { LEVELS_RU } from './typingCourseRu.js';
+
 /**
- * Typing darslari kursi (o'zbek, lotin). Kontent kodda turadi: o'zgartirish uchun shu faylni tahrirlang.
+ * Typing darslari kursi (o'zbek, lotin; ruscha kurs typingCourseRu.js da). Kontent kodda turadi: o'zgartirish uchun shu faylni tahrirlang.
  * Har daraja: 4 ta dars + 1 ta imtihon. Har dars 3 ta mashqdan (step) iborat.
  * Dars id'lari ("1-1", "1-x") bazada progress kaliti sifatida saqlanadi: mavjud id'larni o'zgartirmang.
  * Har bir mashq matnida faqat shu darajagacha o'rganilgan tugmalar ishlatiladi.
  */
 
 /** Daraja tezlik maqsadi (WPM): imtihondan o'tish va darsda 3 yulduz uchun. */
-export const LEVELS = [
+const LEVELS_UZ = [
   {
     n: 1,
     title: 'Asosiy qator',
@@ -261,16 +263,30 @@ export const PASS_ACCURACY = 90;
 /** Coin qoidalari. */
 export const COINS = { lesson: 10, exam: 50, star: 5, daily: 5 };
 
+/** Kurslar tili bo'yicha. Ruscha dars id'lari "r" bilan boshlanadi ("r1-1"). */
+export const LANGS = ['uz', 'ru'];
+const prefix = { uz: '', ru: 'r' };
+export const COURSES = Object.fromEntries(LANGS.map((lang) => {
+  const src = lang === 'ru' ? LEVELS_RU : LEVELS_UZ;
+  const p = prefix[lang];
+  return [lang, src.map((lv) => ({
+    ...lv,
+    lessons: lv.lessons.map((l) => ({ ...l, id: p + l.id })),
+    exam: { ...lv.exam, id: p + lv.exam.id },
+  }))];
+}));
+
 /**
- * Hamma darslar bitta tekis ro'yxatda, o'tish tartibida.
- * @type {{id:string, level:number, index:number, kind:'lesson'|'exam', title:string, keys:string[], wpm:number, steps:{kind:string,text:string}[]}[]}
+ * Hamma darslar bitta tekis ro'yxatda (har til o'z tartibida).
+ * @type {{id:string, lang:string, level:number, index:number, kind:'lesson'|'exam', title:string, keys:string[], wpm:number, steps:{kind:string,text:string}[]}[]}
  */
-export const LESSONS = LEVELS.flatMap((lv) => [
-  ...lv.lessons.map((l, i) => ({ ...l, level: lv.n, index: i, kind: 'lesson', wpm: lv.wpm })),
-  { id: lv.exam.id, level: lv.n, index: lv.lessons.length, kind: 'exam', title: `${lv.n}-daraja imtihoni`, keys: [], wpm: lv.wpm, steps: [{ kind: 'text', text: lv.exam.text }] },
-]);
+export const LESSONS = LANGS.flatMap((lang) => COURSES[lang].flatMap((lv) => [
+  ...lv.lessons.map((l, i) => ({ ...l, lang, level: lv.n, index: i, kind: 'lesson', wpm: lv.wpm })),
+  { id: lv.exam.id, lang, level: lv.n, index: lv.lessons.length, kind: 'exam', title: lang === 'ru' ? `Экзамен ${lv.n} уровня` : `${lv.n}-daraja imtihoni`, keys: [], wpm: lv.wpm, steps: [{ kind: 'text', text: lv.exam.text }] },
+]));
 
 export const LESSON_BY_ID = new Map(LESSONS.map((l) => [l.id, l]));
+export const lessonsOf = (lang) => LESSONS.filter((l) => l.lang === lang);
 
 /**
  * Yulduzlar (0 = o'tmadi). Darsda: 1 = 90%+, 2 = 95%+, 3 = 98%+ va daraja tezligi.

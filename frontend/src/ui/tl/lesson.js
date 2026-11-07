@@ -22,6 +22,14 @@ const norm = (c) => NORMALIZE[c] || c;
  * @returns {Promise<()=>void>}
  */
 export async function mountTypingLesson(root, lessonId) {
+  const ru = lessonId.startsWith('r');
+  /** Xarita manzili (shu dars tilida). */
+  const mapHref = (opened) => {
+    const q = new URLSearchParams();
+    if (ru) q.set('lang', 'ru');
+    if (opened) q.set('opened', opened);
+    return `#/typing-lessons${[...q].length ? `?${q}` : ''}`;
+  };
   const view = html('<section class="tlx"><div class="skeleton tl-skel" aria-busy="true"></div></section>');
   root.replaceChildren(view);
   let off = () => {}; // joriy mashq tinglovchilarini olib tashlash
@@ -36,7 +44,7 @@ export async function mountTypingLesson(root, lessonId) {
     } catch (e) {
       showError(e);
       view.innerHTML = `<div class="tl-empty"><p>${e.code === 'LESSON_LOCKED' ? 'Bu dars hali yopiq. Avval oldingi darslarni tugat.' : "Darsni ochib bo'lmadi."}</p>
-        <a class="btn btn--ghost" href="#/typing-lessons">Darslar xaritasi</a></div>`;
+        <a class="btn btn--ghost" href="${mapHref()}">Darslar xaritasi</a></div>`;
       return;
     }
     if (alive) intro(a);
@@ -49,7 +57,7 @@ export async function mountTypingLesson(root, lessonId) {
     view.innerHTML = `
       ${top(l, null, a.steps.length)}
       <div class="tlx-intro">
-        <span class="tlx-tag">${l.level}-daraja · ${esc(l.level_title)}</span>
+        <span class="tlx-tag">${l.lang === 'ru' ? 'Ruscha · ' : ''}${l.level}-daraja · ${esc(l.level_title)}</span>
         <h1>${exam ? `${l.level}-daraja imtihoni` : esc(l.title)}</h1>
         ${keys.length ? `<div class="tlx-keys">${keys.map((k) => `<span>${esc(k.toUpperCase())}</span>`).join('')}</div>` : ''}
         <ul class="tlx-rules">
@@ -59,7 +67,9 @@ export async function mountTypingLesson(root, lessonId) {
             : `<li>${a.steps.length} ta mashq: ${a.steps.map((s) => STEP_NAME[s.kind]).join(', ').toLowerCase()}.</li>
                <li>O'tish uchun aniqlik kamida <b>${a.rules.pass_accuracy}%</b>. 3 yulduz: 98% va ${l.wpm} so'z/daq.</li>`}
           <li>Xato harf bossang kursor joyida turadi. To'g'ri harfni topib bos.</li>
-          <li>Barmoqlar asosiy qatorda: chap qo'l <b>A S D F</b>, o'ng qo'l <b>J K L ;</b></li>
+          ${l.lang === 'ru'
+            ? "<li>Kompyuterda <b>rus klaviaturasini</b> yoqing (Alt+Shift yoki Win+Probel). Barmoqlar: chap qo'l <b>Ф Ы В А</b>, o'ng qo'l <b>О Л Д Ж</b></li>"
+            : "<li>Barmoqlar asosiy qatorda: chap qo'l <b>A S D F</b>, o'ng qo'l <b>J K L ;</b></li>"}
         </ul>
         ${l.stars ? `<p class="tlx-best">Oldingi natija: ${starsRow(l.stars, 16)} · ${l.best_wpm} so'z/daq</p>` : ''}
         <button class="btn btn--big tlx-start" type="button">Boshlash</button>
@@ -85,7 +95,7 @@ export async function mountTypingLesson(root, lessonId) {
           <input class="tlx-input" type="text" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" enterkeyhint="next" aria-label="Matnni shu yerga yozing">
         </div>
         <p class="tlx-hint" aria-live="polite"><span data-hint></span></p>
-        ${keyboardHtml(l.keys)}
+        ${keyboardHtml(l.keys, l.lang)}
         <p class="tlx-tap">Telefonda yozish uchun matnga bosing</p>
       </div>`;
     const chars = [...view.querySelectorAll('.tlx-chars span')];
@@ -114,8 +124,8 @@ export async function mountTypingLesson(root, lessonId) {
         const top = chars[pos].offsetTop;
         if (top > box.scrollTop + box.clientHeight - 40 || top < box.scrollTop) box.scrollTop = Math.max(0, top - 40);
       }
-      highlightKey(kb, pos < text.length ? text[pos] : null);
-      $hint.textContent = pos < text.length ? fingerHint(text[pos]) : '';
+      highlightKey(kb, pos < text.length ? text[pos] : null, l.lang);
+      $hint.textContent = pos < text.length ? fingerHint(text[pos], l.lang) : '';
     };
     const live = () => {
       if (!startedAt) return;
@@ -169,7 +179,7 @@ export async function mountTypingLesson(root, lessonId) {
 
     const onKey = (e) => {
       if (e.ctrlKey || e.metaKey || e.altKey) return;
-      if (e.key === 'Escape') { location.hash = '#/typing-lessons'; return; }
+      if (e.key === 'Escape') { location.hash = mapHref(); return; }
       if (e.key.length !== 1) {
         if (e.key === 'Backspace' || e.key === 'Tab' || e.key === 'Enter') e.preventDefault();
         return; // telefon klaviaturasi: "Unidentified" -> input hodisasi
@@ -228,7 +238,7 @@ export async function mountTypingLesson(root, lessonId) {
     off();
     const l = a.lesson;
     const exam = l.kind === 'exam';
-    const nextHref = r.next_lesson_id ? `#/typing-lessons/${r.next_lesson_id}` : '#/typing-lessons';
+    const nextHref = r.next_lesson_id ? `#/typing-lessons/${r.next_lesson_id}` : mapHref();
     const coinRows = r.coins.map((c) => `<li><span>${COIN_REASON[c.reason] || c.reason}</span><b>+${c.amount}</b></li>`).join('');
     let title;
     if (r.flagged) title = 'Juda tez! Natija hisobga olinmadi';
@@ -239,7 +249,7 @@ export async function mountTypingLesson(root, lessonId) {
       : !r.passed ? (exam && r.accuracy >= 90 ? `Imtihon uchun ${l.wpm} so'z/daq kerak. Darslarni takrorlab, qayta urin.` : `O'tish uchun aniqlik kamida ${a.rules.pass_accuracy}% bo'lishi kerak. Shoshilmay yoz.`)
         : r.stars < 3 ? (r.accuracy < 98 ? '3 yulduz uchun aniqlik 98% bo\'lsin.' : `3 yulduz uchun ${exam ? l.wpm + 5 : l.wpm} so'z/daq kerak.`) : '';
     view.innerHTML = `
-      <div class="tlx-top"><a class="tl-back" href="#/typing-lessons" aria-label="Darslar xaritasi">${ic('x', 20)}</a><b>${esc(exam ? 'Imtihon' : l.title)}</b>${coinPill(r.coins_total)}</div>
+      <div class="tlx-top"><a class="tl-back" href="${mapHref()}" aria-label="Darslar xaritasi">${ic('x', 20)}</a><b>${esc(exam ? 'Imtihon' : l.title)}</b>${coinPill(r.coins_total)}</div>
       <div class="tlx-res ${r.passed ? 'is-pass' : 'is-fail'}">
         ${starsRow(r.stars, 46, 'tlx-bigstars')}
         <h1>${title}</h1>
@@ -256,7 +266,7 @@ export async function mountTypingLesson(root, lessonId) {
         <div class="tlx-acts">
           ${r.passed && r.next_lesson_id ? `<a class="btn btn--big" href="${nextHref}">Keyingi dars</a>` : ''}
           <button class="btn ${r.passed ? 'btn--ghost' : 'btn--big'}" type="button" data-again>${ic('redo', 18)}Qayta urinish</button>
-          <a class="btn btn--ghost" href="#/typing-lessons${r.level_unlocked ? `?opened=${r.level_unlocked}` : ''}">${ic('map', 18)}Darslar xaritasi</a>
+          <a class="btn btn--ghost" href="${mapHref(r.level_unlocked)}">${ic('map', 18)}Darslar xaritasi</a>
         </div>
       </div>`;
     view.querySelector('[data-again]').onclick = start;
@@ -268,12 +278,13 @@ export async function mountTypingLesson(root, lessonId) {
 }
 
 function top(l, i, total, doneCur = false) {
+  const href = `#/typing-lessons${l.lang === 'ru' ? '?lang=ru' : ''}`;
   const dots = Array.from({ length: total }, (_, k) => {
     const st = i == null ? '' : k < i || (k === i && doneCur) ? ' is-done' : k === i ? ' is-cur' : '';
     return `<i class="${st.trim()}"></i>`;
   }).join('');
   return `<div class="tlx-top">
-    <a class="tl-back" href="#/typing-lessons" aria-label="Darsdan chiqish">${ic('x', 20)}</a>
+    <a class="tl-back" href="${href}" aria-label="Darsdan chiqish">${ic('x', 20)}</a>
     <b>${esc(l.kind === 'exam' ? `${l.level}-daraja imtihoni` : l.title)}</b>
     <span class="tlx-dots" aria-label="${i == null ? total : i + 1} / ${total} mashq">${dots}</span>
   </div>`;

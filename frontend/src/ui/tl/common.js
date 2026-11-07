@@ -23,34 +23,63 @@ export function starsRow(n, s = 18, cls = '') {
   return `<span class="tl-stars ${cls}" role="img" aria-label="${n} yulduz">${out}</span>`;
 }
 
-// Klaviatura qatorlari (pastki registr) va Shift bilan chiqadigan belgilar
-const ROWS = [
-  ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '='],
-  ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'],
-  ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ';', "'"],
-  ['shift', 'z', 'x', 'c', 'v', 'b', 'n', 'm', ',', '.', '/'],
+// Klaviatura tartiblari (pastki registr). Ruscha: ЙЦУКЕН. Barmoqlar tugma joyiga qarab belgilanadi.
+const LAYOUTS = {
+  uz: {
+    rows: [
+      ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '='],
+      ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'],
+      ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ';', "'"],
+      ['shift', 'z', 'x', 'c', 'v', 'b', 'n', 'm', ',', '.', '/'],
+    ],
+    shifted: { '!': '1', '?': '/', '"': "'", ':': ';', '+': '=', '*': '8', '(': '9', ')': '0', _: '-' },
+    home: 'fj',
+  },
+  ru: {
+    rows: [
+      ['ё', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '='],
+      ['й', 'ц', 'у', 'к', 'е', 'н', 'г', 'ш', 'щ', 'з', 'х', 'ъ'],
+      ['ф', 'ы', 'в', 'а', 'п', 'р', 'о', 'л', 'д', 'ж', 'э'],
+      ['shift', 'я', 'ч', 'с', 'м', 'и', 'т', 'ь', 'б', 'ю', '.'],
+    ],
+    shifted: { '!': '1', '"': '2', '№': '3', ';': '4', '%': '5', ':': '6', '?': '7', '*': '8', '(': '9', ')': '0', _: '-', '+': '=', ',': '.' },
+    home: 'ао',
+  },
+};
+// Barmoq tugma joyiga qarab (ikkala tartibda bir xil): qator va ustun -> barmoq
+const COLS = [
+  ['l5', 'l5', 'l4', 'l3', 'l2', 'l2', 'r2', 'r2', 'r3', 'r4', 'r5', 'r5', 'r5'], // raqamlar (ru: ё bilan)
+  ['l5', 'l4', 'l3', 'l2', 'l2', 'r2', 'r2', 'r3', 'r4', 'r5', 'r5', 'r5'],
+  ['l5', 'l4', 'l3', 'l2', 'l2', 'r2', 'r2', 'r3', 'r4', 'r5', 'r5'],
+  ['l5', 'l5', 'l4', 'l3', 'l2', 'l2', 'r2', 'r2', 'r3', 'r4', 'r5'],
 ];
-const SHIFTED = { '!': '1', '?': '/', '"': "'", ':': ';', '+': '=', '*': '8', '(': '9', ')': '0', _: '-' };
-// Qaysi barmoq bosadi: chap/o'ng qo'l (rang uchun)
-const FINGER = {};
-[['1qaz', 'l5'], ['2wsx', 'l4'], ['3edc', 'l3'], ['45rtfgvb', 'l2'], ['67yuhjnm', 'r2'], ['8ik,', 'r3'], ['9ol.', 'r4'], ["0p;'/-=", 'r5']]
-  .forEach(([keys, f]) => { for (const k of keys) FINGER[k] = f; });
-FINGER.shift = 'l5';
+const FINGERS = {};
+for (const [lang, L] of Object.entries(LAYOUTS)) {
+  const f = {};
+  L.rows.forEach((row, r) => {
+    // o'zbekcha raqamlar qatorida ё yo'q: ustunlar bittaga suriladi
+    const shift = r === 0 && lang === 'uz' ? 1 : 0;
+    row.forEach((k, c) => { f[k] = COLS[r][c + shift] || 'r5'; });
+  });
+  FINGERS[lang] = f;
+}
 const FINGER_NAME = { l5: "chap jimjiloq", l4: 'chap nomsiz', l3: "chap o'rta", l2: "chap ko'rsatkich", r2: "o'ng ko'rsatkich", r3: "o'ng o'rta", r4: "o'ng nomsiz", r5: "o'ng jimjiloq" };
+const layout = (lang) => LAYOUTS[lang] || LAYOUTS.uz;
 
 /** Belgi uchun tugma va Shift kerakmi. */
-export function keyFor(ch) {
+export function keyFor(ch, lang = 'uz') {
   if (ch === ' ') return { key: 'space', shift: false };
-  if (SHIFTED[ch]) return { key: SHIFTED[ch], shift: true };
+  const L = layout(lang);
+  if (L.shifted[ch]) return { key: L.shifted[ch], shift: true };
   const low = ch.toLowerCase();
   return { key: low, shift: ch !== low };
 }
 
 /** Qaysi barmoq bilan bosiladi (maslahat matni). */
-export function fingerHint(ch) {
+export function fingerHint(ch, lang = 'uz') {
   if (ch === ' ') return 'Bosh barmoq';
-  const { key, shift } = keyFor(ch);
-  const f = FINGER[key];
+  const { key, shift } = keyFor(ch, lang);
+  const f = (FINGERS[lang] || FINGERS.uz)[key];
   if (!f) return '';
   const name = FINGER_NAME[f];
   const label = name[0].toUpperCase() + name.slice(1);
@@ -59,27 +88,30 @@ export function fingerHint(ch) {
   return `${label} barmoq + ${f[0] === 'l' ? "o'ng" : 'chap'} Shift`;
 }
 
+const dataKey = (k) => (k === "'" ? 'apos' : k);
+
 /** Ekrandagi klaviatura HTML. @param {string[]} newKeys darsdagi yangi tugmalar (belgilanadi) */
-export function keyboardHtml(newKeys = []) {
+export function keyboardHtml(newKeys = [], lang = 'uz') {
+  const L = layout(lang);
+  const F = FINGERS[lang] || FINGERS.uz;
   const isNew = new Set(newKeys);
-  const rows = ROWS.map((r, i) => `<div class="tl-kr tl-kr${i}">${r.map((k) => {
+  const rows = L.rows.map((r, i) => `<div class="tl-kr tl-kr${i}">${r.map((k) => {
     const label = k === 'shift' ? 'Shift' : k.toUpperCase();
-    const home = 'fj'.includes(k) && k.length === 1 ? ' is-home' : '';
-    return `<span class="tl-k f-${FINGER[k] || 'x'}${isNew.has(k) ? ' is-new' : ''}${home}${k === 'shift' ? ' is-wide' : ''}" data-k="${k === "'" ? 'apos' : k}">${label}</span>`;
+    const home = k.length === 1 && L.home.includes(k) ? ' is-home' : '';
+    return `<span class="tl-k f-${F[k] || 'x'}${isNew.has(k) ? ' is-new' : ''}${home}${k === 'shift' ? ' is-wide' : ''}" data-k="${dataKey(k)}">${label}</span>`;
   }).join('')}${i === 3 ? '<span class="tl-k is-wide f-r5" data-k="shift-r">Shift</span>' : ''}</div>`).join('');
-  return `<div class="tl-kb" aria-hidden="true">${rows}<div class="tl-kr"><span class="tl-k is-space" data-k="space">Probel</span></div></div>`;
+  return `<div class="tl-kb" data-lang="${lang}" aria-hidden="true">${rows}<div class="tl-kr"><span class="tl-k is-space" data-k="space">${lang === 'ru' ? 'Пробел' : 'Probel'}</span></div></div>`;
 }
 
 /** Keyingi bosiladigan tugmani yoritadi. */
-export function highlightKey(kb, ch) {
+export function highlightKey(kb, ch, lang = 'uz') {
   kb.querySelectorAll('.is-next').forEach((e) => e.classList.remove('is-next'));
   if (ch == null) return;
-  const { key, shift } = keyFor(ch);
-  const sel = key === "'" ? 'apos' : key;
-  kb.querySelector(`[data-k="${CSS.escape(sel)}"]`)?.classList.add('is-next');
+  const { key, shift } = keyFor(ch, lang);
+  kb.querySelector(`[data-k="${CSS.escape(dataKey(key))}"]`)?.classList.add('is-next');
   if (shift) {
     // Shift harfga qarama-qarshi qo'ldagi tugma bilan bosiladi
-    const left = (FINGER[key] || 'r')[0] === 'l';
+    const left = ((FINGERS[lang] || FINGERS.uz)[key] || 'r')[0] === 'l';
     kb.querySelector(`[data-k="${left ? 'shift-r' : 'shift'}"]`)?.classList.add('is-next');
   }
 }

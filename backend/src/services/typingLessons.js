@@ -1,5 +1,5 @@
 import { AppError } from '../errors.js';
-import { LEVELS, LESSONS, LESSON_BY_ID, COINS, PASS_ACCURACY, starsFor } from '../data/typingCourse.js';
+import { COURSES, LANGS, LESSON_BY_ID, lessonsOf, COINS, PASS_ACCURACY, starsFor } from '../data/typingCourse.js';
 
 const ATTEMPT_TTL_MS = 30 * 60 * 1000; // 30 daqiqada tugamagan urinish yaroqsiz
 const MIN_STEP_SEC = 1;                // bundan tez yozilgan mashq qabul qilinmaydi
@@ -35,9 +35,11 @@ const brief = (l) => ({ id: l.id, kind: l.kind, title: l.title, keys: l.keys, st
  * Kurs xaritasi: darajalar, har dars holati (done/current/open/locked), yulduzlar, coinlar.
  * O'quvchi uchun darslar ketma-ket ochiladi; ustoz va admin hammasini ko'radi.
  */
-export async function getCourse(run, user) {
+export async function getCourse(run, user, lang = 'uz') {
+  const LEVELS = COURSES[lang];
+  const LESSONS = lessonsOf(lang);
   const [{ rows: prog }, { rows: u }] = await Promise.all([
-    run('SELECT lesson_id, stars, best_wpm, best_accuracy FROM typing_lesson_progress WHERE user_id = $1', [user.id]),
+    run('SELECT lesson_id, stars, best_wpm, best_accuracy FROM typing_lesson_progress WHERE user_id = $1 AND lesson_id = ANY($2)', [user.id, LESSONS.map((l) => l.id)]),
     run('SELECT coins FROM users WHERE id = $1', [user.id]),
   ]);
   const byId = new Map(prog.map((p) => [p.lesson_id, p]));
@@ -68,6 +70,7 @@ export async function getCourse(run, user) {
   });
 
   return {
+    lang,
     levels,
     stats: {
       coins: u[0]?.coins ?? 0,
@@ -84,7 +87,9 @@ export async function getCourse(run, user) {
 
 /** Dars holatini tekshiradi: yo'q bo'lsa 404, qulflangan bo'lsa 403. */
 async function lessonStatus(run, user, lessonId) {
-  const course = await getCourse(run, user);
+  const known = LESSON_BY_ID.get(lessonId);
+  if (!known) throw new AppError(404, 'LESSON_NOT_FOUND', 'Dars topilmadi');
+  const course = await getCourse(run, user, known.lang);
   for (const lv of course.levels) {
     const l = lv.lessons.find((x) => x.id === lessonId);
     if (l) {
@@ -106,12 +111,12 @@ export async function startAttempt(run, user, lessonId) {
      VALUES ($1, $2, $3, $4) RETURNING id, expires_at`,
     [user.id, lessonId, JSON.stringify(steps.map((s) => ({ text: s.text }))), expiresAt]
   );
-  const lv = LEVELS.find((x) => x.n === l.level);
+  const lv = COURSES[l.lang].find((x) => x.n === l.level);
   return {
     attempt_id: rows[0].id,
     expires_at: rows[0].expires_at,
     lesson: {
-      id: l.id, kind: l.kind, title: l.title, keys: l.keys, level: l.level, level_title: lv.title,
+      id: l.id, lang: l.lang, kind: l.kind, title: l.title, keys: l.keys, level: l.level, level_title: lv.title,
       wpm: l.wpm, stars: status.stars, best_wpm: status.best_wpm,
     },
     steps,
@@ -254,10 +259,11 @@ async function finish(client, user, a) {
   );
 
   // Keyingi dars: shu tranzaksiya ichida yangilangan progress bo'yicha
-  const course = await getCourse((t, p) => client.query(t, p), user);
+  const course = await getCourse((t, p) => client.query(t, p), user, l.lang);
   const next = course.stats.current_lesson_id;
   return {
     lesson_id: l.id,
+    lang: l.lang,
     kind: l.kind,
     ...m,
     flagged,
@@ -268,21 +274,16 @@ async function finish(client, user, a) {
     coins_earned: earned,
     coins_total: u[0].coins,
     next_lesson_id: next,
-    level_unlocked: l.kind === 'exam' && stars > 0 && prevStars === 0 && l.level < LEVELS.length ? l.level + 1 : null,
+    level_unlocked: l.kind === 'exam' && stars > 0 && prevStars === 0 && l.level < COURSES[l.lang].length ? l.level + 1 : null,
     course_done: next === null,
     stats: course.stats,
   };
 }
 
-/** Profil uchun: coinlar, darslar, yulduzlar, daraja va oxirgi darslar. */
+/** Profil uchun: coinlar, har til bo'yicha daraja/darslar/yulduzlar va oxirgi darslar. */
 export async function getLessonSummary(run, userId) {
-  const [{ rows: p }, { rows: recent }, { rows: u }] = await Promise.all([
-    run(
-      `SELECT count(*)::int AS done, coalesce(sum(stars), 0)::int AS stars,
-              round(max(best_wpm))::int AS best_wpm
-         FROM typing_lesson_progress WHERE user_id = $1`,
-      [userId]
-    ),
+  const [{ rows: prog }, { rows: recent }, { rows: u }, { rows: acc }] = await Promise.all([
+    run('SELECT lesson_id, stars, best_wpm FROM typing_lesson_progress WHERE user_id = $1', [userId]),
     run(
       `SELECT lesson_id, round(wpm)::int AS wpm, round(accuracy)::int AS accuracy, stars, coins, finished_at AS at
          FROM typing_lesson_attempts
@@ -291,31 +292,39 @@ export async function getLessonSummary(run, userId) {
       [userId]
     ),
     run('SELECT coins FROM users WHERE id = $1', [userId]),
+    run(
+      `SELECT round(avg(accuracy))::int AS avg_accuracy FROM (
+         SELECT accuracy FROM typing_lesson_attempts
+          WHERE user_id = $1 AND finished_at IS NOT NULL AND flagged = false
+          ORDER BY finished_at DESC LIMIT 20) t`,
+      [userId]
+    ),
   ]);
-  const { rows: acc } = await run(
-    `SELECT round(avg(accuracy))::int AS avg_accuracy FROM (
-       SELECT accuracy FROM typing_lesson_attempts
-        WHERE user_id = $1 AND finished_at IS NOT NULL AND flagged = false
-        ORDER BY finished_at DESC LIMIT 20) t`,
-    [userId]
-  );
-  const { rows: passed } = await run('SELECT lesson_id FROM typing_lesson_progress WHERE user_id = $1', [userId]);
-  const doneIds = new Set(passed.map((r) => r.lesson_id));
-  const cur = LESSONS.find((l) => !doneIds.has(l.id));
+  const byId = new Map(prog.map((p) => [p.lesson_id, p]));
+  const langs = {};
+  for (const lang of LANGS) {
+    const list = lessonsOf(lang);
+    const mine = list.filter((l) => byId.has(l.id));
+    const cur = list.find((l) => !byId.has(l.id));
+    langs[lang] = {
+      done: mine.length,
+      total: list.length,
+      stars: mine.reduce((s, l) => s + byId.get(l.id).stars, 0),
+      max_stars: list.length * 3,
+      level: cur ? cur.level : COURSES[lang].length,
+      levels: COURSES[lang].length,
+      course_done: !cur,
+    };
+  }
+  const best = prog.length ? Math.round(Math.max(...prog.map((p) => Number(p.best_wpm)))) : null;
   return {
     coins: u[0]?.coins ?? 0,
-    done: p[0].done,
-    total: LESSONS.length,
-    stars: p[0].stars,
-    max_stars: LESSONS.length * 3,
-    level: cur ? cur.level : LEVELS.length,
-    levels: LEVELS.length,
-    course_done: !cur,
-    best_wpm: p[0].best_wpm,
+    langs,
+    best_wpm: best,
     avg_accuracy: acc[0].avg_accuracy,
     recent: recent.map((r) => {
       const l = LESSON_BY_ID.get(r.lesson_id);
-      return { ...r, title: l ? l.title : r.lesson_id, kind: l?.kind ?? 'lesson', level: l?.level ?? null };
+      return { ...r, title: l ? l.title : r.lesson_id, kind: l?.kind ?? 'lesson', level: l?.level ?? null, lang: l?.lang ?? 'uz' };
     }),
   };
 }

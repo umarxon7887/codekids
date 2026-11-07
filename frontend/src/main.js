@@ -65,7 +65,7 @@ async function render({ path, query }) {
 
   if (path === '/typing') return (await import('./games/typing/lobby.js')).mountTypingLobby(app);
   if (path === '/typing-lessons') return (await import('./ui/tl/map.js')).mountTypingMap(app, query);
-  const tl = path.match(/^\/typing-lessons\/(\d-[\dx])$/);
+  const tl = path.match(/^\/typing-lessons\/(r?\d-[\dx])$/);
   if (tl) return (await import('./ui/tl/lesson.js')).mountTypingLesson(app, tl[1]);
   if (path === '/it') return (await import('./ui/it/path.js')).mountItPath(app, query);
   if (path === '/teacher') return (await import('./teacher/panel.js')).mountTeacher(app);
