@@ -65,3 +65,11 @@ export const authLimiter = rateLimit({
   skipSuccessfulRequests: true,
   handler: jsonLimitHandler,
 });
+// Dars rasmlari: sinfda ko'p bola bir IP'dan bir vaqtda ochadi, shuning uchun umumiy limitdan alohida va kengroq
+export const imageLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: Number(process.env.IMAGE_RATE_LIMIT_MAX) || 3000,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  handler: jsonLimitHandler,
+});

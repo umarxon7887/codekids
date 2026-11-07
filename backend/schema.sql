@@ -374,3 +374,21 @@ BEGIN
     );
   END LOOP;
 END $$;
+
+-- IT darslari rasmlari: muharrirdan yuklanadi (brauzer kichraytiradi, odatda 50-300 KB).
+-- Rasm o'zgarmaydi: yangi rasm = yangi qator; bir xil fayl ikki marta saqlanmaydi (sha256).
+CREATE TABLE IF NOT EXISTS it_images (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  author_id   UUID REFERENCES users(id) ON DELETE SET NULL,
+  mime        VARCHAR(20) NOT NULL CHECK (mime IN ('image/webp', 'image/jpeg', 'image/png')),
+  width       SMALLINT,
+  height      SMALLINT,
+  bytes       INTEGER NOT NULL,
+  sha256      CHAR(64) NOT NULL UNIQUE,
+  data        BYTEA NOT NULL,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- O'quvchining haqiqiy ismi: IT darslarida qahramon (Kibi) so'raydi va shu ism bilan murojaat qiladi.
+-- Nikneymdan farqli: boshqalarga ko'rinmaydi, faqat darsda ishlatiladi.
+ALTER TABLE users ADD COLUMN IF NOT EXISTS real_name VARCHAR(20);
