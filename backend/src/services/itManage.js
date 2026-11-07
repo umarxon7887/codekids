@@ -214,7 +214,6 @@ export function publishIssues({ title, content }) {
   });
   if (lines.filter((d) => d.ask_name).length > 1) add('dialog.lines', "Dialogda ism faqat bitta gapda so'ralsin");
   if (content.video && !content.video.id && !content.video.file) add('video', "Video uchun YouTube havolasi yoki fayl yo'li kerak");
-  gameIssues(content.game, add, blank);
   const ex = content.exercises || [];
   if (!ex.length) add('exercises', "Kamida bitta mashq qo'shing");
   ex.forEach((e, i) => {
@@ -266,44 +265,11 @@ export function publishIssues({ title, content }) {
   return out;
 }
 
-/** Tuzatish o'yini: har qism to'liq va har qadamni bajarib bo'ladigan bo'lsin. */
-function gameIssues(g, add, blank) {
-  if (!g) return;
-  if (!g.parts.length) add('game.parts', "O'yinda kamida bitta qism bo'lsin");
-  g.parts.forEach((pt, i) => {
-    const n = `O'yin, ${i + 1}-qism`;
-    const p = `game.parts.${i}`;
-    if (blank(pt.name)) add(`${p}.name`, `${n}: nomi bo'sh`);
-    if (blank(pt.explain)) add(`${p}.explain`, `${n}: Kibi tushuntirishi bo'sh`);
-    if (!pt.steps.length) add(`${p}.steps`, `${n}: kamida bitta harakat qo'shing`);
-    pt.steps.forEach((s, k) => {
-      const q = `${p}.steps.${k}`;
-      const m = `${n}, ${k + 1}-harakat`;
-      if (blank(s.prompt)) add(`${q}.prompt`, `${m}: bolaga topshiriq matni bo'sh`);
-      if (s.kind === 'drag') {
-        if (!s.items.length) add(`${q}.items`, `${m}: sudraladigan narsa yo'q`);
-        s.items.forEach((t, j) => { if (blank(t.label) && !t.image) add(`${q}.items.${j}`, `${m}: ${j + 1}-narsa bo'sh (matn yoki rasm)`); });
-        if (!s.targets.length) add(`${q}.targets`, `${m}: joy (nishon) yo'q`);
-        s.targets.forEach((t, j) => { if (blank(t.label) && !t.image) add(`${q}.targets.${j}`, `${m}: ${j + 1}-joy bo'sh (matn yoki rasm)`); });
-        if (s.answer >= s.targets.length) add(`${q}.answer`, `${m}: to'g'ri joy belgilanmagan`);
-      } else if (s.kind === 'tap') {
-        if (blank(s.label) && !s.image) add(`${q}.label`, `${m}: tugma yozuvi yoki rasmi kerak`);
-      } else if (s.kind === 'wipe') {
-        if (!s.dirty || !s.clean) add(`${q}.dirty`, `${m}: iflos va toza rasmlar kerak`);
-      }
-    });
-  });
-}
-
 /** Kontentdagi barcha rasm ID'lari. */
 export function contentImages(c) {
   const ids = [c.story_image, c.helper?.image, c.term_image];
   for (const e of c.exercises || []) {
     ids.push(e.image, ...(e.option_images || []), ...(e.item_images || []), ...(e.pair_images || []).flat());
-  }
-  for (const pt of c.game?.parts || []) {
-    ids.push(pt.image);
-    for (const s of pt.steps || []) ids.push(s.image, s.dirty, s.clean, ...(s.items || []).map((t) => t.image), ...(s.targets || []).map((t) => t.image));
   }
   return [...new Set(ids.filter(Boolean))];
 }
@@ -329,7 +295,6 @@ function tidy(content) {
       };
     }
   }
-  if (c.game && !c.game.parts?.length && !c.game.intro && !c.game.title) delete c.game;
   // Rasm ro'yxati variantlar soniga moslanadi; birorta rasm bo'lmasa, ro'yxat umuman saqlanmaydi
   const fit = (list, n, pair = false) => {
     if (!list) return undefined;

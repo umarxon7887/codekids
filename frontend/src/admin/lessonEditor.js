@@ -29,17 +29,6 @@ const DIALOG_SAMPLE = () => ({
       ask_name: false, first_only: false, buttons: [{ label: 'Ketdik!', reply: '' }] },
   ],
 });
-const EFFECTS = [['none', "Yo'q"], ['power', 'Tok keldi (chiroq, sovutgich)'], ['cool', 'Harorat tushdi'], ['check', '✗ → ✓ tekshiruv'],
-  ['load', 'Yuklanish chizig\'i'], ['screen', 'Ekran: logotip → ish stoli'], ['type', 'Ekranda yozilgan matn']];
-const STEP_KIND = { drag: 'Sudrash', tap: 'Bosish', wipe: 'Surtib tozalash', type: 'Yozish' };
-const NEW_STEP = {
-  drag: () => ({ kind: 'drag', prompt: '', items: [{ label: '' }], rotate: false, targets: [{ label: '' }], answer: 0 }),
-  tap: () => ({ kind: 'tap', prompt: '', label: '' }),
-  wipe: () => ({ kind: 'wipe', prompt: '' }),
-  type: () => ({ kind: 'type', prompt: 'Klaviaturada ismingni yoz' }),
-};
-const NEW_PART = () => ({ name: '', broken: '', explain: '', hint: '', done: '', effect: 'none', steps: [] });
-const MAX_PARTS = 8;
 const NEW_LINE = () => ({ pose: 'oddiy', text: '', ask_name: false, first_only: false, buttons: [] });
 const DEFAULT_MAZE = ['S.#..', '.##.#', '...#.', '#.#..', '#...G'];
 const NEW_EX = {
@@ -179,9 +168,6 @@ export function mountLessonEditor(box, ctx) {
             <button type="button" class="btn btn--ghost ad-btn-sm" data-act="add-ex:maze">${ic('maze', 16)}Labirint</button>
           </div>`, { n: 4 })}
 
-        ${card('game', 'game', "Tuzatish o'yini", `
-          <div class="ad-game"></div>`, { sub: "ixtiyoriy: savollardan keyin bola buzilgan qurilmani qismma-qism tuzatadi" })}
-
         ${card('finish', 'finish', 'Yakun', `
           <textarea data-f="content.term_text" rows="3" maxlength="600" aria-label="Yakun matni" placeholder="Masalan: Bajarilish tartibi aniq yozilgan ko'rsatmalar algoritm deyiladi."></textarea>
           ${imgSlot('content.term_image')}`, { n: 5, sub: 'termin nima ekanini bir-ikki gapda tushuntiring' })}
@@ -211,7 +197,6 @@ export function mountLessonEditor(box, ctx) {
   const saveSt = root.querySelector('.ad-save-st');
   const issuesBox = root.querySelector('.ad-issues');
   const dlgBox = root.querySelector('.ad-dlg');
-  const gmBox = root.querySelector('.ad-game');
 
   // ---------- Kibi dialogi ----------
   const poseSel = (path, blank) => `<select class="ad-sel-sm" data-f="${path}" aria-label="Kibi holati">${blank ? `<option value="">${blank}</option>` : ''}${POSES.map(([v, l]) => `<option value="${v}">${l}</option>`).join('')}</select>`;
@@ -257,117 +242,6 @@ export function mountLessonEditor(box, ctx) {
         <button type="button" class="ad-mini ad-danger-btn" data-act="dlg-clear">${ic('trash', 14)}Dialogni olib tashlash</button>
       </div>`;
     fill(dlgBox);
-  }
-
-  // ---------- Tuzatish o'yini ----------
-  function renderGame() {
-    const g = st.content.game;
-    if (!g) {
-      gmBox.innerHTML = `<p class="ad-muted">O'yin yo'q.</p>
-        <div class="ad-actions"><button type="button" class="btn btn--ghost ad-btn-sm" data-act="gm-new">${ic('plus', 16)}O'yin qo'shish</button></div>`;
-      return;
-    }
-    const P = 'content.game';
-    const thing = (path, j, what, del) => `
-      <div class="ad-rowf">${rowImg(`${path}.${j}.image`, `${j + 1}-${what}ga rasm`)}
-        <input maxlength="40" data-f="${path}.${j}.label" placeholder="${what[0].toUpperCase()}${what.slice(1)} nomi" aria-label="${j + 1}-${what} nomi">
-        ${del}</div>`;
-    const stepBody = (st2, q, i, k) => {
-      if (st2.kind === 'drag') {
-        return `
-          <fieldset class="ad-rows"><legend>Sudraladigan narsa(lar) <small>3 tagacha; hammasi bitta to'g'ri joyga boradi</small></legend>
-            ${st2.items.map((_, j) => thing(`${q}.items`, j, 'narsa', `<button type="button" class="ad-ib" data-act="gm-del-item:${i}:${k}:${j}" aria-label="${j + 1}-narsani o'chirish">${ic('x', 16)}</button>`)).join('')}
-            <button type="button" class="ad-mini" data-act="gm-add-item:${i}:${k}" ${st2.items.length >= 3 ? 'disabled' : ''}>${ic('plus', 14)}Narsa</button>
-          </fieldset>
-          <label class="ad-check"><input type="checkbox" data-f="${q}.rotate"><span>Narsa teskari turadi, avval burish kerak <small>masalan, xotira plankasi</small></span></label>
-          <fieldset class="ad-rows"><legend>Joylar <small>3 tagacha; to'g'risini belgilang, qolganlari chalg'itadi</small></legend>
-            ${st2.targets.map((_, j) => thing(`${q}.targets`, j, 'joy', `
-              <label class="ad-right" title="To'g'ri joy"><input type="radio" name="gm-ans-${i}-${k}" data-f="${q}.answer" value="${j}" aria-label="${j + 1}-joy to'g'ri"><span>${ic('check', 16)}</span></label>
-              <button type="button" class="ad-ib" data-act="gm-del-tg:${i}:${k}:${j}" aria-label="${j + 1}-joyni o'chirish">${ic('x', 16)}</button>`)).join('')}
-            <button type="button" class="ad-mini" data-act="gm-add-tg:${i}:${k}" ${st2.targets.length >= 3 ? 'disabled' : ''}>${ic('plus', 14)}Joy</button>
-          </fieldset>`;
-      }
-      if (st2.kind === 'tap') {
-        return `<div class="ad-rowf">${rowImg(`${q}.image`, 'Tugma rasmi')}<input maxlength="40" data-f="${q}.label" placeholder="Tugma yozuvi, masalan: Yoqish" aria-label="Tugma yozuvi"></div>`;
-      }
-      if (st2.kind === 'wipe') {
-        return `<div class="ad-gm-wipe"><div>${rowImg(`${q}.dirty`, 'Iflos rasm')}<small>Iflos</small></div><div>${rowImg(`${q}.clean`, 'Toza rasm')}<small>Toza</small></div></div>
-          <p class="ad-hint">Bola iflos rasmni barmog'i bilan surtadi, ostidan toza rasm chiqadi. Ikkala rasm bir xil o'lchamda bo'lsin.</p>`;
-      }
-      return '<p class="ad-hint">Bola klaviaturada yozadi, matn ekranda paydo bo\'ladi.</p>';
-    };
-    gmBox.innerHTML = `
-      <div class="ad-grid">
-        <label class="ad-f"><span>Nomi</span><input maxlength="80" data-f="${P}.title" placeholder="Kibining ustaxonasi"></label>
-        <label class="ad-f"><span>Har qism uchun XP <small>mavzu XP'siga qo'shiladi</small></span><input type="number" min="0" max="50" data-f="${P}.part_xp"></label>
-      </div>
-      <label class="ad-f" data-step="game"><span>Boshlanishida Kibi <small>{ism} = bolaning ismi</small></span><textarea rows="2" maxlength="400" data-f="${P}.intro"></textarea></label>
-      <label class="ad-f"><span>G'alaba yozuvi <small>ekranda chiqadi</small></span><input maxlength="300" data-f="${P}.outro" placeholder="Rahmat, usta {ism}!"></label>
-      ${g.parts.map((pt, i) => {
-        const p = `${P}.parts.${i}`;
-        return `<article class="ad-gm-part" data-step="game:${i}">
-          <header class="ad-ex-h"><b>${i + 1}-qism</b><span class="ad-sp"></span>
-            <button type="button" class="ad-ib" data-act="gm-up:${i}" ${i === 0 ? 'disabled' : ''} aria-label="${i + 1}-qismni yuqoriga">${ic('up', 18)}</button>
-            <button type="button" class="ad-ib" data-act="gm-down:${i}" ${i === g.parts.length - 1 ? 'disabled' : ''} aria-label="${i + 1}-qismni pastga">${ic('down', 18)}</button>
-            <button type="button" class="ad-ib is-danger" data-act="gm-del:${i}" aria-label="${i + 1}-qismni o'chirish">${ic('trash', 18)}</button></header>
-          <div class="ad-rowf">${rowImg(`${p}.image`, 'Kartochka rasmi')}<input maxlength="40" data-f="${p}.name" placeholder="Qism nomi, masalan: Quvvat bloki" aria-label="${i + 1}-qism nomi"></div>
-          <label class="ad-f"><span>Buzilish <small>ekranda «Muammo» bo'lib chiqadi</small></span><textarea rows="2" maxlength="300" data-f="${p}.broken"></textarea></label>
-          <label class="ad-f"><span>Kibi tushuntiradi <small>sog' holatda qanday ishlaydi</small></span><textarea rows="2" maxlength="400" data-f="${p}.explain"></textarea></label>
-          <div class="ad-grid">
-            <label class="ad-f"><span>Xato harakatda maslahat</span><input maxlength="300" data-f="${p}.hint"></label>
-            <label class="ad-f"><span>Tuzalgach Kibi aytadi</span><input maxlength="300" data-f="${p}.done"></label>
-          </div>
-          <label class="ad-f"><span>Tuzalgach ekranda</span><select data-f="${p}.effect">${EFFECTS.map(([v, l]) => `<option value="${v}">${l}</option>`).join('')}</select></label>
-          <div class="ad-gm-steps">${pt.steps.map((st2, k) => {
-            const q = `${p}.steps.${k}`;
-            return `<section class="ad-gm-step"><header class="ad-ex-h"><b>${k + 1}-harakat: ${STEP_KIND[st2.kind]}</b><span class="ad-sp"></span>
-                <button type="button" class="ad-ib is-danger" data-act="gm-del-step:${i}:${k}" aria-label="${k + 1}-harakatni o'chirish">${ic('x', 16)}</button></header>
-              <input maxlength="200" data-f="${q}.prompt" placeholder="Bolaga topshiriq, masalan: Vilkani rozetkaga ula" aria-label="${k + 1}-harakat topshirig'i">
-              ${stepBody(st2, q, i, k)}</section>`;
-          }).join('')}</div>
-          <div class="ad-actions"><span class="ad-muted">Harakat qo'shish:</span>${Object.entries(STEP_KIND).map(([kd, l]) =>
-            `<button type="button" class="ad-mini" data-act="gm-add-step:${i}:${kd}" ${pt.steps.length >= 3 ? 'disabled' : ''}>${ic('plus', 14)}${l}</button>`).join('')}</div>
-        </article>`;
-      }).join('')}
-      <div class="ad-actions">
-        <button type="button" class="ad-mini" data-act="gm-add" ${g.parts.length >= MAX_PARTS ? 'disabled' : ''}>${ic('plus', 14)}Qism qo'shish</button>
-        <button type="button" class="ad-mini ad-danger-btn" data-act="gm-clear">${ic('trash', 14)}O'yinni olib tashlash</button>
-      </div>`;
-    fill(gmBox);
-  }
-
-  function gameAction(raw) {
-    const [act, a, b, d] = raw.split(':');
-    const i = Number(a);
-    const k = Number(b);
-    const j = Number(d);
-    const c = st.content;
-    const parts = c.game?.parts;
-    let at = Number.isNaN(i) ? 'game' : `game:${i}`;
-    if (act === 'gm-new') { c.game = { title: '', intro: '', outro: 'Rahmat, usta {ism}!', part_xp: 5, parts: [NEW_PART()] }; at = 'game'; }
-    else if (act === 'gm-clear') { if (!confirm("O'yin olib tashlansinmi?")) return; delete c.game; at = 'finish'; }
-    else if (act === 'gm-add') { parts.push(NEW_PART()); at = `game:${parts.length - 1}`; }
-    else if (act === 'gm-del') {
-      if ((parts[i].name || parts[i].explain) && !confirm(`${i + 1}-qism o'chirilsinmi?`)) return;
-      parts.splice(i, 1); at = 'game';
-    } else if (act === 'gm-up' || act === 'gm-down') {
-      const o = act === 'gm-up' ? i - 1 : i + 1;
-      [parts[i], parts[o]] = [parts[o], parts[i]];
-      at = `game:${o}`;
-    } else if (act === 'gm-add-step') parts[i].steps.push(NEW_STEP[b]());
-    else if (act === 'gm-del-step') parts[i].steps.splice(k, 1);
-    else if (act === 'gm-add-item') parts[i].steps[k].items.push({ label: '' });
-    else if (act === 'gm-del-item') parts[i].steps[k].items.splice(j, 1);
-    else if (act === 'gm-add-tg') parts[i].steps[k].targets.push({ label: '' });
-    else if (act === 'gm-del-tg') {
-      const s2 = parts[i].steps[k];
-      s2.targets.splice(j, 1);
-      if (s2.answer === j) s2.answer = 0; else if (s2.answer > j) s2.answer -= 1;
-    }
-    step = at;
-    renderGame();
-    changed();
-    preview(at);
   }
 
   // ---------- Mashqlar ro'yxati ----------
@@ -622,7 +496,6 @@ export function mountLessonEditor(box, ctx) {
       video: c.video?.id || c.video?.file ? [c.video.title || (c.video.file ? 'saytdagi video' : 'YouTube video'), c.video.check && '«Tushundingmi?»'].filter(Boolean).join(' · ') : "video yo'q",
       helper: (short(c.helper?.title || c.helper?.text, 60) || "bo'sh") + pic(c.helper?.image),
       exercises: c.exercises.length ? `${c.exercises.length} ta: ${[...new Set(c.exercises.map((e) => TYPE[e.type]))].join(', ')}` : "mashq yo'q",
-      game: c.game ? `${c.game.parts.length} qism${c.game.parts.length ? ` · ${c.game.parts.map((x) => x.name).filter(Boolean).slice(0, 3).join(', ')}` : ''}` : "o'yin yo'q",
       finish: (short(c.term_text, 60) || "bo'sh") + pic(c.term_image),
       manage: '',
     };
@@ -726,15 +599,6 @@ export function mountLessonEditor(box, ctx) {
       c.video.check = Boolean(c.video.check);
       if (!c.video.id && !c.video.file) delete c.video;
     }
-    if (c.game) {
-      c.game.part_xp = Number(c.game.part_xp) || 0;
-      c.game.parts.forEach((pt) => pt.steps.forEach((s2) => {
-        if (s2.kind === 'drag') { s2.answer = Number(s2.answer) || 0; s2.rotate = Boolean(s2.rotate); }
-        for (const x of [...(s2.items || []), ...(s2.targets || [])]) if (!x.image) delete x.image;
-        for (const key of ['image', 'dirty', 'clean']) if (key in s2 && !s2[key]) delete s2[key];
-      }));
-      c.game.parts.forEach((pt) => { if (!pt.image) delete pt.image; });
-    }
     if (c.dialog) {
       if (!c.dialog.lines?.length) delete c.dialog;
       else {
@@ -803,7 +667,6 @@ export function mountLessonEditor(box, ctx) {
         fill(root);
         updateVideoUi();
         renderDialog();
-        renderGame();
         renderExercises();
       }
       showIssues([]);
@@ -920,7 +783,6 @@ export function mountLessonEditor(box, ctx) {
         return;
       }
       if (act.startsWith('dlg')) { dialogAction(act, i, j); return; }
-      if (act.startsWith('gm-')) { gameAction(b.dataset.act); return; }
       if (act === 'add-ex') { ex.push(NEW_EX[a]()); step = `ex:${ex.length - 1}`; }
       else if (act === 'del-ex') {
         if ((ex[i].prompt || '').trim() && !confirm(`${i + 1}-mashq o'chirilsinmi?`)) return;
@@ -1039,7 +901,7 @@ export function mountLessonEditor(box, ctx) {
     slots().forEach((s) => { delete s.dataset.busy; });
     if (r) set(st, path, r.id);
     slots().forEach(drawImg);
-    if (r) { step = path.startsWith('content.exercises.') ? `ex:${path.split('.')[2]}` : path.startsWith('content.game.parts.') ? `game:${path.split('.')[3]}` : path.includes('helper') ? 'helper' : path.includes('term') ? 'finish' : 'story'; changed(); }
+    if (r) { step = path.startsWith('content.exercises.') ? `ex:${path.split('.')[2]}` : path.includes('helper') ? 'helper' : path.includes('term') ? 'finish' : 'story'; changed(); }
   }
 
   saveBtn.onclick = () => save();
@@ -1071,7 +933,6 @@ export function mountLessonEditor(box, ctx) {
   if (st.content.video?.id) root.querySelector('[data-video-url]').value = `https://youtu.be/${st.content.video.id}`;
   updateVideoUi();
   renderDialog();
-  renderGame();
   renderExercises();
   refreshBar();
   preview(st.content.dialog?.lines?.length ? 'dialog' : 'story');

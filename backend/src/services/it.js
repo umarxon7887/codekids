@@ -104,7 +104,7 @@ export async function getLesson(run, user, lessonId) {
       title: l.title,
       term: l.term,
       minutes: l.minutes,
-      xp: lessonXp(l),
+      xp: l.xp,
       status: brief.status,
       section: { id: section.id, title: section.title, method: section.method, index, total: section.lessons.length },
       tool: l.tool_id ? { id: l.tool_id, name: l.tool_name, short: l.tool_short, body: l.tool_body } : null,
@@ -122,12 +122,6 @@ export async function setRealName(run, userId, name) {
   return { name: rows[0]?.real_name ?? null };
 }
 
-/** Mavzu XP'si: asosiy XP + tuzatish o'yinidagi har bir qism uchun XP. */
-export const lessonXp = (l) => {
-  const g = l.content?.game;
-  return l.xp + (g?.parts?.length || 0) * (g?.part_xp ?? 5);
-};
-
 /**
  * Qasr tugatildi: progress va kunlik faollik yoziladi. XP faqat birinchi marta beriladi.
  * @param {Function} run db.query
@@ -137,7 +131,6 @@ export async function completeLesson(run, tx, user, lessonId, { mistakes = 0 } =
   await lessonStatus(run, user, lessonId);
   const { rows } = await run(LESSON_SQL, [lessonId]);
   const l = rows[0];
-  const xp = lessonXp(l);
 
   const first = await tx(async (client) => {
     const toolBefore = l.tool_id
@@ -153,7 +146,7 @@ export async function completeLesson(run, tx, user, lessonId, { mistakes = 0 } =
              best_mistakes = LEAST(it_progress.best_mistakes, EXCLUDED.best_mistakes),
              updated_at = now()
        RETURNING (xmax = 0) AS inserted`,
-      [user.id, lessonId, xp, mistakes]
+      [user.id, lessonId, l.xp, mistakes]
     );
     await client.query(
       `INSERT INTO it_days (user_id, day, lessons) VALUES ($1, ${TODAY}, 1)
@@ -168,7 +161,7 @@ export async function completeLesson(run, tx, user, lessonId, { mistakes = 0 } =
   const nextSection = next ? path.sections.find((x) => x.lessons.some((y) => y.id === next)) : null;
   return {
     first: first.inserted,
-    xp_gained: first.inserted ? xp : 0,
+    xp_gained: first.inserted ? l.xp : 0,
     term: l.term,
     tool: first.inserted && first.newTool ? { id: l.tool_id, name: l.tool_name, short: l.tool_short } : null,
     next_lesson_id: next,

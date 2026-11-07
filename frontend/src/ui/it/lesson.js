@@ -9,7 +9,6 @@ import { showError } from '../../core/toast.js';
 import { html, esc } from '../../utils/dom.js';
 import { ic, castleSrc, asset, kindLabel, shuffle, youtubeEmbed, imgTag } from './common.js';
 import { typingUi, mazeUi } from './games.js';
-import { runRepair } from './repair.js';
 
 // To'g'ri javobdan keyin Kibining qisqa maqtovi
 const PRAISE = ["To'g'ri!", "Zo'r, {ism}!", 'Barakalla!', "To'ppa-to'g'ri!"];
@@ -64,8 +63,6 @@ export function runLesson(view, L, opts = {}) {
   const solved = new Set();
   let mistakes = 0;
   let finished = false;
-  const hasGame = Boolean(c.game?.parts?.length);
-  let gameMistakes = 0;
 
   view.innerHTML = `
     <header class="ls-top">
@@ -261,30 +258,13 @@ export function runLesson(view, L, opts = {}) {
   function nextExercise() {
     progress();
     const ex = queue[0];
-    if (!ex) return hasGame ? playGame() : finish();
+    if (!ex) return finish();
     const again = ex.wrong ? '<span class="ls-again">Yana bir bor</span>' : '';
     const q = `<div class="ls-q"><span class="ls-chip">${esc(kindLabel(ex))}</span>${again}<h2>${esc(ex.prompt)}</h2>${imgTag(ex.image, 'ls-img ls-q-img')}</div>`;
     const ui = { order: orderUi, match: matchUi, sort: sortUi, typing: typingUi, maze: mazeUi }[ex.type]?.(ex) || choiceUi(ex);
     show(q + ui.markup);
     const checkBtn = actions([{ label: 'Tekshirish', disabled: true, onClick: () => check(ex, ui) }]);
     ui.mount(stage, (ready) => { checkBtn.disabled = !ready; });
-  }
-
-  // ---------- Tuzatish o'yini ----------
-  function playGame(startPart) {
-    const bar = view.querySelector('.ls-n');
-    bar.textContent = "O'yin";
-    const go = () => runRepair({
-      stage, fb, show, actions, kibi, kibiImg, say,
-      game: c.game,
-      name: () => learnerName,
-      onMistake: (n) => { gameMistakes += n; },
-      done: finish,
-      startPart,
-    });
-    if (startPart != null || !exercises.length) { go(); return; }
-    show(kibi('maqtash', 'Barakalla! Endi eng qiziq qismi: o\'yin!'));
-    actions([{ label: "O'yinga", onClick: go }]);
   }
 
   async function check(ex, ui) {
@@ -498,7 +478,7 @@ export function runLesson(view, L, opts = {}) {
     let r;
     if (preview) {
       // Ko'rinish: natija serverga yuborilmaydi, birinchi marta o'tgandek ko'rsatiladi
-      r = { first: true, xp_gained: L.xp + (c.game?.parts?.length || 0) * (c.game?.part_xp ?? 5), tool: L.tool, section_done: false, next_lesson_id: null, stats: { streak: 1, today: 1, goal: 2 } };
+      r = { first: true, xp_gained: L.xp, tool: L.tool, section_done: false, next_lesson_id: null, stats: { streak: 1, today: 1, goal: 2 } };
       finished = true;
       showWin(r);
       actions([{ label: "Boshidan ko'rish", onClick: () => opts.onRestart?.() }]);
@@ -561,12 +541,6 @@ export function runLesson(view, L, opts = {}) {
   // Ko'rinishda kerakli joydan boshlanadi (muharrirda qaysi maydon tahrirlanayotgan bo'lsa)
   const s = opts.start;
   if (s === 'finish') finish();
-  else if (typeof s === 'string' && s.startsWith('game') && hasGame) {
-    exercises.forEach((e) => solved.add(e.i));
-    queue = [];
-    progress();
-    playGame(s === 'game' ? undefined : Number(s.slice(5)));
-  }
   else if (typeof s === 'number' && exercises[s]) {
     for (let k = 0; k < s; k++) solved.add(k);
     queue = exercises.slice(s);
