@@ -89,6 +89,7 @@ export function sectionStatus(s) {
 export function kindLabel(e) {
   if (e.type === 'order') return 'Tartibla';
   if (e.type === 'match') return 'Moslashtir';
+  if (e.type === 'sort') return 'Saralash';
   if (e.type === 'typing') return "Yozib ko'r";
   if (e.type === 'maze') return 'Labirint';
   return { predict: "Nima bo'ladi?", error: 'Xatoni top', odd: 'Ortiqchasini top', analogy: "Hayotdan o'xshatish" }[e.kind] || 'Savol';

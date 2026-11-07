@@ -1,10 +1,17 @@
-/** @file IT darslari: mavzu ichi — hikoya, video, yordamchi karta, fikrlash quroli, mashqlar, termin va yakun. */
+/**
+ * @file IT darslari: mavzu ichi — qahramon (Kibi) dialogi, hikoya, video («Tushundingmi?» bilan),
+ * yordamchi karta, fikrlash quroli, mashqlar, termin va yakun.
+ */
 import '../../styles/it.css';
 import { api } from '../../core/api.js';
+import { BASE_URL } from '../../core/config.js';
 import { showError } from '../../core/toast.js';
 import { html, esc } from '../../utils/dom.js';
 import { ic, castleSrc, asset, kindLabel, shuffle, youtubeEmbed, imgTag } from './common.js';
 import { typingUi, mazeUi } from './games.js';
+
+// To'g'ri javobdan keyin Kibining qisqa maqtovi
+const PRAISE = ["To'g'ri!", "Zo'r, {ism}!", 'Barakalla!', "To'ppa-to'g'ri!"];
 
 /** @param {HTMLElement} root @param {string} id mavzu ID @returns {Promise<()=>void>} */
 export async function mountItLesson(root, id) {
@@ -21,7 +28,11 @@ export async function mountItLesson(root, id) {
       <a class="btn" href="#/it">Qasrlar yo'liga</a></div>`;
     return () => {};
   }
-  runLesson(view, data.lesson, { complete: (mistakes) => api.post(`/it/lessons/${id}/complete`, { mistakes }) });
+  runLesson(view, data.lesson, {
+    learner: data.learner,
+    complete: (mistakes) => api.post(`/it/lessons/${id}/complete`, { mistakes }),
+    saveName: (name) => api.put('/it/me/name', { name }),
+  });
   return () => {};
 }
 
@@ -29,16 +40,25 @@ export async function mountItLesson(root, id) {
  * Mavzuni ko'rsatadi. O'quvchi darsi ham, muharrirdagi jonli ko'rinish ham shu funksiyadan foydalanadi.
  * @param {HTMLElement} view `.ls` elementi
  * @param {object} L mavzu (GET /it/lessons/:id dagi `lesson` shaklida)
- * @param {{complete?:(mistakes:number)=>Promise<any>, preview?:boolean, start?:string|number, onRestart?:()=>void}} [opts]
- *   preview: serverga hech narsa yuborilmaydi; start: 'story'|'video'|'helper'|'tool'|'finish' yoki mashq raqami (0 dan)
+ * @param {{complete?:(mistakes:number)=>Promise<any>, saveName?:(name:string)=>Promise<{name:string}>,
+ *   learner?:{name:string|null}, preview?:boolean, start?:string|number, onRestart?:()=>void}} [opts]
+ *   preview: serverga hech narsa yuborilmaydi; start: 'dialog'|'story'|'video'|'helper'|'tool'|'finish' yoki mashq raqami (0 dan)
  */
 export function runLesson(view, L, opts = {}) {
   const preview = Boolean(opts.preview);
   const c = L.content || {};
   const id = L.id;
   const exercises = (c.exercises || []).map((e, i) => ({ ...e, i }));
-  const video = youtubeEmbed(c.video?.id);
-  const intro = [(c.story || c.story_image) && 'story', video && 'video', (c.helper?.text || c.helper?.image) && 'helper', L.tool && 'tool'].filter(Boolean);
+  const video = c.video?.file ? `${BASE_URL}${c.video.file}` : youtubeEmbed(c.video?.id);
+  const hasHelper = Boolean(c.helper?.text || c.helper?.image);
+  // Qahramon dialogi bo'lsa, Kibi butun dars bo'ylab chiqadi (maqtaydi, maslahat beradi)
+  const kibiOn = Boolean(c.dialog?.lines?.length);
+  // «Tushundingmi?» bo'lsa, yordamchi karta faqat «Yo'q» javobida ko'rsatiladi
+  const checkVideo = Boolean(video && c.video.check);
+  const intro = [kibiOn && 'dialog', (c.story || c.story_image) && 'story', video && 'video',
+    hasHelper && !checkVideo && 'helper', L.tool && 'tool'].filter(Boolean);
+  let learnerName = opts.learner?.name || null;
+  let videoNo = 0; // «Tushundingmi?» savoliga necha marta «Yo'q» deyildi
   let queue = exercises.slice(); // xato javob berilgan mashq oxiriga qaytadi
   const solved = new Set();
   let mistakes = 0;
@@ -76,6 +96,20 @@ export function runLesson(view, L, opts = {}) {
     list.forEach((a, k) => { if (a.onClick) btns.querySelector(`[data-k="${k}"]`).onclick = a.onClick; });
     return btns.querySelector('[data-k="0"]');
   };
+  /** Matn: {ism} o'rniga bolaning ismi. */
+  const say = (t) => esc(String(t || '')).replace(/\{ism\}/g, `<b>${esc(learnerName || "do'stim")}</b>`);
+  const kibiImg = (pose, cls = 'ls-kibi-img') => `<img class="${cls}" src="${asset(`kibi/${pose}`)}" alt="" draggable="false">`;
+  /** Kibi va uning gap pufakchasi. */
+  const kibi = (pose, text, extra = '') => `<div class="ls-kibi">
+      <div class="ls-bubble"><p>${say(text)}</p>${extra}</div>${kibiImg(pose)}</div>`;
+  /** Yordamchi karta matni: bir necha qator bo'lsa, raqamli ro'yxat (masalan, yoqish zanjiri). */
+  const helperBody = (t) => {
+    const rows = String(t || '').split('\n').map((x) => x.trim()).filter(Boolean);
+    if (rows.length > 1) return `<ol class="ls-steps">${rows.map((x) => `<li>${esc(x)}</li>`).join('')}</ol>`;
+    return rows.length ? `<p>${esc(rows[0])}</p>` : '';
+  };
+  const helperCard = () => `<div class="ls-card ls-helper"><span class="ls-chip">${ic('bulb', 16)}Yordamchi karta</span>
+    ${c.helper.title ? `<h2>${esc(c.helper.title)}</h2>` : ''}${imgTag(c.helper.image)}${helperBody(c.helper.text)}</div>`;
   const show = (markup) => {
     fb.hidden = true;
     fb.className = 'ls-fb';
@@ -89,23 +123,17 @@ export function runLesson(view, L, opts = {}) {
   function nextIntro() {
     const k = intro[step++];
     if (!k) return nextExercise();
-    if (k === 'story') {
+    if (k === 'dialog') runDialog(nextIntro);
+    else if (k === 'story') {
       show(`<div class="ls-card ls-story">
         <img class="ls-castle" src="${L.kind === 'test' ? castleSrc('boss') : asset('door-ready')}" alt="" width="112" height="112">
         <span class="ls-kicker">${esc(L.section.title)} · ${L.kind === 'test' ? "bo'lim testi" : `${L.section.index + 1}-mavzu`}</span>
         <h1>${esc(L.title)}</h1>${imgTag(c.story_image)}<p>${esc(c.story)}</p></div>`);
       actions([{ label: L.kind === 'test' ? 'Testni boshlash' : 'Boshladik', onClick: nextIntro }]);
     } else if (k === 'video') {
-      const t = c.video.title || 'Video';
-      show(`<div class="ls-card ls-video"><span class="ls-chip">${ic('play', 16)}Video</span>
-        ${c.video.title ? `<h2>${esc(c.video.title)}</h2>` : ''}
-        <div class="ls-player"><iframe src="${video}" title="${esc(t)}" loading="lazy"
-          allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-          allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div></div>`);
-      actions([{ label: "Ko'rdim, davom etamiz", onClick: nextIntro }]);
+      playVideo(nextIntro);
     } else if (k === 'helper') {
-      show(`<div class="ls-card ls-helper"><span class="ls-chip">${ic('bulb', 16)}Yordamchi karta</span>
-        ${c.helper.title ? `<h2>${esc(c.helper.title)}</h2>` : ''}${imgTag(c.helper.image)}${c.helper.text ? `<p>${esc(c.helper.text)}</p>` : ''}</div>`);
+      show(helperCard());
       actions([{ label: 'Tushundim', onClick: nextIntro }]);
     } else {
       show(`<div class="ls-card ls-tool"><span class="ls-chip">${ic('tool', 16)}Fikrlash quroli</span>
@@ -115,6 +143,117 @@ export function runLesson(view, L, opts = {}) {
     }
   }
 
+  // ---------- Qahramon dialogi ----------
+  /** Ism avval saqlangan bo'lsa, first_only gaplar va ism so'rash o'tkazib yuboriladi, o'rniga welcome_back aytiladi. */
+  function runDialog(done) {
+    const known = Boolean(learnerName);
+    const all = c.dialog.lines;
+    const lines = all.filter((d) => !(known && (d.first_only || d.ask_name)));
+    const list = known && lines.length < all.length && c.dialog.welcome_back
+      ? [{ pose: 'salom', text: c.dialog.welcome_back, buttons: [] }, ...lines] : lines;
+    let k = 0;
+    const next = () => {
+      const d = list[k++];
+      if (!d) { done(); return; }
+      if (d.ask_name) askName(d, next);
+      else line(d, next);
+    };
+    next();
+  }
+  function line(d, next) {
+    show(kibi(d.pose, d.text));
+    const bs = d.buttons?.length ? d.buttons : [{ label: 'Davom' }];
+    actions(bs.map((b, i) => ({
+      label: esc(b.label),
+      ghost: i > 0,
+      onClick: () => {
+        if (!b.reply) { next(); return; }
+        show(kibi(b.reply_pose || 'maqtash', b.reply));
+        actions([{ label: 'Davom', onClick: next }]);
+      },
+    })));
+  }
+  const NAME_RE = /^\p{L}[\p{L}\p{M}'’ʻʼ‘` -]*$/u;
+  function askName(d, next) {
+    show(kibi(d.pose, d.text, `<input class="ls-name-in" maxlength="20" autocomplete="given-name" autocapitalize="words" enterkeyhint="done" placeholder="Ismingni yoz" aria-label="Isming">
+      <small class="ls-name-msg" role="status"></small>`));
+    const inp = stage.querySelector('.ls-name-in');
+    const msg = stage.querySelector('.ls-name-msg');
+    const value = () => inp.value.trim().replace(/\s+/g, ' ');
+    const ok = () => value().length >= 2 && NAME_RE.test(value());
+    const btn = actions([{ label: esc(d.buttons?.[0]?.label || 'Davom'), disabled: true, onClick: submit }]);
+    async function submit() {
+      if (!ok()) return;
+      btn.disabled = true;
+      try {
+        learnerName = preview || !opts.saveName ? value() : (await opts.saveName(value())).name;
+        next();
+      } catch (e) {
+        msg.textContent = e.message || "Ismni saqlab bo'lmadi, qayta urinib ko'r";
+        btn.disabled = false;
+      }
+    }
+    inp.oninput = () => {
+      btn.disabled = !ok();
+      msg.textContent = value() && !NAME_RE.test(value()) ? 'Faqat harflar bilan yoz' : '';
+    };
+    inp.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); submit(); } };
+    setTimeout(() => inp.focus(), 50);
+  }
+
+  // ---------- Video va «Tushundingmi?» ----------
+  // Saytdagi video faylda «Davom» video oxirigacha ko'rilgandan keyin ochiladi (ko'rinishda va qayta o'tishda darhol).
+  function playVideo(after, { again = false, plain = false } = {}) {
+    const t = c.video.title || 'Video';
+    const file = Boolean(c.video.file);
+    const player = file
+      ? `<video class="ls-vid" src="${video}" poster="${video.replace(/\.mp4$/, '.jpg')}" controls playsinline preload="metadata"></video>`
+      : `<iframe src="${video}" title="${esc(t)}" loading="lazy"
+          allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+          allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>`;
+    const free = !file || preview || L.status === 'done';
+    show(`<div class="ls-card ls-video"><span class="ls-chip">${ic('play', 16)}Video</span>
+      ${c.video.title ? `<h2>${esc(c.video.title)}</h2>` : ''}
+      <div class="ls-player${file ? ' is-file' : ''}">${player}</div>
+      ${free ? '' : '<small class="ls-vid-note">Video tugagach «Davom» tugmasi ochiladi.</small>'}</div>`);
+    const go = () => (checkVideo && !plain ? askUnderstood(after) : after());
+    const btn = actions([{ label: checkVideo || plain ? 'Davom' : "Ko'rdim, davom etamiz", disabled: !free, onClick: go }]);
+    if (!file) return;
+    const el = stage.querySelector('video');
+    const open = () => {
+      if (!btn.disabled) return;
+      btn.disabled = false;
+      stage.querySelector('.ls-vid-note')?.remove();
+    };
+    el.onended = open;
+    el.ontimeupdate = () => { if (el.duration && el.currentTime >= el.duration - 0.5) open(); };
+    if (again) el.play().catch(() => {});
+  }
+  function askUnderstood(after) {
+    show(kibi('oylash', "Xo'sh, {ism}, mavzuni tushundingmi?"));
+    actions([
+      { label: 'Ha', onClick: () => {
+        show(kibi('maqtash', "Zo'r! Unda kel, davom etamiz. Endi navbat savollarga!"));
+        actions([{ label: 'Savollarga', onClick: after }]);
+      } },
+      { label: "Yo'q", ghost: true, onClick: () => {
+        videoNo += 1;
+        if (videoNo >= 2) {
+          show(kibi('dalda', 'Mayli, savollar davomida senga yordam beraman.'));
+          actions([{ label: 'Davom', onClick: after }]);
+          return;
+        }
+        show(kibi('dalda', "Hechqisi yo'q, keling, oddiyroq tushuntiraman."));
+        const replay = { label: "Videoni yana ko'raman", onClick: () => playVideo(after, { again: true }) };
+        actions([{ label: 'Davom', onClick: () => {
+          if (!hasHelper) { playVideo(after, { again: true }); return; }
+          show(helperCard());
+          actions([replay]);
+        } }]);
+      } },
+    ]);
+  }
+
   // ---------- Mashqlar ----------
   function nextExercise() {
     progress();
@@ -122,7 +261,7 @@ export function runLesson(view, L, opts = {}) {
     if (!ex) return finish();
     const again = ex.wrong ? '<span class="ls-again">Yana bir bor</span>' : '';
     const q = `<div class="ls-q"><span class="ls-chip">${esc(kindLabel(ex))}</span>${again}<h2>${esc(ex.prompt)}</h2>${imgTag(ex.image, 'ls-img ls-q-img')}</div>`;
-    const ui = { order: orderUi, match: matchUi, typing: typingUi, maze: mazeUi }[ex.type]?.(ex) || choiceUi(ex);
+    const ui = { order: orderUi, match: matchUi, sort: sortUi, typing: typingUi, maze: mazeUi }[ex.type]?.(ex) || choiceUi(ex);
     show(q + ui.markup);
     const checkBtn = actions([{ label: 'Tekshirish', disabled: true, onClick: () => check(ex, ui) }]);
     ui.mount(stage, (ready) => { checkBtn.disabled = !ready; });
@@ -135,16 +274,18 @@ export function runLesson(view, L, opts = {}) {
     if (right) {
       solved.add(ex.i);
       queue.shift();
-      fb.className = 'ls-fb is-ok';
-      fb.innerHTML = `<b>${ic('check', 18)}To'g'ri!</b>${ex.explain ? `<p>${esc(ex.explain)}</p>` : ''}`;
+      fb.className = `ls-fb is-ok${kibiOn ? ' has-kibi' : ''}`;
+      const praise = kibiOn ? say(PRAISE[(solved.size + mistakes) % PRAISE.length]) : "To'g'ri!";
+      fb.innerHTML = `${kibiOn ? kibiImg('maqtash', 'ls-fb-kibi') : ''}<div><b>${ic('check', 18)}${praise}</b>${ex.explain ? `<p>${esc(ex.explain)}</p>` : ''}</div>`;
     } else {
       mistakes += 1;
       ex.wrong = true;
       queue.push(queue.shift());
-      fb.className = 'ls-fb is-bad';
-      fb.innerHTML = `<b>${ic('undo', 18)}Hali emas, hechqisi yo'q</b>
-        ${c.helper?.text ? `<p><span>Yordamchi karta:</span> ${esc(c.helper.text)}</p>` : ''}
-        <p class="ls-later">Bu savol dars oxirida yana chiqadi.</p>`;
+      fb.className = `ls-fb is-bad${kibiOn ? ' has-kibi' : ''}`;
+      const tip = ex.hint ? `<p>${esc(ex.hint)}</p>`
+        : c.helper?.text ? `<p><span>Yordamchi karta:</span> ${esc(c.helper.text.replace(/\s*\n\s*/g, ' → '))}</p>` : '';
+      fb.innerHTML = `${kibiOn ? kibiImg('dalda', 'ls-fb-kibi') : ''}<div><b>${ic('undo', 18)}Hali emas, hechqisi yo'q</b>
+        ${tip}<p class="ls-later">Bu savol dars oxirida yana chiqadi.</p></div>`;
     }
     fb.hidden = false;
     progress();
@@ -286,6 +427,49 @@ export function runLesson(view, L, opts = {}) {
     };
   }
 
+  function sortUi(ex) {
+    const im = ex.item_images || [];
+    const order = shuffle(ex.items.map((_, k) => k));
+    const pick = new Map(); // narsa -> tanlangan guruh
+    let el;
+    let locked = false;
+    return {
+      markup: `<p class="ls-hint">Har birini to'g'ri guruhga ajrat.</p>
+        <div class="ls-sort">${order.map((k) => `
+          <div class="ls-srt" data-k="${k}">
+            <span class="ls-srt-l">${imgTag(im[k], 'ls-srt-img')}${ex.items[k] ? `<span>${esc(ex.items[k])}</span>` : ''}</span>
+            <span class="ls-srt-g" role="radiogroup" aria-label="${esc(ex.items[k] || 'Rasm')}: qaysi guruhga?">${ex.groups.map((g, j) =>
+              `<button type="button" class="ls-srt-b c${j}" role="radio" aria-checked="false" data-g="${j}">${esc(g)}</button>`).join('')}</span>
+          </div>`).join('')}</div>`,
+      mount(root2, ready) {
+        el = root2;
+        el.querySelectorAll('.ls-srt').forEach((row) => {
+          const k = Number(row.dataset.k);
+          row.querySelectorAll('[data-g]').forEach((b) => {
+            b.onclick = () => {
+              if (locked) return;
+              pick.set(k, Number(b.dataset.g));
+              row.querySelectorAll('[data-g]').forEach((x) => x.setAttribute('aria-checked', String(x === b)));
+              row.classList.add('is-set');
+              ready(pick.size === ex.items.length);
+            };
+          });
+        });
+      },
+      evaluate() {
+        let all = true;
+        el.querySelectorAll('.ls-srt').forEach((row) => {
+          const k = Number(row.dataset.k);
+          const ok = pick.get(k) === ex.item_groups[k];
+          if (!ok) all = false;
+          row.classList.add(ok ? 'is-right' : 'is-wrong');
+        });
+        return all;
+      },
+      lock() { locked = true; el.querySelectorAll('.ls-srt-b').forEach((b) => { b.disabled = true; }); },
+    };
+  }
+
   // ---------- Yakun: termin, XP, qurol ----------
   async function finish() {
     progress();
@@ -309,14 +493,20 @@ export function runLesson(view, L, opts = {}) {
       return;
     }
     finished = true;
-    showWin(r);
-    const next = nextOf(r);
-    const hall = `#/it/section/${L.section.id}`;
-    actions(next && r.next_section_id === L.section.id
-      ? [{ label: 'Keyingi eshik', href: `${hall}?unlock=${next}` }, { label: 'Zalga qaytish', href: hall, ghost: true }]
-      : next
-        ? [{ label: 'Keyingi qasr', href: `#/it?opened=${r.next_section_id}` }, { label: 'Zalga qaytish', href: hall, ghost: true }]
-        : [{ label: "Qasrlar yo'liga qaytish", href: '#/it' }]);
+    const done = () => {
+      showWin(r);
+      const next = nextOf(r);
+      const hall = `#/it/section/${L.section.id}`;
+      // Savollarning yarmidan ko'piga xato javob berilgan bo'lsa, Kibi videoni yana ko'rishni taklif qiladi
+      const rewatch = video && kibiOn && mistakes * 2 > exercises.length
+        ? [{ label: "Videoni yana ko'rish", ghost: true, onClick: () => { L.status = 'done'; playVideo(done, { plain: true }); } }] : [];
+      actions([...(next && r.next_section_id === L.section.id
+        ? [{ label: 'Keyingi eshik', href: `${hall}?unlock=${next}` }, { label: 'Zalga qaytish', href: hall, ghost: true }]
+        : next
+          ? [{ label: 'Keyingi qasr', href: `#/it?opened=${r.next_section_id}` }, { label: 'Zalga qaytish', href: hall, ghost: true }]
+          : [{ label: "Qasrlar yo'liga qaytish", href: '#/it' }]), ...rewatch]);
+    };
+    done();
   }
 
   const nextOf = (r) => (r.next_lesson_id && r.next_lesson_id !== id ? r.next_lesson_id : null);
@@ -327,16 +517,18 @@ export function runLesson(view, L, opts = {}) {
       `<span class="it-pill is-fire">${ic('fire', 16)}<b>${r.stats.streak}</b>&nbsp;kun</span>`,
     ].join('');
     show(`<div class="ls-card ls-win">
-      <img class="ls-castle ls-pop" src="${r.section_done ? castleSrc('open') : asset('door-done')}" alt="" width="140" height="140">
+      ${kibiOn ? kibiImg('galaba', 'ls-kibi-win ls-pop') : `<img class="ls-castle ls-pop" src="${r.section_done ? castleSrc('open') : asset('door-done')}" alt="" width="140" height="140">`}
       <h1>${r.section_done ? 'Qasr zabt etildi!' : 'Mavzu o\'zlashtirildi!'}</h1>
       ${r.section_done ? `<p class="ls-sub">«${esc(L.section.title)}» bo'limi to'liq tugatildi.</p>`
         : sameNext ? '<p class="ls-sub">Keyingi eshikning qulfi ochildi!</p>' : ''}
       ${L.term ? `<span class="ls-kicker">Bugun o'rgangan so'zing</span><div class="ls-term">${esc(L.term)}</div>` : ''}
       ${imgTag(c.term_image)}
-      ${c.term_text ? `<p>${esc(c.term_text)}</p>` : ''}
+      ${c.term_text ? `<p>${say(c.term_text)}</p>` : ''}
       <div class="ls-gains">${gains}</div>
       ${r.tool ? `<div class="ls-newtool">${ic('tool', 18)}<span>Sumkangga yangi qurol: <b>${esc(r.tool.name)}</b></span></div>` : ''}
       ${mistakes === 0 ? '<p class="ls-perfect">Bitta ham xatosiz!</p>' : ''}
+      ${kibiOn && video && mistakes * 2 > exercises.length
+        ? kibi('dalda', "Videoni yana bir ko'rib chiqsang, hammasi yanada oydinlashadi.") : ''}
       ${r.stats.today >= r.stats.goal ? '<p class="ls-goal">Bugungi maqsad bajarildi!</p>' : ''}
     </div>`);
   }

@@ -318,3 +318,44 @@ a.hd:hover .hd-pic { transform: translateY(-3px); }
   .hl-doors > li { width: calc(140 * var(--u)); }
 }
 .ls-sub { margin: 0; font-size: 17px !important; color: #4A3D80; font-weight: 500; }
+
+/* ---------- Qahramon (Kibi) ---------- */
+.ls-kibi { display: flex; flex-direction: column; align-items: center; gap: 4px; padding-top: 8px; }
+.ls-bubble { position: relative; box-sizing: border-box; width: 100%; background: var(--white); border: 1.5px solid var(--line); border-radius: 26px; padding: 18px 20px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 3px 0 var(--line); }
+.ls-bubble::after { content: ''; position: absolute; left: 50%; bottom: -12px; width: 22px; height: 22px; margin-left: -11px; background: var(--white); border-right: 1.5px solid var(--line); border-bottom: 1.5px solid var(--line); transform: rotate(45deg); border-bottom-right-radius: 6px; }
+.ls-bubble p { margin: 0; font-size: 20px; line-height: 1.45; font-weight: 500; text-align: center; }
+.ls-bubble b { color: #5B45B0; }
+.ls-kibi-img { width: auto; height: min(36vh, 300px); max-width: 100%; object-fit: contain; margin-top: 10px; animation: ls-kibi-in .35s ease-out; pointer-events: none; }
+@keyframes ls-kibi-in { from { transform: translateY(14px) scale(.96); opacity: 0; } to { transform: none; opacity: 1; } }
+.ls .ls-name-in { box-sizing: border-box; width: 100%; min-height: 56px; padding: 10px 16px; font: inherit; font-size: 20px; text-align: center; color: var(--ink); background: #FFFCF8; border: 2px solid var(--line); border-radius: 18px; }
+.ls .ls-name-in:focus { border-color: var(--ink); outline: 3px solid var(--butter); outline-offset: 1px; }
+.ls-name-msg { min-height: 18px; text-align: center; color: var(--bad); font-size: 14px; }
+.ls-name-msg:empty { display: none; }
+.ls-fb.has-kibi { flex-direction: row; align-items: flex-start; gap: 12px; }
+.ls-fb.has-kibi > div { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.ls-fb-kibi { width: 56px; height: 72px; object-fit: contain; flex-shrink: 0; }
+.ls-kibi-win { height: 190px; width: auto; max-width: 70%; object-fit: contain; align-self: center; }
+.ls-win .ls-kibi-img { height: 150px; }
+.ls-steps { margin: 0; padding-left: 26px; display: flex; flex-direction: column; gap: 8px; font-size: 17px; line-height: 1.4; }
+.ls-steps li::marker { font-weight: 700; color: #5B45B0; }
+
+/* Saytdagi video (vertikal bo'lishi mumkin) */
+.ls-player.is-file { aspect-ratio: auto; display: flex; justify-content: center; background: #0B0907; }
+.ls-vid { display: block; width: 100%; max-height: 70vh; max-height: 70dvh; background: #0B0907; }
+.ls-vid-note { text-align: center; }
+
+/* Saralash */
+.ls-sort { display: flex; flex-direction: column; gap: 10px; }
+.ls-srt { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: space-between; background: var(--white); border: 2px solid var(--line); border-radius: 20px; padding: 8px 10px 8px 14px; }
+.ls-srt-l { display: flex; align-items: center; gap: 10px; font-size: 17px; font-weight: 500; min-width: 0; }
+.ls-srt-img { width: 52px; height: 52px; object-fit: contain; flex-shrink: 0; pointer-events: none; }
+.ls-srt-g { display: flex; gap: 6px; margin-left: auto; }
+.ls-srt-b { font: inherit; font-size: 15px; font-weight: 600; min-height: 44px; padding: 6px 12px; border-radius: 14px; border: 2px solid var(--line); background: #FFFCF8; color: var(--ink-2); cursor: pointer; }
+.ls-srt-b[aria-checked="true"].c0 { background: var(--sky); border-color: #6FA9D6; color: var(--ink); }
+.ls-srt-b[aria-checked="true"].c1 { background: var(--peach); border-color: #E59A6E; color: var(--ink); }
+.ls-srt-b[aria-checked="true"].c2 { background: var(--lav); border-color: #9C89DF; color: var(--ink); }
+.ls-srt-b:focus-visible { outline: 3px solid var(--butter); outline-offset: 2px; }
+.ls-srt-b:disabled { cursor: default; }
+.ls .ls-sort .is-right { border-color: #2E9E6A; background: var(--mint); }
+.ls .ls-sort .is-wrong { border-color: var(--bad); background: #F8D7D5; }
+@media (prefers-reduced-motion: reduce) { .ls-kibi-img { animation: none; } }

@@ -315,3 +315,15 @@ body:has(.ad) #settings { display: none; }
   .ad-fold-t small { display: none; }
   .ad-ex-add { gap: 6px; }
 }
+
+/* Kibi dialogi va saralash mashqi */
+.ad-dlg { display: flex; flex-direction: column; gap: 14px; }
+.ad-dlg-ln { display: flex; flex-direction: column; gap: 10px; padding: 14px; border: 1.5px solid #EFE3D5; border-radius: 16px; background: var(--white); }
+.ad-dlg-ln .ad-ex-h { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ad-dlg-ln .ad-grid .ad-check { align-self: center; }
+.ad-dlg-btn { flex-wrap: wrap; }
+.ad-dlg-btn > input:first-child { flex: 0 1 140px; }
+.ad-dlg-btn > input:nth-child(2) { flex: 1 1 200px; }
+@media (max-width: 560px) {
+  .ad-dlg-btn > input { flex-basis: 100% !important; }
+}

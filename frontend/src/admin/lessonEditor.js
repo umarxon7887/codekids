@@ -11,12 +11,31 @@ import { pickAndUpload } from './images.js';
 
 const MAX_EX = 12;
 const KINDS = [['general', 'Umumiy savol'], ['predict', "Nima bo'ladi?"], ['error', 'Xatoni top'], ['odd', 'Ortiqchasini top'], ['analogy', "Hayotdan o'xshatish"]];
-const TYPE = { choice: 'Tanlash', order: 'Tartiblash', match: 'Moslashtirish', typing: 'Typing', maze: 'Labirint' };
+const TYPE = { choice: 'Tanlash', order: 'Tartiblash', match: 'Moslashtirish', sort: 'Saralash', typing: 'Typing', maze: 'Labirint' };
+// Qahramon (Kibi) holatlari: public/it/kibi/<holat>.webp
+const POSES = [['salom', 'Salom'], ['oylash', "O'ylayapti / savol"], ['maqtash', 'Maqtayapti'], ['oddiy', 'Oddiy turibdi'],
+  ['tushuntirish', 'Tushuntiryapti'], ['usta', 'Usta'], ['galaba', "G'alaba"], ['dalda', 'Dalda beryapti']];
+const MAX_LINES = 8;
+const VIDEO_FILE = /^it\/video\/[a-z0-9-]{1,60}\.mp4$/;
+// Tanishuv dialogi namunasi (1-eshik ssenariysidan)
+const DIALOG_SAMPLE = () => ({
+  welcome_back: 'Yana xush kelibsan, {ism}!',
+  lines: [
+    { pose: 'salom', text: 'Salom! Men Kibi, kiber bolakayman. Isming nima?', ask_name: true, first_only: true, buttons: [{ label: 'Davom', reply: '' }] },
+    { pose: 'oylash', text: "Tanishganimdan xursandman, {ism}! IT ni o'rganishga qaror qildingmi?", ask_name: false, first_only: true,
+      buttons: [{ label: 'Ha!', reply: "Barakalla, {ism}! Bu juda to'g'ri qaror.", reply_pose: 'maqtash' },
+        { label: 'Hali bilmayman', reply: "Hechqisi yo'q! Keling, birga sinab ko'ramiz. Senga yoqib qolishiga ishonaman.", reply_pose: 'dalda' }] },
+    { pose: 'tushuntirish', text: "Unday bo'lsa, kel 1-mavzumizni boshlaymiz! Bilasanmi, kompyuterni yoqish tugmasini bosganingda ichida nimalar bo'ladi? Kel, birga ko'ramiz!",
+      ask_name: false, first_only: false, buttons: [{ label: 'Ketdik!', reply: '' }] },
+  ],
+});
+const NEW_LINE = () => ({ pose: 'oddiy', text: '', ask_name: false, first_only: false, buttons: [] });
 const DEFAULT_MAZE = ['S.#..', '.##.#', '...#.', '#.#..', '#...G'];
 const NEW_EX = {
   choice: () => ({ type: 'choice', kind: 'general', prompt: '', options: ['', ''], answer: 0, explain: '' }),
   order: () => ({ type: 'order', prompt: '', items: ['', '', ''], explain: '' }),
   match: () => ({ type: 'match', prompt: '', pairs: [['', ''], ['', '']], explain: '' }),
+  sort: () => ({ type: 'sort', prompt: '', groups: ['', ''], items: ['', '', ''], item_groups: [0, 0, 1], explain: '' }),
   typing: () => ({ type: 'typing', prompt: 'Quyidagi matnni xatosiz yoz', text: '', min_accuracy: 90, case_sensitive: false, explain: '' }),
   maze: () => ({ type: 'maze', prompt: 'Qahramonni qasrga olib bor', mode: 'program', grid: DEFAULT_MAZE.slice(), max_commands: null, explain: '' }),
 };
@@ -108,6 +127,9 @@ export function mountLessonEditor(box, ctx) {
               <select data-f="tool_id"><option value="">Yo'q</option>${ctx.tools.map((t) => `<option value="${t.id}">${esc(t.name)}</option>`).join('')}</select></label>
           </div>`)}
 
+        ${card('dialog', 'dialog', 'Kibi dialogi', `
+          <div class="ad-dlg"></div>`, { sub: 'ixtiyoriy: qahramon bola bilan gaplashadi, butun dars bo\'ylab chiqadi' })}
+
         ${card('story', 'story', 'Hikoya', `
           <textarea data-f="content.story" rows="4" maxlength="1500" aria-label="Hikoya matni" placeholder="Masalan: Oshpaz sho'rva pishirmoqchi. U nimadan boshlaydi?"></textarea>
           <span class="ad-count" data-count="content.story" data-max="1500"></span>
@@ -116,18 +138,21 @@ export function mountLessonEditor(box, ctx) {
         ${card('video', 'video', 'Video', `
           <div class="ad-video">
             <div class="ad-video-f">
-              <label class="ad-f"><span>YouTube havolasi</span>
+              <label class="ad-f"><span>Sayt fayli <small>frontend/public ichida, masalan it/video/1-eshik.mp4</small></span>
+                <input data-f="content.video.file" data-video-file placeholder="it/video/1-eshik.mp4" autocomplete="off" spellcheck="false"></label>
+              <label class="ad-f"><span>yoki YouTube havolasi</span>
                 <input data-video-url inputmode="url" placeholder="https://youtu.be/..." autocomplete="off"></label>
+              <label class="ad-check"><input type="checkbox" data-f="content.video.check" data-video-check><span>Video tugagach Kibi «Tushundingmi?» deb so'rasin <small>«Yo'q» bo'lsa yordamchi karta va video qayta</small></span></label>
               <label class="ad-f"><span>Video sarlavhasi <small>ixtiyoriy</small></span><input maxlength="120" data-f="content.video.title" data-video-title></label>
               <p class="ad-hint" data-video-msg></p>
             </div>
             <div class="ad-thumb" data-video-thumb hidden></div>
           </div>
-          <p class="ad-hint">Videoni YouTube'ga «Ro'yxatsiz» (Unlisted) qilib yuklang: unda u faqat havola orqali ochiladi va qidiruvda chiqmaydi.</p>`, { n: 2, sub: 'ixtiyoriy, hikoyadan keyin chiqadi' })}
+          <p class="ad-hint">Sayt fayli tavsiya etiladi: reklama yo'q va «Davom» video oxirigacha ko'rilgandan keyin ochiladi. Yonida bir xil nomli .jpg muqova bo'lsa, u ko'rinadi. YouTube uchun videoni «Ro'yxatsiz» (Unlisted) qilib yuklang.</p>`, { n: 2, sub: 'ixtiyoriy, hikoyadan keyin chiqadi' })}
 
         ${card('helper', 'helper', 'Yordamchi karta', `
           <label class="ad-f"><span>Sarlavha</span><input maxlength="80" data-f="content.helper.title" placeholder="Masalan: Oshpaz kabi o'yla"></label>
-          <label class="ad-f"><span>Matn</span><textarea rows="3" maxlength="800" data-f="content.helper.text"></textarea></label>
+          <label class="ad-f"><span>Matn <small>har qadamni yangi qatorga yozsangiz, raqamli ro'yxat bo'ladi</small></span><textarea rows="4" maxlength="800" data-f="content.helper.text"></textarea></label>
           ${imgSlot('content.helper.image')}`, { n: 3, sub: 'termin ishlatmasdan; xato javobda ham qayta chiqadi' })}
 
         ${card('exercises', 'story', 'Mashqlar', `
@@ -137,6 +162,7 @@ export function mountLessonEditor(box, ctx) {
             <button type="button" class="btn btn--ghost ad-btn-sm" data-act="add-ex:choice">${ic('plus', 16)}Tanlash</button>
             <button type="button" class="btn btn--ghost ad-btn-sm" data-act="add-ex:order">${ic('plus', 16)}Tartiblash</button>
             <button type="button" class="btn btn--ghost ad-btn-sm" data-act="add-ex:match">${ic('plus', 16)}Moslashtirish</button>
+            <button type="button" class="btn btn--ghost ad-btn-sm" data-act="add-ex:sort">${ic('plus', 16)}Saralash</button>
             <span class="ad-ex-games">O'yin:</span>
             <button type="button" class="btn btn--ghost ad-btn-sm" data-act="add-ex:typing">${ic('keyboard', 16)}Typing</button>
             <button type="button" class="btn btn--ghost ad-btn-sm" data-act="add-ex:maze">${ic('maze', 16)}Labirint</button>
@@ -170,6 +196,53 @@ export function mountLessonEditor(box, ctx) {
   const pubBtn = root.querySelector('[data-pub]');
   const saveSt = root.querySelector('.ad-save-st');
   const issuesBox = root.querySelector('.ad-issues');
+  const dlgBox = root.querySelector('.ad-dlg');
+
+  // ---------- Kibi dialogi ----------
+  const poseSel = (path, blank) => `<select class="ad-sel-sm" data-f="${path}" aria-label="Kibi holati">${blank ? `<option value="">${blank}</option>` : ''}${POSES.map(([v, l]) => `<option value="${v}">${l}</option>`).join('')}</select>`;
+  function renderDialog() {
+    const d = st.content.dialog;
+    if (!d?.lines?.length) {
+      dlgBox.innerHTML = `<p class="ad-muted">Dialog yo'q. Kibi faqat dialog bo'lsa chiqadi.</p>
+        <div class="ad-actions">
+          <button type="button" class="btn btn--ghost ad-btn-sm" data-act="dlg-sample">${ic('plus', 16)}Tanishuv namunasini qo'yish</button>
+          <button type="button" class="btn btn--ghost ad-btn-sm" data-act="dlg-add">${ic('plus', 16)}Bo'sh gap qo'shish</button>
+        </div>`;
+      return;
+    }
+    const P = 'content.dialog';
+    dlgBox.innerHTML = `
+      <label class="ad-f"><span>Qayta kirganda <small>ism allaqachon ma'lum bo'lsa, «faqat birinchi marta» gaplar o'rniga aytiladi</small></span>
+        <input maxlength="300" data-f="${P}.welcome_back" placeholder="Yana xush kelibsan, {ism}!"></label>
+      <p class="ad-hint">{ism} o'rniga bola yozgan ism qo'yiladi.</p>
+      ${d.lines.map((ln, i) => `
+        <article class="ad-dlg-ln" data-step="dialog">
+          <header class="ad-ex-h"><b>${i + 1}-gap</b>${poseSel(`${P}.lines.${i}.pose`)}<span class="ad-sp"></span>
+            <button type="button" class="ad-ib" data-act="dlg-up:${i}" ${i === 0 ? 'disabled' : ''} aria-label="${i + 1}-gapni yuqoriga">${ic('up', 18)}</button>
+            <button type="button" class="ad-ib" data-act="dlg-down:${i}" ${i === d.lines.length - 1 ? 'disabled' : ''} aria-label="${i + 1}-gapni pastga">${ic('down', 18)}</button>
+            <button type="button" class="ad-ib is-danger" data-act="dlg-del:${i}" aria-label="${i + 1}-gapni o'chirish">${ic('trash', 18)}</button></header>
+          <textarea rows="2" maxlength="400" data-f="${P}.lines.${i}.text" aria-label="${i + 1}-gap matni" placeholder="Kibi nima deydi?"></textarea>
+          <div class="ad-grid">
+            <label class="ad-check"><input type="checkbox" data-f="${P}.lines.${i}.ask_name"><span>Shu yerda ism so'ralsin</span></label>
+            <label class="ad-check"><input type="checkbox" data-f="${P}.lines.${i}.first_only"><span>Faqat birinchi marta</span></label>
+          </div>
+          <fieldset class="ad-rows"><legend>Tugmalar <small>bo'sh bo'lsa «Davom»; javob yozilsa, Kibi avval shuni aytadi</small></legend>
+            ${ln.buttons.map((_, k) => `
+              <div class="ad-rowf ad-dlg-btn">
+                <input maxlength="40" data-f="${P}.lines.${i}.buttons.${k}.label" placeholder="Tugma" aria-label="${i + 1}-gap, ${k + 1}-tugma">
+                <input maxlength="300" data-f="${P}.lines.${i}.buttons.${k}.reply" placeholder="Kibi javobi (ixtiyoriy)" aria-label="${i + 1}-gap, ${k + 1}-tugma javobi">
+                ${poseSel(`${P}.lines.${i}.buttons.${k}.reply_pose`, 'Holat: o\'sha')}
+                <button type="button" class="ad-ib" data-act="dlg-btn-del:${i}:${k}" aria-label="${k + 1}-tugmani o'chirish">${ic('x', 16)}</button>
+              </div>`).join('')}
+            <button type="button" class="ad-mini" data-act="dlg-btn-add:${i}" ${ln.buttons.length >= 3 ? 'disabled' : ''}>${ic('plus', 14)}Tugma</button>
+          </fieldset>
+        </article>`).join('')}
+      <div class="ad-actions">
+        <button type="button" class="ad-mini" data-act="dlg-add" ${d.lines.length >= MAX_LINES ? 'disabled' : ''}>${ic('plus', 14)}Gap qo'shish</button>
+        <button type="button" class="ad-mini ad-danger-btn" data-act="dlg-clear">${ic('trash', 14)}Dialogni olib tashlash</button>
+      </div>`;
+    fill(dlgBox);
+  }
 
   // ---------- Mashqlar ro'yxati ----------
   function renderExercises() {
@@ -238,6 +311,27 @@ export function mountLessonEditor(box, ctx) {
           </div>`).join('')}
         <button type="button" class="ad-mini" data-act="add-pair:${i}" ${e.pairs.length >= 5 ? 'disabled' : ''}>${ic('plus', 14)}Juftlik</button>
       </fieldset>`;
+    } else if (e.type === 'sort') {
+      const opts = (k) => e.groups.map((g, j) => `<option value="${j}">${esc(g || `${j + 1}-guruh`)}</option>`).join('');
+      body = `<fieldset class="ad-rows"><legend>Guruhlar <small>2 yoki 3 ta, masalan: Ichida / Tashqarida</small></legend>
+          ${e.groups.map((_, j) => `
+            <div class="ad-rowf">
+              <span class="ad-num">${j + 1}</span>
+              <input maxlength="40" data-f="${p}.groups.${j}" placeholder="${j + 1}-guruh" aria-label="${i + 1}-mashq, ${j + 1}-guruh">
+              <button type="button" class="ad-ib" data-act="del-grp:${i}:${j}" ${e.groups.length <= 2 ? 'disabled' : ''} aria-label="${j + 1}-guruhni o'chirish">${ic('x', 16)}</button>
+            </div>`).join('')}
+          <button type="button" class="ad-mini" data-act="add-grp:${i}" ${e.groups.length >= 3 ? 'disabled' : ''}>${ic('plus', 14)}Guruh</button>
+        </fieldset>
+        <fieldset class="ad-rows"><legend>Narsalar <small>har biriga to'g'ri guruhni tanlang; o'quvchiga aralashtirib beriladi</small></legend>
+          ${e.items.map((_, k) => `
+            <div class="ad-rowf">
+              ${rowImg(`${p}.item_images.${k}`, `${k + 1}-narsaga rasm`)}
+              <input maxlength="80" data-f="${p}.items.${k}" placeholder="${k + 1}-narsa" aria-label="${i + 1}-mashq, ${k + 1}-narsa">
+              <select class="ad-sel-sm" data-f="${p}.item_groups.${k}" data-num aria-label="${k + 1}-narsaning guruhi">${opts(k)}</select>
+              <button type="button" class="ad-ib" data-act="del-sitem:${i}:${k}" ${e.items.length <= 2 ? 'disabled' : ''} aria-label="${k + 1}-narsani o'chirish">${ic('x', 16)}</button>
+            </div>`).join('')}
+          <button type="button" class="ad-mini" data-act="add-sitem:${i}" ${e.items.length >= 8 ? 'disabled' : ''}>${ic('plus', 14)}Narsa</button>
+        </fieldset>`;
     } else if (e.type === 'typing') {
       body = `
         <label class="ad-f"><span>Yoziladigan matn <small>o'quvchi aynan shuni yozadi, 300 belgigacha</small></span><textarea rows="2" maxlength="300" data-f="${p}.text" placeholder="Masalan: Kompyuter buyruqlarni ketma-ket bajaradi."></textarea></label>
@@ -271,6 +365,7 @@ export function mountLessonEditor(box, ctx) {
     return `<article class="ad-ex${folded ? ' is-folded' : ''}" data-step="ex:${i}">${head}
       <div class="ad-ex-b">${top}${body}
         <label class="ad-f"><span>Izoh <small>to'g'ri javobdan keyin chiqadi, ixtiyoriy</small></span><input maxlength="400" data-f="${p}.explain"></label>
+        ${e.type === 'typing' || e.type === 'maze' ? '' : `<label class="ad-f"><span>Maslahat <small>xato javobda chiqadi (bo'lmasa yordamchi karta matni), ixtiyoriy</small></span><input maxlength="300" data-f="${p}.hint" placeholder="Masalan: Tok bo'lmasa, boshqa qismlar ishlay oladimi?"></label>`}
       </div>
     </article>`;
   }
@@ -368,6 +463,15 @@ export function mountLessonEditor(box, ctx) {
     const msg = root.querySelector('[data-video-msg]');
     const thumb = root.querySelector('[data-video-thumb]');
     root.querySelector('[data-video-title]').disabled = !v;
+    root.querySelector('[data-video-check]').disabled = !v;
+    const fileMsg = v?.file && !VIDEO_FILE.test(v.file) ? "Fayl yo'li shunday bo'lsin: it/video/nom.mp4 (kichik harf, raqam, chiziqcha)" : '';
+    if (v?.file) {
+      thumb.hidden = true;
+      thumb.innerHTML = '';
+      msg.textContent = fileMsg || 'Saytdagi video ishlatiladi.';
+      msg.className = `ad-hint ${fileMsg ? 'is-bad' : 'is-ok'}`;
+      return;
+    }
     if (v?.id) {
       thumb.hidden = false;
       thumb.innerHTML = `<img src="${youtubeThumb(v.id)}" alt="Video muqovasi" width="320" height="180" loading="lazy">
@@ -388,7 +492,8 @@ export function mountLessonEditor(box, ctx) {
     const sums = {
       basic: [st.kind === 'test' ? "Bo'lim testi" : 'Oddiy mavzu', `${st.minutes || '?'} daqiqa`, `${st.xp || 0} XP`, st.term && `termin: ${st.term}`, tool && `qurol: ${tool.name}`].filter(Boolean).join(' · '),
       story: (short(c.story, 60) || "bo'sh") + pic(c.story_image),
-      video: c.video?.id ? (c.video.title || 'video bor') : "video yo'q",
+      dialog: c.dialog?.lines?.length ? `${c.dialog.lines.length} ta gap${c.dialog.lines.some((x) => x.ask_name) ? ' · ism so\'raladi' : ''}` : "dialog yo'q",
+      video: c.video?.id || c.video?.file ? [c.video.title || (c.video.file ? 'saytdagi video' : 'YouTube video'), c.video.check && '«Tushundingmi?»'].filter(Boolean).join(' · ') : "video yo'q",
       helper: (short(c.helper?.title || c.helper?.text, 60) || "bo'sh") + pic(c.helper?.image),
       exercises: c.exercises.length ? `${c.exercises.length} ta: ${[...new Set(c.exercises.map((e) => TYPE[e.type]))].join(', ')}` : "mashq yo'q",
       finish: (short(c.term_text, 60) || "bo'sh") + pic(c.term_image),
@@ -488,7 +593,23 @@ export function mountLessonEditor(box, ctx) {
   // ---------- Saqlash ----------
   function cleanContent(content) {
     const c = structuredClone(content);
-    if (!c.video?.id) delete c.video;
+    if (c.video) {
+      if (!c.video.id) delete c.video.id;
+      if (!c.video.file?.trim()) delete c.video.file; else c.video.file = c.video.file.trim();
+      c.video.check = Boolean(c.video.check);
+      if (!c.video.id && !c.video.file) delete c.video;
+    }
+    if (c.dialog) {
+      if (!c.dialog.lines?.length) delete c.dialog;
+      else {
+        c.dialog.welcome_back = c.dialog.welcome_back || '';
+        c.dialog.lines.forEach((ln) => {
+          ln.ask_name = Boolean(ln.ask_name);
+          ln.first_only = Boolean(ln.first_only);
+          ln.buttons.forEach((b) => { b.reply = b.reply || ''; if (!b.reply_pose) delete b.reply_pose; });
+        });
+      }
+    }
     for (const k of ['story_image', 'term_image']) if (!c[k]) delete c[k];
     if (c.helper) {
       if (!c.helper.image) delete c.helper.image;
@@ -497,6 +618,7 @@ export function mountLessonEditor(box, ctx) {
     c.exercises.forEach((e) => {
       if (!e.image) delete e.image;
       if (e.type === 'choice') e.answer = Number(e.answer) || 0;
+      if (e.type === 'sort') e.item_groups = e.items.map((_, k) => Number(e.item_groups?.[k]) || 0);
       if (e.type === 'typing') { e.min_accuracy = clampInt(e.min_accuracy, 50, 100, 90); e.case_sensitive = Boolean(e.case_sensitive); }
       if (e.type === 'maze') e.max_commands = clampInt(e.max_commands, 1, 40, null);
       for (const k of ['option_images', 'item_images', 'pair_images']) {
@@ -544,6 +666,7 @@ export function mountLessonEditor(box, ctx) {
         st.content.exercises.forEach((e, k) => { if (foldedIdx[k]) exFolded.add(e); });
         fill(root);
         updateVideoUi();
+        renderDialog();
         renderExercises();
       }
       showIssues([]);
@@ -578,7 +701,7 @@ export function mountLessonEditor(box, ctx) {
     runLesson(view, L, {
       preview: true,
       start: s.startsWith('ex:') ? Number(s.slice(3)) : s,
-      onRestart: () => preview('story'),
+      onRestart: () => preview(st.content.dialog?.lines?.length ? 'dialog' : 'story'),
     });
   }
   const previewSoon = () => { clearTimeout(pvTimer); pvTimer = setTimeout(() => preview(), 450); };
@@ -597,8 +720,9 @@ export function mountLessonEditor(box, ctx) {
       const raw = t.value.trim();
       const vid = youtubeId(raw);
       const msg = root.querySelector('[data-video-msg]');
-      if (vid) st.content.video = { id: vid, title: st.content.video?.title || '' };
-      else delete st.content.video;
+      const cur = st.content.video;
+      if (vid) st.content.video = { ...cur, id: vid, title: cur?.title || '' };
+      else if (cur) { delete cur.id; if (!cur.file) delete st.content.video; }
       if (!raw) { msg.textContent = ''; msg.className = 'ad-hint'; }
       else if (!vid) { msg.textContent = "Bu YouTube havolasi emas. Masalan: https://youtu.be/abc123XYZ_0"; msg.className = 'ad-hint is-bad'; }
       updateVideoUi();
@@ -610,8 +734,10 @@ export function mountLessonEditor(box, ctx) {
     if (!f || t.type === 'radio') return;
     let v = t.type === 'checkbox' ? t.checked : t.value;
     if (t.type === 'number') v = v === '' ? '' : Number(v);
+    if (t.dataset.num !== undefined) v = Number(v);
     if (f === 'tool_id') v = v || null;
     set(st, f, v);
+    if (t.matches('[data-video-file], [data-video-check]')) { updateVideoUi(); step = 'video'; }
     changed();
   });
   root.addEventListener('change', (e) => {
@@ -656,6 +782,7 @@ export function mountLessonEditor(box, ctx) {
         if (!c.classList.contains('is-folded')) { step = `ex:${i}`; preview(); }
         return;
       }
+      if (act.startsWith('dlg')) { dialogAction(act, i, j); return; }
       if (act === 'add-ex') { ex.push(NEW_EX[a]()); step = `ex:${ex.length - 1}`; }
       else if (act === 'del-ex') {
         if ((ex[i].prompt || '').trim() && !confirm(`${i + 1}-mashq o'chirilsinmi?`)) return;
@@ -674,6 +801,15 @@ export function mountLessonEditor(box, ctx) {
         swap(ex[i].items, j, o);
         const im = imgs(ex[i], 'item_images', ex[i].items.length);
         if (im) swap(im, j, o);
+      } else if (act === 'add-grp') ex[i].groups.push('');
+      else if (act === 'del-grp') {
+        ex[i].groups.splice(j, 1);
+        ex[i].item_groups = ex[i].item_groups.map((g) => (g === j ? 0 : g > j ? g - 1 : g));
+      } else if (act === 'add-sitem') { ex[i].items.push(''); ex[i].item_groups.push(0); }
+      else if (act === 'del-sitem') {
+        ex[i].items.splice(j, 1);
+        ex[i].item_groups.splice(j, 1);
+        imgs(ex[i], 'item_images', ex[i].items.length + 1)?.splice(j, 1);
       } else if (act === 'add-pair') ex[i].pairs.push(['', '']);
       else if (act === 'del-pair') { ex[i].pairs.splice(j, 1); imgs(ex[i], 'pair_images', ex[i].pairs.length + 1)?.splice(j, 1); }
       else if (act === 'mz-tool') {
@@ -702,8 +838,8 @@ export function mountLessonEditor(box, ctx) {
         const card2 = exList.lastElementChild;
         card2?.scrollIntoView({ block: 'center', behavior: 'smooth' });
         card2?.querySelector('textarea')?.focus({ preventScroll: true });
-      } else if (/^add-(opt|item|pair)$/.test(act)) {
-        const ins = exList.children[i]?.querySelectorAll('.ad-rowf input:not([type=radio])');
+      } else if (/^add-(opt|item|pair|sitem)$/.test(act)) {
+        const ins = exList.children[i]?.querySelectorAll(`.ad-rowf input:not([type=radio])${act === 'add-sitem' ? ':not([data-f*=".groups."])' : ''}`);
         ins?.[act === 'add-pair' ? ex[i].pairs.length * 2 - 2 : (ex[i].options || ex[i].items).length - 1]?.focus();
       }
       preview();
@@ -714,7 +850,7 @@ export function mountLessonEditor(box, ctx) {
     if (e.target.closest('[data-save-draft]')) { save(false); return; }
     if (e.target.closest('[data-pv-open]')) { root.classList.add('is-pv-open'); preview(); return; }
     if (e.target.closest('[data-pv-close]')) { root.classList.remove('is-pv-open'); return; }
-    if (e.target.closest('[data-pv-restart]')) { preview('story'); return; }
+    if (e.target.closest('[data-pv-restart]')) { preview(st.content.dialog?.lines?.length ? 'dialog' : 'story'); return; }
     // Klaviatura bilan katak tanlansa (Enter/Space) ham chiziladi
     const cell = e.target.closest('[data-cell]');
     if (cell && e.detail === 0) {
@@ -724,6 +860,34 @@ export function mountLessonEditor(box, ctx) {
       exList.querySelector(`[data-maze="${i}"] [data-cell="${y}:${x}"]`)?.focus();
     }
   });
+
+  function dialogAction(act, i, k) {
+    const c = st.content;
+    const lines = c.dialog?.lines;
+    if (act === 'dlg-sample') {
+      if (lines?.length && !confirm('Hozirgi dialog namunaga almashtirilsinmi?')) return;
+      c.dialog = DIALOG_SAMPLE();
+    } else if (act === 'dlg-add') {
+      if (!c.dialog) c.dialog = { welcome_back: '', lines: [] };
+      if (c.dialog.lines.length < MAX_LINES) c.dialog.lines.push(NEW_LINE());
+    } else if (act === 'dlg-clear') {
+      if (!confirm("Kibi dialogi olib tashlansinmi?")) return;
+      delete c.dialog;
+    } else if (act === 'dlg-del') {
+      if ((lines[i].text || '').trim() && !confirm(`${i + 1}-gap o'chirilsinmi?`)) return;
+      lines.splice(i, 1);
+      if (!lines.length) delete c.dialog;
+    } else if (act === 'dlg-up' || act === 'dlg-down') {
+      const o = act === 'dlg-up' ? i - 1 : i + 1;
+      [lines[i], lines[o]] = [lines[o], lines[i]];
+    } else if (act === 'dlg-btn-add') {
+      if (lines[i].buttons.length < 3) lines[i].buttons.push({ label: '', reply: '' });
+    } else if (act === 'dlg-btn-del') lines[i].buttons.splice(k, 1);
+    step = 'dialog';
+    renderDialog();
+    changed();
+    preview('dialog');
+  }
 
   async function imageAction(act, path) {
     const slots = () => root.querySelectorAll(`[data-img="${path}"]`);
@@ -768,9 +932,10 @@ export function mountLessonEditor(box, ctx) {
   fill(root);
   if (st.content.video?.id) root.querySelector('[data-video-url]').value = `https://youtu.be/${st.content.video.id}`;
   updateVideoUi();
+  renderDialog();
   renderExercises();
   refreshBar();
-  preview('story');
+  preview(st.content.dialog?.lines?.length ? 'dialog' : 'story');
 
   return () => {
     clearTimeout(pvTimer);

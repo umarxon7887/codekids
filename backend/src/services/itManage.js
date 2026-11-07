@@ -206,6 +206,14 @@ export function publishIssues({ title, content }) {
   const key = (t, img) => `${String(t ?? '').trim().toLowerCase()}|${img || ''}`;
 
   if (blank(title)) add('title', "Mavzu nomi bo'sh");
+  const lines = content.dialog?.lines || [];
+  lines.forEach((d, i) => {
+    const n = `Dialog, ${i + 1}-gap`;
+    if (blank(d.text)) add(`dialog.lines.${i}.text`, `${n}: matn bo'sh`);
+    d.buttons.forEach((b, k) => { if (blank(b.label)) add(`dialog.lines.${i}.buttons.${k}.label`, `${n}: ${k + 1}-tugma yozuvi bo'sh`); });
+  });
+  if (lines.filter((d) => d.ask_name).length > 1) add('dialog.lines', "Dialogda ism faqat bitta gapda so'ralsin");
+  if (content.video && !content.video.id && !content.video.file) add('video', "Video uchun YouTube havolasi yoki fayl yo'li kerak");
   const ex = content.exercises || [];
   if (!ex.length) add('exercises', "Kamida bitta mashq qo'shing");
   ex.forEach((e, i) => {
@@ -231,6 +239,19 @@ export function publishIssues({ title, content }) {
       });
       const side = (j) => e.pairs.map((x, k) => key(x[j], im[k]?.[j]));
       if (e.pairs.length > 1 && (dup(side(0)) || dup(side(1)))) add(`${p}.pairs`, `${n}: bir xil so'zlar bor (juftlikni ajratib bo'lmaydi)`);
+    } else if (e.type === 'sort') {
+      const im = e.item_images || [];
+      if (e.groups.length < 2) add(`${p}.groups`, `${n}: kamida 2 ta guruh kerak`);
+      e.groups.forEach((g, k) => { if (blank(g)) add(`${p}.groups.${k}`, `${n}: ${k + 1}-guruh nomi bo'sh`); });
+      if (e.items.length < 2) add(`${p}.items`, `${n}: kamida 2 ta narsa kerak`);
+      e.items.forEach((o, k) => {
+        if (blank(o) && !im[k]) add(`${p}.items.${k}`, `${n}: ${k + 1}-narsa bo'sh (matn yoki rasm qo'ying)`);
+        const g = e.item_groups[k];
+        if (g == null || g >= e.groups.length) add(`${p}.item_groups.${k}`, `${n}: ${k + 1}-narsaning guruhi tanlanmagan`);
+      });
+      if (e.groups.length > 1 && !e.groups.every((_, k) => e.item_groups.slice(0, e.items.length).includes(k))) {
+        add(`${p}.item_groups`, `${n}: har bir guruhda kamida bitta narsa bo'lsin`);
+      }
     } else if (e.type === 'typing') {
       if (blank(e.text)) add(`${p}.text`, `${n}: yoziladigan matn bo'sh`);
     } else if (e.type === 'maze') {
@@ -257,6 +278,23 @@ export function contentImages(c) {
 function tidy(content) {
   const c = { ...content };
   if (c.helper && !c.helper.title && !c.helper.text && !c.helper.image) delete c.helper;
+  if (c.video && !c.video.id && !c.video.file) delete c.video;
+  if (c.dialog) {
+    if (!c.dialog.lines?.length) delete c.dialog;
+    else {
+      c.dialog = {
+        ...c.dialog,
+        lines: c.dialog.lines.map((d) => ({
+          ...d,
+          buttons: d.buttons.map((b) => {
+            const x = { ...b };
+            if (!x.reply) { delete x.reply; delete x.reply_pose; }
+            return x;
+          }),
+        })),
+      };
+    }
+  }
   // Rasm ro'yxati variantlar soniga moslanadi; birorta rasm bo'lmasa, ro'yxat umuman saqlanmaydi
   const fit = (list, n, pair = false) => {
     if (!list) return undefined;
@@ -267,10 +305,12 @@ function tidy(content) {
   c.exercises = c.exercises.map((e) => {
     const x = { ...e };
     if (!x.explain) delete x.explain;
+    if (!x.hint) delete x.hint;
     if (!x.image) delete x.image;
     const set = (k, v) => { if (v) x[k] = v; else delete x[k]; };
     if (x.type === 'choice') set('option_images', fit(x.option_images, x.options.length));
-    if (x.type === 'order') set('item_images', fit(x.item_images, x.items.length));
+    if (x.type === 'order' || x.type === 'sort') set('item_images', fit(x.item_images, x.items.length));
+    if (x.type === 'sort') x.item_groups = x.item_groups.slice(0, x.items.length);
     if (x.type === 'match') set('pair_images', fit(x.pair_images, x.pairs.length, true));
     return x;
   });

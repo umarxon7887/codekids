@@ -388,3 +388,7 @@ CREATE TABLE IF NOT EXISTS it_images (
   data        BYTEA NOT NULL,
   created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- O'quvchining haqiqiy ismi: IT darslarida qahramon (Kibi) so'raydi va shu ism bilan murojaat qiladi.
+-- Nikneymdan farqli: boshqalarga ko'rinmaydi, faqat darsda ishlatiladi.
+ALTER TABLE users ADD COLUMN IF NOT EXISTS real_name VARCHAR(20);
