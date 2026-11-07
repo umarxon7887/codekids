@@ -374,3 +374,54 @@ BEGIN
     );
   END LOOP;
 END $$;
+
+-- =====================================================================
+-- Typing darslari: darajalar va darslar kodda (src/data/typingCourse.js),
+-- bazada faqat o'quvchi progressi, urinishlar va coinlar.
+-- =====================================================================
+ALTER TABLE users ADD COLUMN IF NOT EXISTS coins INTEGER NOT NULL DEFAULT 0;
+
+-- Bitta dars urinishi. Har mashq (step) alohida vaqt bilan o'lchanadi (steps JSONB).
+CREATE TABLE IF NOT EXISTS typing_lesson_attempts (
+  id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id      UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  lesson_id    VARCHAR(10) NOT NULL,              -- "1-1", "1-x" (imtihon)
+  steps        JSONB NOT NULL,                    -- [{text, started_at, done, correct, len, errors, sec}]
+  started_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+  expires_at   TIMESTAMPTZ NOT NULL,
+  finished_at  TIMESTAMPTZ,
+  wpm          NUMERIC(6, 2),
+  accuracy     NUMERIC(5, 2),
+  stars        SMALLINT,
+  coins        INTEGER NOT NULL DEFAULT 0,
+  flagged      BOOLEAN NOT NULL DEFAULT false
+);
+CREATE INDEX IF NOT EXISTS typing_lesson_attempts_user_idx
+  ON typing_lesson_attempts (user_id, finished_at DESC);
+
+-- O'quvchining har dars bo'yicha eng yaxshi natijasi
+CREATE TABLE IF NOT EXISTS typing_lesson_progress (
+  user_id        UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  lesson_id      VARCHAR(10) NOT NULL,
+  stars          SMALLINT NOT NULL CHECK (stars BETWEEN 1 AND 3),
+  best_wpm       NUMERIC(6, 2) NOT NULL,
+  best_accuracy  NUMERIC(5, 2) NOT NULL,
+  attempts       INTEGER NOT NULL DEFAULT 1,
+  passed_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (user_id, lesson_id)
+);
+
+-- Coin harakatlari (qayerdan kelgani). users.coins = shu jadval yig'indisi.
+CREATE TABLE IF NOT EXISTS coin_events (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id     UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  amount      INTEGER NOT NULL,
+  reason      VARCHAR(20) NOT NULL,              -- lesson | exam | star | daily
+  ref         VARCHAR(40),                       -- dars id
+  day         DATE NOT NULL DEFAULT (now() AT TIME ZONE 'Asia/Tashkent')::date,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS coin_events_user_idx ON coin_events (user_id, created_at DESC);
+-- Kunlik bonus kuniga bir marta
+CREATE UNIQUE INDEX IF NOT EXISTS coin_events_daily_uq ON coin_events (user_id, day) WHERE reason = 'daily';

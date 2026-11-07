@@ -38,3 +38,8 @@
 body:has(.hm) #settings, body:has(.au) #settings { display: none; }
 #app:has(.hm), #app:has(.au) { padding-top: 0; margin-top: 0; }
 .hm-top { padding-right: 0; }
+/* Typing darslari coinlari (tl.css dagi .ck-coins bilan bir xil ko'rinish) */
+.hm-coins { display: inline-flex; align-items: center; gap: 6px; background: #FFF1C9; color: #7A5A00; border-radius: 999px; padding: 4px 14px 4px 5px; font-size: 16px; font-weight: 600; text-decoration: none; }
+.hm-coins[hidden] { display: none; }
+.hm-coins .ck-coin { display: block; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }

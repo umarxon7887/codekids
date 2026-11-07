@@ -4,6 +4,7 @@ import { api } from '../core/api.js';
 import { getUser, setUser } from '../core/state.js';
 import { showError, toast } from '../core/toast.js';
 import { html, esc } from '../utils/dom.js';
+import { coinSvg } from './tl/coin.js';
 
 const P = {
   x: '<path d="M6 6l12 12M18 6L6 18"/>',
@@ -227,6 +228,7 @@ function studentView(s) {
         ${row('maze', 'Labirintda eng yuqori daraja', s.lab_best_level != null ? `${s.lab_best_level}-daraja` : notYet)}
       </div>
     </section>
+    ${lessonsCard(s.typing_lessons)}
     ${itCard(s.it)}
     <section class="pf-card">
       <h3>Sinflarim</h3>
@@ -236,6 +238,31 @@ function studentView(s) {
       <h3>So'nggi o'yinlar</h3>
       ${s.recent.length ? `<ul class="pf-list">${s.recent.map(recentItem).join('')}</ul>`
         : '<p class="pf-empty">Hali o\'yin o\'ynamading. Typing Race yoki ustoz xonasidan boshla!</p>'}
+    </section>`;
+}
+
+function lessonsCard(tl) {
+  if (!tl) return '';
+  const stars = (n) => `<span class="pf-stars" aria-label="${n} yulduz">${'★'.repeat(n)}<i>${'★'.repeat(3 - n)}</i></span>`;
+  const recent = tl.recent.length
+    ? `<ul class="pf-list">${tl.recent.map((r) => `<li class="pf-item">
+        <span class="pf-ii is-kb">${ic(r.kind === 'exam' ? 'trophy' : 'kb')}</span>
+        <div class="pf-it"><b>${r.level}-daraja · ${esc(r.kind === 'exam' ? 'Imtihon' : r.title)}</b>
+          <span>${esc(day(r.at))} · ${r.wpm} so'z/daq · ${r.accuracy}%</span></div>
+        ${r.stars ? stars(r.stars) : '<span class="pf-place">O\'tmadi</span>'}</li>`).join('')}</ul>`
+    : '<p class="pf-empty">Hali dars o\'tmading. Bosh sahifadagi "Typing darslari"dan boshla!</p>';
+  return `
+    <section class="pf-card pf-tlc">
+      <div class="pf-tlh"><h3>Typing darslari</h3><span class="pf-coins">${coinSvg(26)}<b>${tl.coins}</b> coin</span></div>
+      <div class="pf-rows">
+        ${row('trophy', 'Daraja', tl.course_done ? `Hammasi tugadi (${tl.levels}/${tl.levels})` : `${tl.level} / ${tl.levels}`)}
+        ${row('book', "O'tilgan darslar", `${tl.done} / ${tl.total}`)}
+        ${row('star', 'Yulduzlar', `${tl.stars} / ${tl.max_stars}`)}
+        ${row('kb', 'Darsdagi eng yaxshi tezlik', tl.best_wpm != null ? `${tl.best_wpm} so'z/daq` : '<span class="pf-none">Hali yo\'q</span>')}
+        ${row('target', "O'rtacha aniqlik", tl.avg_accuracy != null ? `${tl.avg_accuracy}%` : '<span class="pf-none">Hali yo\'q</span>')}
+      </div>
+      <h3 class="pf-sub">So'nggi darslar</h3>
+      ${recent}
     </section>`;
 }
 

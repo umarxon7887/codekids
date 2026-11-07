@@ -105,3 +105,12 @@ html.pf-lock, html.pf-lock body { overflow: hidden; }
   .pf { animation: pf-in .18s ease-out; }
   @keyframes pf-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 }
+
+/* Typing darslari kartasi */
+.pf-tlh { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.pf-tlh h3 { margin: 0; }
+.pf-coins { display: inline-flex; align-items: center; gap: 6px; background: #FFF1C9; color: #7A5A00; border-radius: 999px; padding: 4px 14px 4px 5px; font-size: 15px; font-weight: 500; }
+.pf-coins b { font-size: 18px; font-weight: 700; }
+.pf-coins .ck-coin { display: block; }
+.pf-stars { color: #F7B928; font-size: 18px; letter-spacing: 1px; white-space: nowrap; }
+.pf-stars i { font-style: normal; color: #EFE3D3; }

@@ -163,3 +163,11 @@ Ulanish: `io(URL, { auth: { token } })`. Mehmon: `auth: { guest: true, deviceId:
 **Ma'lum cheklovlar:**
 - Xona holati xotirada. Server qayta ishga tushsa, jonli o'yin to'xtaydi (bazadagi holat saqlanadi, lekin xona qayta yuklanganda taymer va savol holatiga qarab davom etadi).
 - Bir vaqtda bitta server instance.
+
+## Typing darslari (`/api/v1/typing-lessons`, auth kerak)
+Darslar matni: `src/data/typingCourse.js` (6 daraja × 4 dars + imtihon). Bazada progress, urinishlar, coinlar.
+- `GET /` — darajalar, dars holati (done/current/open/locked), yulduzlar, `stats.coins`.
+- `POST /attempts` `{lesson_id:"1-1"}` — darsni boshlash, mashq matnlari. Qulf: 403 `LESSON_LOCKED`.
+- `POST /attempts/:id/steps/:i/begin` — mashqning birinchi tugmasi bosildi (vaqt serverda).
+- `POST /attempts/:id/steps/:i` `{typed, errors}` — mashq tugadi; oxirgisida `result` (wpm, accuracy, stars, coins, next_lesson_id, level_unlocked).
+Coin: dars 10, imtihon 50, har yangi yulduz 5, kunning birinchi o'tilgan darsi 5. Qayta o'tishda faqat yangi yulduz uchun.

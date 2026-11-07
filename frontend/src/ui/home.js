@@ -1,9 +1,10 @@
-/** @file O'quvchi bosh sahifasi: Typing, xonaga kirish, IT darslari. */
+/** @file O'quvchi bosh sahifasi: Typing Race, Typing darslari, xonaga kirish, IT darslari. */
 import '../styles/home.css';
-import { auth } from '../core/api.js';
+import { auth, api } from '../core/api.js';
 import { disconnectSocket } from '../core/socket.js';
 import { toast } from '../core/toast.js';
 import { html, esc } from '../utils/dom.js';
+import { coinSvg } from './tl/coin.js';
 
 const P = {
   logo: '<path d="M8 7l-5 5 5 5M16 7l5 5-5 5M14 4l-4 16"/>',
@@ -20,6 +21,7 @@ export function mountHome(root, user, reroute) {
       <header class="hm-top">
         <div class="hm-brand"><span class="hm-logo">${svg('logo', 22, 2.2)}</span>CodeKids</div>
         <div class="hm-right">
+          <a class="ck-coins hm-coins" href="#/typing-lessons" title="Coinlar" hidden>${coinSvg(22)}<b>0</b><span class="sr">coin</span></a>
           <button class="hm-me" id="me"><span class="hm-ava">${esc(name[0].toUpperCase())}</span>${esc(name)}</button>
           <button class="btn btn--ghost hm-out hm-out--top" data-out>Chiqish</button>
         </div>
@@ -28,8 +30,13 @@ export function mountHome(root, user, reroute) {
       <div class="hm-cards">
         <a class="hm-card" href="#/typing" style="background:var(--sky)">
           <span class="hm-ic" style="color:#1F5C8A">${svg('kb')}</span>
-          <b>Typing Race</b><span class="d" style="color:#3F5566">Tez va aniq yozishni mashq qil</span>
+          <b>Typing Race</b><span class="d" style="color:#3F5566">Do'stlar bilan tezlikda poyga</span>
           <span class="hm-go">Boshlash</span>
+        </a>
+        <a class="hm-card" href="#/typing-lessons" style="background:var(--butter)">
+          <span class="hm-row"><span class="hm-ic">${coinSvg(34)}</span><span class="hm-new" style="color:#7A5A00">Yangi</span></span>
+          <b>Typing darslari</b><span class="d" data-tl style="color:#6B4E00">6 daraja, coin va yulduzlar</span>
+          <span class="hm-go">Darslarga</span>
         </a>
         <form class="hm-card" id="join" style="background:var(--mint)" novalidate>
           <span class="hm-ic" style="color:#1F5C41">${svg('maze')}</span>
@@ -68,5 +75,12 @@ export function mountHome(root, user, reroute) {
     });
   };
   root.replaceChildren(view);
+  // Coinlar va darslar holati (sahifa yuklanishini kutmasdan)
+  api.get('/typing-lessons').then(({ stats }) => {
+    const pill = $('.hm-coins');
+    pill.querySelector('b').textContent = String(stats.coins);
+    pill.hidden = false;
+    $('[data-tl]').textContent = stats.done ? `${stats.level}-daraja · ${stats.done}/${stats.total} dars` : '6 daraja, coin va yulduzlar';
+  }).catch(() => {});
   return () => {};
 }
