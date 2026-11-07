@@ -327,3 +327,11 @@ body:has(.ad) #settings { display: none; }
 @media (max-width: 560px) {
   .ad-dlg-btn > input { flex-basis: 100% !important; }
 }
+
+/* Tuzatish o'yini */
+.ad-game { display: flex; flex-direction: column; gap: 14px; }
+.ad-gm-part { display: flex; flex-direction: column; gap: 12px; padding: 14px; border: 1.5px solid #EFE3D5; border-radius: 18px; background: #FFFCF8; }
+.ad-gm-steps { display: flex; flex-direction: column; gap: 10px; }
+.ad-gm-step { display: flex; flex-direction: column; gap: 10px; padding: 12px; border-radius: 14px; background: var(--white); border: 1.5px dashed #E5D5C3; }
+.ad-gm-wipe { display: flex; gap: 18px; }
+.ad-gm-wipe > div { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 13px; color: var(--ink-2); }

@@ -3,7 +3,7 @@
  * Navigatsiya: network-first (oflayn -> index.html). Statik: stale-while-revalidate.
  * Backend (boshqa origin) hech qachon keshlanmaydi.
  */
-const VERSION = 'ck-v4';
+const VERSION = 'ck-v5';
 const SCOPE = self.registration.scope;
 const SHELL = [SCOPE, `${SCOPE}index.html`, `${SCOPE}manifest.json`];
 

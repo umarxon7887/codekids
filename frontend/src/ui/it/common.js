@@ -26,6 +26,8 @@ const P = {
   keyboard: '<rect x="2" y="6" width="20" height="12" rx="3"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/>',
   maze: '<path d="M4 4h16v16H4zM8 4v8M12 8v12M16 4v8M8 16h4"/>',
   fold: '<path d="M7 9l5-5 5 5M7 15l5 5 5-5"/>',
+  rotate: '<path d="M20 12a8 8 0 1 1-2.3-5.7M20 4v5h-5"/>',
+  power: '<path d="M12 3v8M6.3 7a8 8 0 1 0 11.4 0"/>',
 };
 
 const YT_ID = /^[A-Za-z0-9_-]{11}$/;

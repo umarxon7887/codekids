@@ -142,6 +142,48 @@ const dialog = z.object({
   welcome_back: z.string().trim().max(300).default(''),
 });
 
+// ---------- Tuzatish o'yini («Kibining ustaxonasi») ----------
+// Bola buzilgan qurilmani qismma-qism tuzatadi. Har qism 1–3 qadamdan iborat:
+//   drag  — narsa(lar)ni to'g'ri joyga sudraydi (yoki bosib, keyin joyni bosadi); rotate: avval to'g'ri tomonga buradi
+//   tap   — tugmani bosadi (masalan, yoqish tugmasi)
+//   wipe  — barmog'i bilan surtib tozalaydi (iflos rasm ostidan toza rasm chiqadi)
+//   type  — ismini yozadi va u ekranda paydo bo'ladi
+// Tuzilma qoralama va e'lon uchun bir xil; to'liqligini publishIssues() tekshiradi.
+export const GAME_EFFECTS = ['none', 'power', 'cool', 'check', 'load', 'screen', 'type'];
+const gText = (max) => z.string().trim().max(max).default('');
+const gThing = z.object({ label: gText(40), image });
+const gameStep = z.discriminatedUnion('kind', [
+  z.object({
+    kind: z.literal('drag'),
+    prompt: gText(200),
+    items: z.array(gThing).max(3).default([]),
+    rotate: z.boolean().default(false),
+    targets: z.array(gThing).max(3).default([]),
+    answer: z.number().int().min(0).max(2).default(0),
+  }),
+  z.object({ kind: z.literal('tap'), prompt: gText(200), label: gText(40), image }),
+  z.object({ kind: z.literal('wipe'), prompt: gText(200), dirty: image, clean: image }),
+  z.object({ kind: z.literal('type'), prompt: gText(200) }),
+]);
+export const GAME_STEP_KINDS = ['drag', 'tap', 'wipe', 'type'];
+const gamePart = z.object({
+  name: gText(40),          // qism nomi (kartochkada)
+  image,                    // kartochka rasmi
+  broken: gText(300),       // ekrandagi buzilish
+  explain: gText(400),      // Kibi: sog' holatda qanday ishlaydi
+  hint: gText(300),         // xato harakatda maslahat
+  done: gText(300),         // tuzalgach nima bo'ldi
+  effect: z.enum(GAME_EFFECTS).default('none'),
+  steps: z.array(gameStep).max(3).default([]),
+});
+const game = z.object({
+  title: gText(80),
+  intro: gText(400),        // boshlanishida Kibi (usta) gapi
+  outro: gText(300),        // g'alaba yozuvi: «Rahmat, usta {ism}!»
+  part_xp: z.number().int().min(0).max(50).default(5),
+  parts: z.array(gamePart).max(8).default([]),
+});
+
 export const lessonContentSchema = z.object({
   story: z.string().trim().max(1500).default(''),              // vaziyat / hikoya
   story_image: image,
@@ -149,6 +191,7 @@ export const lessonContentSchema = z.object({
   video: video.optional(),                                      // hikoyadan keyin ko'rsatiladigan video
   helper: z.object({ title: z.string().trim().max(80), text: z.string().trim().max(800), image }).optional(), // yordamchi karta
   exercises: z.array(exerciseSchema).min(1).max(12),
+  game: game.optional(),                                        // savollardan keyin tuzatish o'yini
   term_text: z.string().trim().max(600).default(''),           // yakunda termin tushuntirishi
   term_image: image,
 });
@@ -218,6 +261,7 @@ export const draftContentSchema = z.object({
   video: z.object({ id: youtubeId.optional(), file: videoFile.optional(), title: dText(120), check: z.boolean().default(false) }).optional(),
   helper: z.object({ title: dText(80), text: dText(800), image }).optional(),
   exercises: z.array(draftExercise).max(12, "Bitta mavzuda ko'pi bilan 12 ta mashq").default([]),
+  game: game.optional(),
   term_text: dText(600),
   term_image: image,
 });
