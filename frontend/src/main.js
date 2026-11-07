@@ -62,6 +62,9 @@ async function render({ path, query }) {
 
   const teacherOnly = path === '/teacher' || path.startsWith('/host/');
   if (teacherOnly && user.role !== 'teacher') { location.hash = '#/'; return () => {}; }
+  const adminOnly = path === '/admin' || path.startsWith('/admin/');
+  if (adminOnly && user.role !== 'admin') { location.hash = '#/'; return () => {}; }
+  if (adminOnly) return (await import('./admin/panel.js')).mountAdmin(app, path.slice('/admin'.length) || '/');
 
   if (path === '/typing') return (await import('./games/typing/lobby.js')).mountTypingLobby(app);
   if (path === '/typing-lessons') return (await import('./ui/tl/map.js')).mountTypingMap(app, query);
@@ -80,6 +83,7 @@ async function render({ path, query }) {
   if (m) return (await import('./teacher/host.js')).mountHost(app, { code: m[1], game: query.game || 'typing' });
 
   if (user.role === 'teacher') return (await import('./teacher/panel.js')).mountTeacher(app);
+  if (user.role === 'admin') return (await import('./admin/panel.js')).mountAdmin(app, '/');
   return (await import('./ui/home.js')).mountHome(app, user, route);
 }
 

@@ -2,8 +2,8 @@ import { Router } from 'express';
 import { query, withTransaction } from '../db.js';
 import { validate } from '../middleware/validate.js';
 import { requireAuth } from '../middleware/auth.js';
-import { lessonParams, completeSchema } from '../schemas/it.js';
-import { getPath, getLesson, completeLesson } from '../services/it.js';
+import { lessonParams, completeSchema, nameSchema } from '../schemas/it.js';
+import { getPath, getLesson, completeLesson, setRealName } from '../services/it.js';
 
 const router = Router();
 
@@ -27,5 +27,10 @@ router.post(
     res.json(await completeLesson(query, withTransaction, req.user, req.validated.params.id, req.validated.body));
   }
 );
+
+// PUT /api/v1/it/me/name: qahramon so'ragan haqiqiy ism (nikneymdan alohida, boshqalarga ko'rinmaydi)
+router.put('/me/name', validate({ body: nameSchema }), async (req, res) => {
+  res.json(await setRealName(query, req.user.id, req.validated.body.name));
+});
 
 export default router;

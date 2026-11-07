@@ -3,7 +3,7 @@
  * Navigatsiya: network-first (oflayn -> index.html). Statik: stale-while-revalidate.
  * Backend (boshqa origin) hech qachon keshlanmaydi.
  */
-const VERSION = 'ck-v3';
+const VERSION = 'ck-v4';
 const SCOPE = self.registration.scope;
 const SHELL = [SCOPE, `${SCOPE}index.html`, `${SCOPE}manifest.json`];
 
@@ -23,6 +23,8 @@ self.addEventListener('fetch', (e) => {
   const { request } = e;
   const url = new URL(request.url);
   if (request.method !== 'GET' || url.origin !== self.location.origin) return;
+  // Video qismlab (Range) yuklanadi: keshlanmaydi, brauzer o'zi oladi
+  if (request.headers.has('range') || url.pathname.endsWith('.mp4')) return;
   if (request.mode === 'navigate') {
     e.respondWith(fetch(request).catch(() => caches.match(`${SCOPE}index.html`)));
     return;

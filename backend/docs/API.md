@@ -102,7 +102,7 @@ Xona kodi: 6 belgi, harf va raqam (O, I, 0, 1 yo'q). Xona 2 soat yashaydi.
 
 ## IT darslari (login talab qiladi)
 
-Bo'lim → qasrlar (darslar). Admin bo'limlari hammaga, ustoz bo'limlari faqat o'z sinfidagi o'quvchilarga ko'rinadi; faqat nashr qilinganlar. O'quvchi uchun qasrlar ketma-ket ochiladi, ustoz va admin hammasini ochadi.
+Bo'lim (yo'ldagi qasr) → mavzular (qasr zalidagi eshiklar). Admin bo'limlari hammaga, ustoz bo'limlari faqat o'z sinfidagi o'quvchilarga ko'rinadi; faqat e'lon qilinganlar. O'quvchi uchun mavzular ketma-ket ochiladi, ustoz va admin hammasini ochadi.
 
 | Metod | Yo'l | Izoh |
 |---|---|---|
@@ -110,8 +110,46 @@ Bo'lim → qasrlar (darslar). Admin bo'limlari hammaga, ustoz bo'limlari faqat o
 | GET | `/it/lessons/:id` | `{ lesson: { ..., section, tool, content }, stats }`. Qulf bo'lsa `403 LESSON_LOCKED`, ko'rinmasa `404 LESSON_NOT_FOUND` |
 | POST | `/it/lessons/:id/complete` | `{ mistakes }` → `{ first, xp_gained, term, tool, next_lesson_id, next_section_id, section_done, stats }`. XP faqat birinchi marta |
 
-`content` = `{ story, helper: { title, text }, exercises: [...], term_text }`. Mashq turlari: `choice` (`kind`: predict/error/odd/analogy/general, `options`, `answer`), `order` (`items` to'g'ri tartibda), `match` (`pairs`).
+`content` = `{ story, story_image?, video?: { id, title }, helper: { title, text, image? }, exercises: [...], term_text, term_image? }`.
+Mashq turlari (har birida ixtiyoriy `image` — savol rasmi):
+- `choice`: `kind` (predict/error/odd/analogy/general), `options`, `option_images?` (variantlar bilan bir tartibda, `null` bo'lishi mumkin), `answer`. Variant matnsiz, faqat rasm bo'lishi mumkin;
+- `order`: `items` (to'g'ri tartibda), `item_images?`;
+- `match`: `pairs`, `pair_images?` (`[[chap, o'ng], ...]`);
+- `typing` (mini-o'yin): `text` (300 belgigacha), `min_accuracy` (50–100, standart 90), `case_sensitive` (standart `false`);
+- `maze` (mini-o'yin): `grid` — 3×3 dan 10×10 gacha qatorlar (`#` buta/devor, `.` yo'l, `S` qahramon, `G` qasr), `mode`: `program` (buyruqlar tuzib) yoki `direct` (o'zi boshqarib), `max_commands` (1–40 yoki `null`). Qahramondan qasrgacha yo'l bo'lishi shart.
+
+Rasm maydonlari — `it_images` dagi rasm ID'si (uuid). `video.id` — faqat 11 belgili YouTube video ID; pleyer `youtube-nocookie.com/embed/<id>` dan quriladi, hikoyadan keyin chiqadi.
+
+| Metod | Yo'l | Izoh |
+|---|---|---|
+| GET | `/it/images/:id` | rasm fayli (login shart emas, `<img>` uchun). `Cache-Control: public, max-age=31536000, immutable`. Umumiy limitdan tashqari (o'z limiti: 15 daqiqada 3000) |
 Namuna kontent: `node scripts/seed-it-sample.mjs` (o'chirish: `--remove`).
+
+### Darslar muharriri (faqat `role: admin`)
+
+Admin umumiy (`is_global`) bo'limlarni boshqaradi. Yangi bo'lim va mavzu qoralama bo'lib yaratiladi (`is_published: false`).
+
+| Metod | Yo'l | Izoh |
+|---|---|---|
+| GET | `/it/manage` | `{ sections: [{ id, title, method, description, position, is_published, lessons: [{ id, title, kind, position, is_published, exercises, has_video, learners }] }], tools: [{ id, name, short, body, used }] }` |
+| POST | `/it/manage/sections` | `{ title, method?, description? }` → `201 { section }` (ro'yxat oxiriga) |
+| PUT | `/it/manage/sections/:id` | `{ title?, method?, description?, is_published? }` → `{ section }` |
+| DELETE | `/it/manage/sections/:id` | o'quvchi progressi bo'lsa `409 HAS_PROGRESS { learners }`; `?force=1` bilan bo'lim, mavzulari va progress o'chadi |
+| POST | `/it/manage/sections/:id/move` | `{ dir: 'up' \| 'down' }` → `{ moved }` |
+| POST | `/it/manage/sections/:id/lessons` | `{ title, kind? }` → `201 { lesson }` (bo'sh qoralama; `test` uchun 20 XP) |
+| GET | `/it/manage/lessons/:id` | `{ lesson: { ..., content, section_title, learners } }` (qoralama bo'lsa ham) |
+| PUT | `/it/manage/lessons/:id` | `{ title?, kind?, term?, tool_id?, minutes?, xp?, content?, is_published? }` → `{ lesson }`. Qoralama chala bo'lishi mumkin. E'lon qilingan (yoki hozir e'lon qilinayotgan) mavzu chala bo'lsa `422 LESSON_NOT_READY`, `details: [{ path, message }]` (masalan `exercises.0.options.1`), hech narsa saqlanmaydi. Kontentdagi rasm topilmasa `400 IMAGE_NOT_FOUND` |
+| DELETE | `/it/manage/lessons/:id` | progress bo'lsa `409 HAS_PROGRESS`; `?force=1` |
+| POST | `/it/manage/lessons/:id/move` | `{ dir }` (bo'lim ichida) |
+| POST | `/it/manage/images` | `multipart/form-data`: `file` (WebP/JPEG/PNG, 600 KB gacha; tur fayl sarlavhasidan aniqlanadi), `width`, `height` → `201 { image: { id, width, height, bytes } }`. Bir xil fayl ikkinchi marta saqlanmaydi. Umumiy joy chegarasi `IT_IMAGES_MAX_MB` (standart 300) → `413 STORAGE_FULL` |
+| GET | `/it/manage/images/stats` | `{ total, bytes, unused, unused_bytes, limit }` |
+| DELETE | `/it/manage/images/unused` | 1 soatdan eski va hech bir mavzuda ishlatilmagan rasmlarni o'chiradi → `{ deleted }` |
+| POST | `/it/manage/tools` | `{ name, short?, body? }` → `201 { tool }` |
+| PUT | `/it/manage/tools/:id` | `{ name?, short?, body? }` → `{ tool }` |
+| DELETE | `/it/manage/tools/:id` | mavzuga biriktirilgan bo'lsa `409 TOOL_IN_USE { used }`; `?force=1` |
+
+Admin akkaunti ro'yxatdan o'tish orqali yaratilmaydi (u yerda faqat `student`/`teacher`), faqat skript bilan:
+`DATABASE_URL="..." node scripts/create-admin.mjs` — email, nikneym va parol (kamida 12 belgi, ekranda ko'rinmaydi) so'raladi. Email allaqachon admin bo'lsa, parolni yangilaydi va eski sessiyalarni yopadi.
 
 ---
 

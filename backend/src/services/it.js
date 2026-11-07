@@ -91,7 +91,10 @@ async function lessonStatus(run, user, lessonId) {
 /** Bitta qasr: kontent va fikrlash quroli kartasi. */
 export async function getLesson(run, user, lessonId) {
   const { lesson: brief, section, path } = await lessonStatus(run, user, lessonId);
-  const { rows } = await run(LESSON_SQL, [lessonId]);
+  const [{ rows }, { rows: me }] = await Promise.all([
+    run(LESSON_SQL, [lessonId]),
+    run('SELECT real_name FROM users WHERE id = $1', [user.id]),
+  ]);
   const l = rows[0];
   const index = section.lessons.findIndex((x) => x.id === lessonId);
   return {
@@ -107,8 +110,16 @@ export async function getLesson(run, user, lessonId) {
       tool: l.tool_id ? { id: l.tool_id, name: l.tool_name, short: l.tool_short, body: l.tool_body } : null,
       content: l.content,
     },
+    // Qahramon shu ism bilan murojaat qiladi (null bo'lsa, dialogda so'raladi)
+    learner: { name: me[0]?.real_name || null },
     stats: path.stats,
   };
+}
+
+/** O'quvchining haqiqiy ismi (nikneymdan alohida, faqat darslarda ishlatiladi). */
+export async function setRealName(run, userId, name) {
+  const { rows } = await run('UPDATE users SET real_name = $2 WHERE id = $1 RETURNING real_name', [userId, name]);
+  return { name: rows[0]?.real_name ?? null };
 }
 
 /**
