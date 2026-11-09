@@ -35,31 +35,31 @@ const keysGrid = (u, l, d, r) => `<span class="lb-kg"><span></span>${keyCap(u)}<
 function studentSide() {
   return `
     <div class="lb-card lb-heroes" id="lb-heroes" hidden>
-      <div class="lb-ch"><b>Qahramoningni tanla</b><small class="lb-swipe">suring →</small></div>
-      <div class="lb-hgrid" role="radiogroup" aria-label="Qahramonlar">${HEROES.map((h) => `
+      <div class="lb-ch"><b>${t('lb.pickHero')}</b><small class="lb-swipe">${t('lb.swipeRight')}</small></div>
+      <div class="lb-hgrid" role="radiogroup" aria-label="${t('lb.heroes')}">${HEROES.map((h) => `
         <button type="button" class="lb-hero" role="radio" aria-checked="false" data-hero="${h.id}" aria-label="${esc(h.name)}">
           <span class="lb-ph" style="background:${h.bg}"><img src="${heroUrl(h.id)}" alt=""></span><span class="lb-hn">${esc(h.name)}</span></button>`).join('')}
       </div>
     </div>
-    <div class="lb-tip lb-tip--touch">${I.swipe}<div><b>Yurish uchun ekranni suring</b><small id="lb-tipt"></small></div></div>
-    <div class="lb-card lb-keys"><b>Klaviaturadan yur</b>
-      <div class="lb-kk">${keysGrid('↑', '←', '↓', '→')}<span class="lb-or">yoki</span>${keysGrid('W', 'A', 'S', 'D')}</div>
-      <small>Tugmani bosib tursang, to'xtamay yuradi</small></div>`;
+    <div class="lb-tip lb-tip--touch">${I.swipe}<div><b>${t('lb.swipeToMove')}</b><small id="lb-tipt"></small></div></div>
+    <div class="lb-card lb-keys"><b>${t('lb.kbMove')}</b>
+      <div class="lb-kk">${keysGrid('↑', '←', '↓', '→')}<span class="lb-or">${t('lb.or')}</span>${keysGrid('W', 'A', 'S', 'D')}</div>
+      <small>${t('lb.hold')}</small></div>`;
 }
 
 function hostSide(code) {
   const c = String(code);
   const digits = [...c].map((ch, i) => `${i === 3 && c.length === 6 ? '<i class="lb-dash" aria-hidden="true"></i>' : ''}<span>${esc(ch)}</span>`).join('');
   return `
-    <div class="lb-codecard"><span class="lb-cl">Xona kodi</span>
-      <div class="lb-digits" aria-label="Xona kodi ${esc(c)}">${digits}</div>
-      <small>O'quvchilar shu ${c.length} ta belgini kiritadi</small>
-      <div class="lb-cacts"><button type="button" id="lb-copy">${I.copy}Nusxa olish</button><button type="button" id="lb-board">${I.full}Doskaga</button></div>
+    <div class="lb-codecard"><span class="lb-cl">${t('home.codeLabel')}</span>
+      <div class="lb-digits" aria-label="${t('home.codeLabel')} ${esc(c)}">${digits}</div>
+      <small>${t('lb.codeHint', { n: c.length })}</small>
+      <div class="lb-cacts"><button type="button" id="lb-copy">${I.copy}${t('hs.copy')}</button><button type="button" id="lb-board">${I.full}${t('hs.toBoard')}</button></div>
     </div>
-    <button type="button" class="lb-go" id="lb-start" hidden><span class="lb-goi">${I.play}</span><span><b>O'yinni boshlash</b><small id="lb-ready">0 o'quvchi tayyor</small></span></button>
-    <div class="lb-live" id="lb-live" hidden><i></i><span><b>O'yin ketmoqda</b><small id="lb-livet"></small></span></div>
-    <button type="button" class="lb-close" id="lb-close">${I.xc}Xonani yopish</button>
-    <div class="lb-card lb-pl"><div class="lb-ch"><b>O'yinchilar</b><span class="lb-conn" id="lb-conn"><i></i>0 o'quvchi</span></div>
+    <button type="button" class="lb-go" id="lb-start" hidden><span class="lb-goi">${I.play}</span><span><b>${t('hs.start')}</b><small id="lb-ready">${t('lb.ready', { n: 0 })}</small></span></button>
+    <div class="lb-live" id="lb-live" hidden><i></i><span><b>${t('hs.active')}</b><small id="lb-livet"></small></span></div>
+    <button type="button" class="lb-close" id="lb-close">${I.xc}${t('hs.close')}</button>
+    <div class="lb-card lb-pl"><div class="lb-ch"><b>${t('lb.players')}</b><span class="lb-conn" id="lb-conn"><i></i>${t('hs.students', { n: 0 })}</span></div>
       <ol class="lb-plist" id="lb-plist"></ol></div>`;
 }
 
@@ -74,25 +74,25 @@ export async function mountLabyrinth(root, { code, host = false }) {
   root.replaceChildren(html(`
     <section class="lb${host ? ' lb--host' : ''}">
       <header class="lb-top">
-        <a class="lb-back" href="${host ? '#/teacher' : '#/'}" aria-label="${host ? 'Ustoz paneliga qaytish' : 'Xonadan chiqish'}">${I.back}</a>
-        <div class="lb-tt"><h1>${host ? 'Labirint xonasi' : 'Labirint'}</h1>${host ? '' : `<span class="lb-code">${esc(code)}</span>`}</div>
+        <a class="lb-back" href="${host ? '#/teacher' : '#/'}" aria-label="${host ? t('lb.toPanel') : t('lb.leave')}">${I.back}</a>
+        <div class="lb-tt"><h1>${host ? t('lb.room') : t('pf.lab')}</h1>${host ? '' : `<span class="lb-code">${esc(code)}</span>`}</div>
         <span class="lb-time" id="lb-timebox">${I.clock}<b id="lb-time">--:--</b></span>
       </header>
       ${host ? '<div class="lb-chips" id="lb-chips"></div>' : ''}
       <div class="lb-main" id="lb-main">
         <div class="lb-play">
-          ${host ? '' : '<div class="lb-lvl"><b id="lb-lvl">1-daraja</b><span class="lb-pips" id="lb-pips"></span><span class="lb-qn" id="lb-qn"></span></div>'}
+          ${host ? '' : `<div class="lb-lvl"><b id="lb-lvl">${t('app.level', { n: 1 })}</b><span class="lb-pips" id="lb-pips"></span><span class="lb-qn" id="lb-qn"></span></div>`}
           <div class="lb-stage${host ? ' is-map' : ''}" id="lb-stage">
             <canvas id="maze"></canvas>
-            <div class="lb-skel" id="lb-skel"><span>Labirint yuklanmoqda…</span></div>
-            ${host ? `<span class="lb-glass lb-view">Ustoz ko'rinishi<span class="lb-view2"> · butun labirint</span></span>
-              <div class="lb-glass lb-levels" id="lb-levels" role="group" aria-label="Daraja"></div>` : `
+            <div class="lb-skel" id="lb-skel"><span>${t('lb.loading')}</span></div>
+            ${host ? `<span class="lb-glass lb-view">${t('lb.teacherView')}<span class="lb-view2"> · ${t('lb.wholeMaze')}</span></span>
+              <div class="lb-glass lb-levels" id="lb-levels" role="group" aria-label="${t('tp.level')}"></div>` : `
               <div class="lb-hud"><span class="lb-glass lb-lives" id="lb-lives"></span><span class="lb-glass lb-score">${I.star()}<b id="lb-score">0</b></span></div>
-              <div class="lb-glass lb-cam" role="group" aria-label="Kamera">
-                <button type="button" data-cam="follow" aria-pressed="true">${I.me}Men</button><button type="button" data-cam="map" aria-pressed="false">${I.map}Xarita</button></div>
-              <span class="lb-metag" id="lb-metag" hidden><span>Sen shu yerdasan</span></span>`}
-            <div class="lb-glass lb-zoom" id="lb-zoom" role="group" aria-label="Xaritani yaqinlashtirish"${host ? '' : ' hidden'}>
-              <button type="button" data-z="in" aria-label="Yaqinlashtirish">${I.plus}</button><span class="lb-zt" aria-hidden="true"><i id="lb-zk"></i></span><button type="button" data-z="out" aria-label="Uzoqlashtirish">${I.minus}</button></div>
+              <div class="lb-glass lb-cam" role="group" aria-label="${t('lb.camera')}">
+                <button type="button" data-cam="follow" aria-pressed="true">${I.me}${t('lb.me')}</button><button type="button" data-cam="map" aria-pressed="false">${I.map}${t('lb.map')}</button></div>
+              <span class="lb-metag" id="lb-metag" hidden><span>${t('lb.youHere')}</span></span>`}
+            <div class="lb-glass lb-zoom" id="lb-zoom" role="group" aria-label="${t('lb.zoom')}"${host ? '' : ' hidden'}>
+              <button type="button" data-z="in" aria-label="${t('lb.zoomIn')}">${I.plus}</button><span class="lb-zt" aria-hidden="true"><i id="lb-zk"></i></span><button type="button" data-z="out" aria-label="${t('lb.zoomOut')}">${I.minus}</button></div>
             <div class="lb-status" id="lb-status" role="status"></div>
           </div>
         </div>
@@ -148,33 +148,33 @@ export async function mountLabyrinth(root, { code, host = false }) {
     if (host) {
       const onLevel = active().filter((p) => (p.level ?? 1) === hostView && !p.finished).length;
       el.innerHTML = status === 'waiting'
-        ? `<span><b>O'quvchilar kirgach «Boshlash»ni bosing</b></span>`
-        : status === 'active' ? `<span><b>${hostView}-darajada ${onLevel} ta o'quvchi o'ynayapti</b></span>` : '';
+        ? `<span><b>${t('lb.pressStart')}</b></span>`
+        : status === 'active' ? `<span><b>${t('lb.onLevel', { l: hostView, n: onLevel })}</b></span>` : '';
       return;
     }
     if (status === 'waiting') {
       const others = active().filter((p) => p.id !== playerId).slice(0, 4);
       el.innerHTML = `${others.length ? `<span class="lb-avs">${others.map((p) => avatarHtml(heroOf(p))).join('')}</span>` : ''}
-        <span class="lb-st"><b>Ustoz boshlashini kuting</b><small>Xonada ${active().length || 1} o'quvchi</small></span>${DOTS}`;
+        <span class="lb-st"><b>${t('ty.waitTeacher')}</b><small>${t('lb.inRoom', { n: active().length || 1 })}</small></span>${DOTS}`;
       return;
     }
     if (status !== 'active') { el.innerHTML = ''; return; }
     const left = Math.ceil((lockedUntil - now()) / 1000);
     if (eliminated) {
       el.classList.add('is-bad');
-      el.innerHTML = `<span class="lb-st"><b>Jonlaring tugadi</b><small>Boshqalar tugatishini kutyapmiz</small></span>${DOTS}`;
+      el.innerHTML = `<span class="lb-st"><b>${t('lb.e.lives')}</b><small>${t('lb.waitOthers')}</small></span>${DOTS}`;
     } else if (finished) {
       el.classList.add('is-ok');
-      el.innerHTML = `<span class="lb-sti">${I.castle}</span><span class="lb-st"><b>Barakalla! Hamma darajani o'tding</b><small>Boshqalar tugatishini kutyapmiz</small></span>${DOTS}`;
+      el.innerHTML = `<span class="lb-sti">${I.castle}</span><span class="lb-st"><b>${t('lb.allPassed')}</b><small>${t('lb.waitOthers')}</small></span>${DOTS}`;
     } else if (left > 0) {
       el.classList.add('is-warn', 'is-pill');
-      el.innerHTML = `<span class="lb-st"><b>Noto'g'ri javob · ${left} s kut</b><small>Oxirgi to'g'ri javob joyiga qaytding</small></span>`;
+      el.innerHTML = `<span class="lb-st"><b>${t('lb.wrongWait', { s: left })}</b><small>${t('lb.backToLast')}</small></span>`;
     } else if (qInfo.left > 0) {
       el.classList.add('is-pill');
-      el.innerHTML = `<span class="lb-sti">${I.q}</span><span class="lb-st"><b>Qasr yashirin: yana ${qInfo.left} ta savol</b><small>«?» belgili joylarni top</small></span>`;
+      el.innerHTML = `<span class="lb-sti">${I.q}</span><span class="lb-st"><b>${t('lb.hidden', { n: qInfo.left })}</b><small>${t('lb.findQ')}</small></span>`;
     } else if (exitShown) {
       el.classList.add('is-ok', 'is-pill');
-      el.innerHTML = `<span class="lb-sti">${I.castle}</span><span class="lb-st"><b>Qasr ochildi! Unga bor</b><small>Xaritada qasr qayerdaligini ko'r</small></span>`;
+      el.innerHTML = `<span class="lb-sti">${I.castle}</span><span class="lb-st"><b>${t('lb.opened')}</b><small>${t('lb.seeMap')}</small></span>`;
     } else el.innerHTML = '';
   }
 
@@ -188,19 +188,19 @@ export async function mountLabyrinth(root, { code, host = false }) {
     const lv = $('#lb-lives');
     lv.hidden = lives == null;
     if (lives != null) lv.innerHTML = Array.from({ length: Math.max(3, lives) }, (_, i) => (i < lives ? I.heart : I.heartOff)).join('');
-    lv.setAttribute('aria-label', lives == null ? '' : `${lives} ta jon`);
-    $('#lb-lvl').textContent = `${level}-daraja`;
+    lv.setAttribute('aria-label', lives == null ? '' : t('lb.lives', { n: lives }));
+    $('#lb-lvl').textContent = t('app.level', { n: level });
     const pips = $('#lb-pips');
     pips.innerHTML = Array.from({ length: levels }, (_, i) => `<i class="${i + 1 < level ? 'is-done' : i + 1 === level ? 'is-on' : ''}"></i>`).join('');
-    pips.setAttribute('aria-label', `${levels} darajadan ${level}-chisi`);
-    $('#lb-qn').textContent = `Savollar ${qInfo.total - qInfo.left} / ${qInfo.total}`;
+    pips.setAttribute('aria-label', t('lb.levelOf', { n: level, of: levels }));
+    $('#lb-qn').textContent = t('lb.qCount', { a: qInfo.total - qInfo.left, b: qInfo.total });
     renderStatus();
   }
 
   function renderTip() {
     if (host) return;
     const name = heroInfo(myHero || heroOf(me || { id: playerId }, true)).name.toLowerCase();
-    $('#lb-tipt').textContent = `Barmoqni qaysi tomonga sursang, ${name} o'sha tomonga yuradi${mode === 'map' ? '. Xaritani ikki barmoq bilan yaqinlashtir' : ''}`;
+    $('#lb-tipt').textContent = t('lb.tip', { name }) + (mode === 'map' ? t('lb.tipMap') : '');
   }
 
   function markHero(n) {
@@ -243,7 +243,7 @@ export async function mountLabyrinth(root, { code, host = false }) {
   function hostChips() {
     const el = $('#lb-chips');
     if (!el || !info) return;
-    const items = [info.title, `${info.questions} savol`, `${info.levels} daraja`, info.lives ? `Standart · ${info.lives} jon` : 'Bolalar · jonsiz', `${info.minutes} daqiqa`];
+    const items = [info.title, t('tp.nQ', { n: info.questions }), t('lb.nLevels', { n: info.levels }), info.lives ? `${t('tp.standard')} · ${t('lb.lives', { n: info.lives })}` : `${t('tp.kids')} · ${t('tp.noLives')}`, t('tp.min', { n: info.minutes })];
     el.innerHTML = items.filter(Boolean).map((x) => `<span>${esc(x)}</span>`).join('');
   }
 
@@ -253,9 +253,9 @@ export async function mountLabyrinth(root, { code, host = false }) {
   function levelTabs() {
     const nav = $('#lb-levels');
     if (!host || !nav || !allLevels?.length) return;
-    nav.innerHTML = `<small>Daraja</small>${allLevels.map((l) => {
+    nav.innerHTML = `<small>${t('tp.level')}</small>${allLevels.map((l) => {
       const n = playingOn(l.level);
-      return `<button type="button" data-l="${l.level}" aria-pressed="${l.level === hostView}" aria-label="${l.level}-daraja, ${n} o'quvchi">${l.level}${n ? `<i>${n}</i>` : ''}</button>`;
+      return `<button type="button" data-l="${l.level}" aria-pressed="${l.level === hostView}" aria-label="${t('app.level', { n: l.level })}, ${t('hs.students', { n })}">${l.level}${n ? `<i>${n}</i>` : ''}</button>`;
     }).join('')}`;
   }
 
@@ -270,19 +270,19 @@ export async function mountLabyrinth(root, { code, host = false }) {
   function hostBoard() {
     const list = sortPlayers(lastPlayers);
     const n = list.length;
-    $('#lb-conn').innerHTML = `<i></i>${n} o'quvchi`;
-    $('#lb-ready').textContent = `${n} o'quvchi tayyor`;
+    $('#lb-conn').innerHTML = `<i></i>${t('hs.students', { n })}`;
+    $('#lb-ready').textContent = t('lb.ready', { n });
     const fin = list.filter((p) => p.finished && p.rank && !p.eliminated).length;
-    $('#lb-livet').textContent = `${fin} / ${n} qasrga yetdi`;
+    $('#lb-livet').textContent = t('lb.reached', { a: fin, b: n });
     const el = $('#lb-plist');
-    if (!n) { el.innerHTML = `<li class="lb-empty">Hali o'quvchi yo'q. Kodni kiritganlar shu yerda chiqadi.</li>`; return; }
+    if (!n) { el.innerHTML = `<li class="lb-empty">${t('lb.noStudents')}</li>`; return; }
     el.innerHTML = list.map((p) => {
-      const sub = p.eliminated ? `<span class="lb-badge is-out">${I.broken}jon tugadi</span>`
-        : p.finished && p.rank ? `<span class="lb-badge">${I.flag}finish · ${p.rank}-o'rin</span>`
-          : status === 'waiting' ? '' : `<small>${p.level ?? 1}-daraja</small>`;
+      const sub = p.eliminated ? `<span class="lb-badge is-out">${I.broken}${t('lb.out')}</span>`
+        : p.finished && p.rank ? `<span class="lb-badge">${I.flag}finish · ${t('pf.place', { n: p.rank })}</span>`
+          : status === 'waiting' ? '' : `<small>${t('app.level', { n: p.level ?? 1 })}</small>`;
       return `<li class="lb-prow">${avatarHtml(heroOf(p))}
         <span class="lb-rnm"><span class="lb-nm">${esc(p.nickname)}</span>${sub ? `<span>${sub}</span>` : ''}</span>
-        <span class="lb-psc">${esc(p.score ?? 0)} ball</span>
+        <span class="lb-psc">${esc(p.score ?? 0)} ${t('score.points')}</span>
         <button type="button" class="lb-kick" data-kick="${esc(p.id)}" aria-label="${t('host.kick')}: ${esc(p.nickname)}">${I.x}</button></li>`;
     }).join('');
   }
@@ -328,7 +328,7 @@ export async function mountLabyrinth(root, { code, host = false }) {
     m.hidden = false;
     const n = Math.min(qInfo.total, qInfo.total - qInfo.left + 1);
     m.innerHTML = `<div class="lb-qcard" role="dialog" aria-modal="true" aria-labelledby="lb-qt">
-      <div class="lb-qh"><span class="lb-qb">?</span><span>${level}-daraja · savol</span><span class="lb-qc">${n} / ${qInfo.total}</span></div>
+      <div class="lb-qh"><span class="lb-qb">?</span><span>${t('app.level', { n: level })} · ${t('lb.question')}</span><span class="lb-qc">${n} / ${qInfo.total}</span></div>
       <h2 id="lb-qt">${esc(q.text)}</h2>
       <div class="lb-opts">${q.options.map((o, i) => `<button type="button" class="lb-opt" data-i="${i}"><span>${'ABCD'[i]}</span>${esc(o)}</button>`).join('')}</div>
       <p class="lb-fb" id="lb-fb" role="status"></p></div>`;
@@ -347,8 +347,8 @@ export async function mountLabyrinth(root, { code, host = false }) {
       const opens = r.correct && r.exit && !exitShown;
       const fb = $('#lb-fb');
       fb.className = `lb-fb ${r.correct ? 'is-ok' : 'is-bad'}`;
-      fb.textContent = r.correct ? (opens ? "To'g'ri! +10 ball. Qasr ochildi!" : "To'g'ri! +10 ball")
-        : r.eliminated ? "Noto'g'ri. Jonlaring tugadi" : `Noto'g'ri.${r.lives != null ? ' −1 jon,' : ''} 5 soniya kutasan`;
+      fb.textContent = r.correct ? (opens ? t('lb.fb.okOpen') : t('lb.fb.ok'))
+        : r.eliminated ? t('lb.fb.out') : t(r.lives != null ? 'lb.fb.wrongLife' : 'lb.fb.wrong');
       await sleep(r.correct ? 1100 : 1500);
       m.hidden = true;
       question = null;
@@ -373,7 +373,7 @@ export async function mountLabyrinth(root, { code, host = false }) {
     const m = $('#lb-modal');
     m.hidden = false;
     m.innerHTML = `<div class="lb-qcard lb-lvup" role="dialog" aria-live="polite"><img src="${BASE_URL}lab/castle.webp" alt="">
-      <h2>${level}-daraja tugadi!</h2><p>Keyingisi: ${esc(r.next.level)}-daraja · ${esc(r.next.questions?.total ?? '')} ta savol</p></div>`;
+      <h2>${t('lb.levelDone', { n: level })}</h2><p>${t('lb.next')}: ${t('app.level', { n: esc(r.next.level) })} · ${t('tp.nQ', { n: r.next.questions?.total ?? 0 })}</p></div>`;
     await sleep(1700);
     m.hidden = true;
     pos = { x: r.x, y: r.y };
@@ -402,7 +402,7 @@ export async function mountLabyrinth(root, { code, host = false }) {
       if (r.next) { await levelUp(r); return; }
       pos = { x: r.x, y: r.y };
       renderer.setMe(r.x, r.y);
-      if (r.finished) { finished = true; stopHold(); renderStatus(); toast(`Hamma ${levels} daraja tugadi! 🏆`, 'success'); }
+      if (r.finished) { finished = true; stopHold(); renderStatus(); toast(t('lb.allLevels', { n: levels }), 'success'); }
       if (r.question) showQuestion(r.question);
     } catch (e) {
       renderer.setMe(pos.x, pos.y); // silliq qaytish (uzoq bo'lsa renderer o'zi sakraydi)
@@ -604,10 +604,10 @@ export async function mountLabyrinth(root, { code, host = false }) {
       renderStatus();
     });
     $('#lb-copy').onclick = async () => {
-      try { await navigator.clipboard.writeText(code); toast('Kod nusxalandi', 'success'); } catch { toast(`Kod: ${code}`); }
+      try { await navigator.clipboard.writeText(code); toast(t('hs.copied'), 'success'); } catch { toast(`${t('hs.code')}: ${code}`); }
     };
     $('#lb-board').onclick = () => {
-      const o = html(`<div class="lb-full" role="dialog" aria-label="Xona kodi"><span>Xona kodi</span><b>${esc(code)}</b><small>Bosh sahifa → «Xonaga kirish»</small><button type="button" class="btn">Yopish</button></div>`);
+      const o = html(`<div class="lb-full" role="dialog" aria-label="${t('home.codeLabel')}"><span>${t('home.codeLabel')}</span><b>${esc(code)}</b><small>${t('hs.path')}</small><button type="button" class="btn">${t('app.close')}</button></div>`);
       document.body.appendChild(o);
       o.requestFullscreen?.().catch(() => {});
       o.querySelector('button').onclick = () => { if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); o.remove(); };
@@ -633,11 +633,11 @@ export async function mountLabyrinth(root, { code, host = false }) {
     joinedOnce = true;
   } catch (e) {
     if (!handleStateError(e)) showError(e);
-    $('#lb-skel')?.replaceChildren(document.createTextNode("Xonaga qo'shilib bo'lmadi"));
+    $('#lb-skel')?.replaceChildren(document.createTextNode(t('lb.joinFail')));
   }
   const initTimeout = setTimeout(() => {
     const s = $('#lb-skel');
-    if (s) s.textContent = "Xona ma'lumoti kelmadi. Qayta urinib ko'ring.";
+    if (s) s.textContent = t('lb.noData');
   }, 10000);
   cleanups.push(() => clearTimeout(initTimeout));
 

@@ -6,6 +6,7 @@ import '../../styles/typing.css';
 import { showError } from '../../core/toast.js';
 import { html } from '../../utils/dom.js';
 import { mountTyping, findResumable } from './game.js';
+import { t, getLang } from '../../i18n/index.js';
 
 const KB = '<svg aria-hidden="true" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="3"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/></svg>';
 const BACK = '<svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>';
@@ -26,24 +27,24 @@ export async function mountTypingLobby(root, { guest = false } = {}) {
   root.replaceChildren(html(`
     <section class="ty">
       <div class="ty-top">
-        <a href="#/" class="ty-back" aria-label="Orqaga">${BACK}</a>
-        <h1>${guest ? 'Mehmon mashqi' : 'Typing Race'}</h1>
+        <a href="#/" class="ty-back" aria-label="${t('app.backShort')}">${BACK}</a>
+        <h1>${guest ? t('ty.guestTitle') : 'Typing Race'}</h1>
       </div>
       ${guest ? `<div class="ty-note" role="note">${INFO}Mehmon rejimida natijalar saqlanmaydi</div>` : ''}
       <div class="ty-grid">
         <div class="ty-card">
           <div class="ty-head"><span class="ty-ic">${KB}</span>
-            <div><b>${guest ? 'Typing mashqi' : 'Yangi poyga'}</b><small>${guest ? "Tez va aniq yozishni sinab ko'r" : 'Matn tasodifiy tanlanadi'}</small></div></div>
-          <fieldset class="ty-lang"><legend>Matn tili</legend>
-            <div class="ty-opts">${LANGS.map(([v, l], i) => `<label><input type="radio" name="lang" value="${v}"${i ? '' : ' checked'}><span>${l}</span></label>`).join('')}</div>
+            <div><b>${guest ? t('ty.guestPractice') : t('ty.newRace')}</b><small>${guest ? t('ty.guestD') : t('ty.randomText')}</small></div></div>
+          <fieldset class="ty-lang"><legend>${t('tp.textLang')}</legend>
+            <div class="ty-opts">${LANGS.map(([v, l]) => `<label><input type="radio" name="lang" value="${v}"${v === getLang() ? ' checked' : ''}><span>${l}</span></label>`).join('')}</div>
           </fieldset>
-          <button id="go" class="btn ty-go">▶ Boshlash</button>
+          <button id="go" class="btn ty-go">▶ ${t('home.start')}</button>
         </div>
         ${guest ? `<div class="ty-reg">
-          <b>Natijalaring saqlansinmi?</b>
-          <p>Ro'yxatdan o'tsang, natijalaring profilingda turadi. Xonalar, Labirint va IT darslari ham ochiladi.</p>
-          <div class="ty-tags"><span>🔒 Xonalar</span><span>🔒 Labirint</span><span>🔒 IT darslari</span></div>
-          <a href="#/" class="btn">Ro'yxatdan o'tish</a>
+          <b>${t('ty.saveQ')}</b>
+          <p>${t('ty.saveP')}</p>
+          <div class="ty-tags"><span>🔒 ${t('pf.rooms')}</span><span>🔒 ${t('pf.lab')}</span><span>🔒 ${t('home.it')}</span></div>
+          <a href="#/" class="btn">${t('au.register')}</a>
         </div>` : ''}
       </div>
     </section>`));

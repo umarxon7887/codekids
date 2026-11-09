@@ -1,15 +1,16 @@
 /** @file Labirint qahramonlari: 8 ta rasm, bolaning tanlovi (telefonda saqlanadi), avatar HTML. */
 import { BASE_URL } from '../../core/config.js';
+import { t } from '../../i18n/index.js';
 
 export const HEROES = [
-  { id: 1, name: "O'rdak", bg: '#FFD98A' },
-  { id: 2, name: 'Tulki', bg: '#FFC9A8' },
-  { id: 3, name: 'Mushuk', bg: '#F3D9C4' },
-  { id: 4, name: 'Robot', bg: '#CFE6F7' },
-  { id: 5, name: 'Ajdarcha', bg: '#CDEBDD' },
-  { id: 6, name: 'Quyon', bg: '#FFE1EC' },
-  { id: 7, name: 'Panda', bg: '#E9E4DE' },
-  { id: 8, name: 'Kosmonavt', bg: '#DCD3F5' },
+  { id: 1, name: t('hero.1'), bg: '#FFD98A' },
+  { id: 2, name: t('hero.2'), bg: '#FFC9A8' },
+  { id: 3, name: t('hero.3'), bg: '#F3D9C4' },
+  { id: 4, name: t('hero.4'), bg: '#CFE6F7' },
+  { id: 5, name: t('hero.5'), bg: '#CDEBDD' },
+  { id: 6, name: t('hero.6'), bg: '#FFE1EC' },
+  { id: 7, name: t('hero.7'), bg: '#E9E4DE' },
+  { id: 8, name: t('hero.8'), bg: '#DCD3F5' },
 ];
 export const HERO_COUNT = HEROES.length;
 

@@ -3,15 +3,16 @@ import { query, withTransaction } from '../db.js';
 import { validate } from '../middleware/validate.js';
 import { requireAuth } from '../middleware/auth.js';
 import { lessonParams, completeSchema, nameSchema } from '../schemas/it.js';
-import { getPath, getLesson, completeLesson, setRealName } from '../services/it.js';
+import { getPath, getLesson, completeLesson, setRealName, pathLang } from '../services/it.js';
 
 const router = Router();
 
 router.use(requireAuth);
 
 // GET /api/v1/it/path: bo'limlar, qasrlar holati (done/current/open/locked), XP, ketma-ket kunlar
+// Til: ?lang=ru yoki Accept-Language (ilovadagi UZ/RU tanlovi)
 router.get('/path', async (req, res) => {
-  res.json(await getPath(query, req.user));
+  res.json(await getPath(query, req.user, pathLang(req.query.lang || req.get('accept-language'))));
 });
 
 // GET /api/v1/it/lessons/:id: qasr kontenti (qulflangan bo'lsa 403 LESSON_LOCKED)

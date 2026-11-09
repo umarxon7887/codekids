@@ -1,6 +1,7 @@
 /** @file Poyga mashinalari: 12 ta rasm, bolaning tanlovi (telefonda saqlanadi), kutish vaqtidagi tanlash oynasi. */
 import '../../styles/typing.css';
 import { BASE_URL } from '../../core/config.js';
+import { t } from '../../i18n/index.js';
 
 export const CAR_COUNT = 12;
 const KEY = 'ck_car';
@@ -25,9 +26,9 @@ export function ensurePicker(root, onPick) {
   const cur = getMyCar();
   if (cur) onPick?.(cur); // oldin tanlangan mashina serverga ham yetsin
   box.innerHTML = `<div class="cp">
-    <div class="cp-h"><b>Mashinangni tanla</b><small>Poyga boshlanguncha almashtirsa bo'ladi</small></div>
-    <div class="cp-grid" role="radiogroup" aria-label="Mashina">${Array.from({ length: CAR_COUNT }, (_, i) => i + 1).map((n) =>
-      `<button type="button" class="cp-car" role="radio" aria-checked="${n === cur}" data-car="${n}" aria-label="${n}-mashina"><img src="${carUrl(n)}" alt="" loading="lazy"></button>`).join('')}</div>
+    <div class="cp-h"><b>${t('ty.pickCar')}</b><small>${t('ty.carHint')}</small></div>
+    <div class="cp-grid" role="radiogroup" aria-label="${t('ty.car')}">${Array.from({ length: CAR_COUNT }, (_, i) => i + 1).map((n) =>
+      `<button type="button" class="cp-car" role="radio" aria-checked="${n === cur}" data-car="${n}" aria-label="${t('ty.carN', { n })}"><img src="${carUrl(n)}" alt="" loading="lazy"></button>`).join('')}</div>
   </div>`;
   box.querySelectorAll('[data-car]').forEach((b) => {
     b.onclick = () => {

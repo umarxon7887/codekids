@@ -8,6 +8,8 @@ const titleField = z.string().trim().min(3).max(200);
 const descriptionField = z.string().trim().max(1000);
 const topicField = z.string().trim().min(1).max(100);
 const levelField = z.number().int().min(1).max(4);
+/** Kontent tili (savollar to'plami / typing matni). */
+const languageField = z.enum(['uz', 'ru']);
 
 const questionItem = z
   .object({
@@ -40,6 +42,7 @@ export const createContentSchema = z.discriminatedUnion('type', [
     description: descriptionField.optional(),
     topic: topicField.optional(),
     level: levelField.default(1),
+    language: languageField.default('uz'),
     data: questionsDataSchema,
   }),
   z.object({
@@ -48,6 +51,7 @@ export const createContentSchema = z.discriminatedUnion('type', [
     description: descriptionField.optional(),
     topic: topicField.optional(),
     level: levelField.default(1),
+    language: languageField.default('uz'),
     data: typingDataSchema,
   }),
 ]);
@@ -58,6 +62,7 @@ export const updateContentSchema = z
     description: descriptionField.optional(),
     topic: topicField.optional(),
     level: levelField.optional(),
+    language: languageField.optional(),
     data: z.record(z.unknown()).optional(),
   })
   .refine((d) => Object.keys(d).length > 0, {
@@ -83,6 +88,7 @@ export const bulkMetaSchema = z.object({
   title: titleField,
   topic: topicField.optional(),
   level: z.coerce.number().int().min(1).max(4).default(1),
+  language: languageField.default('uz'),
 });
 
 export const csvRowSchema = z.object({

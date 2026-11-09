@@ -49,21 +49,21 @@ export function findResumable(mode) {
 export async function mountTyping(root, { mode = 'solo', contentId, language = 'uz', code, fresh = false } = {}) {
   root.replaceChildren(html(`
     <section class="game">
-      <div class="game__bar"><a href="#/" class="btn btn--ghost" aria-label="Orqaga">←</a><h2>Typing Race</h2></div>
+      <div class="game__bar"><a href="#/" class="btn btn--ghost" aria-label="${t('app.backShort')}">←</a><h2>Typing Race</h2></div>
       <div id="t-board" class="board" ${mode === 'room' ? '' : 'hidden'}></div>
-      <div class="stats"><a href="#/" class="ty-back" aria-label="Orqaga"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></a><span id="t-time">00:00</span><span id="t-wpm">0 WPM</span></div>
+      <div class="stats"><a href="#/" class="ty-back" aria-label="${t('app.backShort')}"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></a><span id="t-time">00:00</span><span id="t-wpm">0 WPM</span></div>
       <div id="t-msg" class="banner" hidden></div>
       <div id="t-pick" hidden></div>
       <label class="typing" id="t-wrap">
         <div id="t-text" class="typing__text"><div class="skeleton"></div></div>
-        <input id="t-input" class="typing__input" style="${HIDDEN_INPUT_STYLE}" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Matn terish maydoni" disabled />
+        <input id="t-input" class="typing__input" style="${HIDDEN_INPUT_STYLE}" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="${t('ty.inputLabel')}" disabled />
       </label>
       <div id="t-result" class="result" hidden></div>
       <div id="t-end" hidden></div>
       <div id="t-kick" hidden></div>
     </section>`));
   const $ = (s) => root.querySelector(s);
-  if (mode === 'room') { const h = root.querySelector('.game__bar h2'); if (h) h.textContent = `Poyga · xona ${code}`; }
+  if (mode === 'room') { const h = root.querySelector('.game__bar h2'); if (h) h.textContent = t('ty.raceRoom', { code }); }
   const textEl = $('#t-text'), input = $('#t-input'), timeEl = $('#t-time'), wpmEl = $('#t-wpm'), msg = $('#t-msg'), resEl = $('#t-result');
   let serverCorrect = 0;
   let meId = null;
@@ -196,7 +196,7 @@ export async function mountTyping(root, { mode = 'solo', contentId, language = '
       input.focus({ preventScroll: true });
       // Oxirgi belgi yozilgan zahoti sahifa yangilangan bo'lsa, natija yuborilmay qolgan bo'ladi: yakunlaymiz
       if (resume && target && input.value.length >= target.length) finish();
-    } catch (e) { roundStarted = false; showError(e); textEl.textContent = "Mashqni boshlab bo'lmadi"; }
+    } catch (e) { roundStarted = false; showError(e); textEl.textContent = t('ty.startFail'); }
   }
 
   async function finish() {
@@ -214,7 +214,7 @@ export async function mountTyping(root, { mode = 'solo', contentId, language = '
         root.querySelector('.game__bar').hidden = true; window.scrollTo(0, 0);
       }
       resEl.querySelector('[data-again]')?.addEventListener('click', () => window.dispatchEvent(new HashChangeEvent('hashchange')));
-      toast('Natija qabul qilindi', 'success');
+      toast(t('ty.accepted'), 'success');
       // Klaviatura yopilgach brauzer sahifani o'zi suradi: natijani ko'rsatish joyini o'zimiz belgilaymiz
       setTimeout(() => resEl.scrollIntoView({ block: 'nearest' }), 350);
     } catch (e) {
@@ -268,7 +268,7 @@ export async function mountTyping(root, { mode = 'solo', contentId, language = '
       renderBoard($('#t-board'), snap, { meId: me?.id, meNick: me?.nickname, compact: true });
       if (snap.status === 'active') beginRound();
       else if (snap.status === 'finished') finish().finally(() => showEnd(snap.players));
-      else if (!roundStarted) { msg.hidden = false; msg.textContent = 'Ustoz boshlashini kuting...'; ensurePicker(root, (n) => emitAck('room:car', { code, car: n }).catch(() => {})); }
+      else if (!roundStarted) { msg.hidden = false; msg.textContent = t('ty.waitTeacher'); ensurePicker(root, (n) => emitAck('room:car', { code, car: n }).catch(() => {})); }
     };
     const onFinished = (d) => finish().finally(() => showEnd(d?.players));
     const onKicked = () => showKicked();
@@ -312,19 +312,19 @@ export async function mountTyping(root, { mode = 'solo', contentId, language = '
 function resultHtml(r, mode) {
   const n = r.accuracy >= 95 ? 3 : r.accuracy >= 80 ? 2 : 1;
   const star = (on, big) => `<svg aria-hidden="true" width="${big ? 52 : 40}" height="${big ? 52 : 40}" viewBox="0 0 24 24" fill="${on ? '#F4B400' : '#FFFFFF'}" stroke="#E0A800" stroke-width="1.2" stroke-linejoin="round"><path d="M12 2l3 7h7l-5.5 4.5L18.5 21 12 16.5 5.5 21l2-7.5L2 9h7z"/></svg>`;
-  const title = n === 3 ? 'Barakalla!' : n === 2 ? 'Yaxshi!' : "Yaxshi urinish!";
+  const title = n === 3 ? t('ty.bravo') : n === 2 ? t('tl.good') : t('ty.niceTry');
   const saved = r.saved === false
-    ? `<div class="tr-reg"><b>Bu natija saqlanmadi</b><span>Ro'yxatdan o'tsang, natijalaring profilingda turadi.</span><a class="btn" href="#/">Ro'yxatdan o'tish</a></div>`
-    : mode === 'room' ? '' : '<div class="tr-ok">✓ Natija profilingga saqlandi</div>';
+    ? `<div class="tr-reg"><b>${t('ty.notSaved')}</b><span>${t('ty.regHint')}</span><a class="btn" href="#/">${t('au.register')}</a></div>`
+    : mode === 'room' ? '' : `<div class="tr-ok">✓ ${t('ty.saved')}</div>`;
   return `<div class="tr">
     <div class="tr-hero">
-      <div class="tr-stars" role="img" aria-label="${n} yulduz">${star(n >= 1)}${star(n >= 2, true)}${star(n >= 3)}</div>
-      <h1>${title}</h1><p>Matnni oxirigacha yozding</p>
+      <div class="tr-stars" role="img" aria-label="${t('app.stars', { n })}">${star(n >= 1)}${star(n >= 2, true)}${star(n >= 3)}</div>
+      <h1>${title}</h1><p>${t('ty.done')}</p>
       <div class="tr-big">${esc(r.wpm)}</div><div class="tr-u">WPM</div>
     </div>
-    <div class="tr-two"><div><b>${esc(r.accuracy)}%</b><span>Aniqlik</span></div><div><b>${esc(round(r.time_sec, 1))} s</b><span>Vaqt</span></div></div>
-    ${r.flagged ? '<div class="tr-warn">⚠️ Natija shubhali deb belgilandi</div>' : ''}
+    <div class="tr-two"><div><b>${esc(r.accuracy)}%</b><span>${t('ty.acc')}</span></div><div><b>${esc(round(r.time_sec, 1))} ${t('tl.sec')}</b><span>${t('ty.time')}</span></div></div>
+    ${r.flagged ? `<div class="tr-warn">⚠️ ${t('ty.flagged')}</div>` : ''}
     ${saved}
-    ${mode === 'room' ? '' : `<div class="tr-btns"><button class="btn" data-again>Yana mashq qilish</button><a class="btn btn--ghost" href="#/">Bosh sahifaga</a></div>`}
+    ${mode === 'room' ? '' : `<div class="tr-btns"><button class="btn" data-again>${t('ty.again')}</button><a class="btn btn--ghost" href="#/">${t('ty.home')}</a></div>`}
   </div>`;
 }

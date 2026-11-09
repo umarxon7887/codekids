@@ -1,40 +1,24 @@
 /** @file Toast xabarlar va backend xato kodlarini foydalanuvchi tiliga o'girish. */
+import { t, getLang } from '../i18n/index.js';
 
-const MESSAGES = {
-  VALIDATION_ERROR: "Kiritilgan ma'lumotlarda xato bor.",
-  CONFLICT: 'Bu email allaqachon band.',
-  RATE_LIMITED: "Juda ko'p urinish. Biroz kutib qayta urinib ko'ring.",
-  INVALID_CREDENTIALS: "Email yoki parol noto'g'ri.",
-  TOKEN_MISSING: 'Avval tizimga kiring.',
-  TOKEN_INVALID: 'Sessiya yaroqsiz. Qayta kiring.',
-  TOKEN_EXPIRED: 'Sessiya tugadi. Qayta kiring.',
-  TOKEN_REUSED: 'Xavfsizlik uchun qayta kirishingiz kerak.',
-  TOKEN_USED: 'Bu mashq allaqachon yakunlangan. Yangisini boshlang.',
-  SESSION_USED: 'Bu sessiya allaqachon ishlatilgan. Yangi o‘yin boshlang.',
-  TOO_FAST: 'Juda tez! Biroz sekinroq.',
-  NETWORK_ERROR: "Internetga ulanib bo'lmadi. Aloqani tekshiring.",
-  ROOM_NOT_FOUND: 'Xona topilmadi. Kodni tekshiring.',
-  ROOM_NOT_ACTIVE: "O'yin hali boshlanmagan yoki tugagan.",
-  ROOM_NOT_STARTABLE: "Xonani hozir boshlab bo'lmaydi.",
-  ROOM_FINISHED: 'Xona yopilgan.',
-  NO_PLAYERS: "Xonada o'yinchi yo'q.",
-  NOT_A_PARTICIPANT: "Siz bu xonada ishtirokchi emassiz.",
-  FORBIDDEN: "Bu amalga ruxsat yo'q.",
-  WRONG_GAME_TYPE: "Bu xona boshqa o'yin uchun.",
-  GUEST_NOT_ALLOWED: "Mehmonlar bu o'yinda qatnasha olmaydi.",
-  AUTH_REQUIRED: 'Avval tizimga kiring.',
-  LOCKED: "Siz vaqtincha qulflangansiz, kuting.",
-  QUESTION_PENDING: 'Avval savolga javob bering.',
-  NO_PENDING_QUESTION: 'Hozir javob kutilayotgan savol yo‘q.',
-  INVALID_CHOICE: "Noto'g'ri variant tanlandi.",
-  PLAYER_FINISHED: 'Siz allaqachon tugatgansiz.',
-  BLOCKED: 'Devor!',
-  KICKED: 'Siz xonadan chiqarildingiz.',
-  ROOM_CLOSED: 'Xona yopilgan.',
-};
+/**
+ * Xato kodi -> foydalanuvchi tilidagi matn. O'zbek tilida serverning aniqroq matni afzal,
+ * boshqa tilda (server matni o'zbekcha bo'lgani uchun) shu yerdagi tarjima ishlatiladi.
+ * @param {string} code @param {string} [fallback]
+ */
+export function friendlyMessage(code, fallback) {
+  const k = `err.${code}`;
+  const m = t(k);
+  const known = m !== k;
+  if (getLang() === 'uz' && fallback && !(known && PREFER_LOCAL[code])) return fallback;
+  return known ? m : t('err.unknown');
+}
 
-/** @param {string} code @param {string} [fallback] */
-export const friendlyMessage = (code, fallback) => MESSAGES[code] || fallback || 'Kutilmagan xato yuz berdi.';
+/** O'zbek tilida ham server matni o'rniga bolalarga moslangan matn chiqadigan kodlar (avvalgi xatti-harakat). */
+const PREFER_LOCAL = Object.fromEntries(['VALIDATION_ERROR', 'CONFLICT', 'RATE_LIMITED', 'INVALID_CREDENTIALS', 'TOKEN_MISSING', 'TOKEN_INVALID',
+  'TOKEN_EXPIRED', 'TOKEN_REUSED', 'TOKEN_USED', 'SESSION_USED', 'TOO_FAST', 'NETWORK_ERROR', 'ROOM_NOT_FOUND', 'ROOM_NOT_ACTIVE',
+  'ROOM_NOT_STARTABLE', 'ROOM_FINISHED', 'NO_PLAYERS', 'NOT_A_PARTICIPANT', 'FORBIDDEN', 'WRONG_GAME_TYPE', 'GUEST_NOT_ALLOWED',
+  'AUTH_REQUIRED', 'LOCKED', 'QUESTION_PENDING', 'NO_PENDING_QUESTION', 'INVALID_CHOICE', 'PLAYER_FINISHED', 'BLOCKED', 'KICKED', 'ROOM_CLOSED'].map((c) => [c, 1]));
 
 /**
  * @param {string} text
@@ -58,6 +42,6 @@ export function toast(text, type = 'info') {
 export function showError(err) {
   let text = friendlyMessage(err?.code, err?.message);
   const d = Array.isArray(err?.details) ? err.details[0] : null;
-  if (d) text += ` (${d.row ? `qator ${d.row}: ` : ''}${d.message || d.field || JSON.stringify(d)})`;
+  if (d) text += ` (${d.row ? t('err.row', { n: d.row }) : ''}${getLang() === 'uz' ? d.message || d.field || JSON.stringify(d) : d.field || d.path || d.message})`;
   toast(text, 'error');
 }

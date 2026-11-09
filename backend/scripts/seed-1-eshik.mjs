@@ -18,7 +18,7 @@ const SECTION_ID = '00000000-0000-4000-8000-00000001e101'; // bo'lim topilmasa s
 const ASSETS = new URL('./assets/1-eshik/', import.meta.url);
 
 // Rasm nomi -> o'lchami (sahifa sakramasligi uchun)
-const IMAGES = {
+export const IMAGES = {
   'quvvat-bloki': [290, 227],
   monitor: [282, 257],
   sichqoncha: [178, 247],
@@ -28,6 +28,9 @@ const IMAGES = {
   'qattiq-disk': [248, 171],
   'sistema-bloki-ochiq': [816, 892],
   'kompyuter-toliq': [883, 504],
+  'sistema-bloki': [214, 268],
+  'ona-plata': [291, 254],
+  protsessor: [238, 238],
 };
 // Kontentda rasm o'rniga «@nom» yoziladi, yozishdan oldin rasm ID'siga almashtiriladi
 const img = (name) => `@${name}`;
@@ -73,6 +76,7 @@ export const LESSON = {
         hint: "Tok bo'lmasa, boshqa qismlar ishlay oladimi?" },
       { type: 'order', prompt: "Kompyuter yonish tartibini to'g'ri qo'y",
         items: ['Tugma bosiladi', 'Quvvat bloki tok beradi', 'Protsessor qismlarni tekshiradi', 'Windows xotiraga yuklanadi', 'Monitorda ish stoli chiqadi'],
+        item_images: [img('sistema-bloki'), img('quvvat-bloki'), img('ona-plata'), img('operativ-xotira'), img('monitor')],
         explain: 'Avval tok keladi, keyin protsessor uyg\'onadi, Windows yuklanadi va oxirida ekran tayyor bo\'ladi.',
         hint: 'Kim birinchi uyg\'onishi kerak? Ekran eng oxirida chiqqan edi.' },
       { type: 'match', prompt: 'Har bir tashqi qismni vazifasi bilan juftla',
@@ -82,14 +86,15 @@ export const LESSON = {
         hint: "Qaysi qism bilan ekranni ko'ramiz, qaysi biri bilan eshitamiz?" },
       { type: 'sort', prompt: 'Qismlarni ikki qutiga ajrat: sistema bloki ichida yoki tashqarida',
         groups: ['Ichida', 'Tashqarida'],
+        group_images: [img('sistema-bloki-ochiq'), img('kompyuter-toliq')],
         items: ['Protsessor', 'Operativ xotira', 'Qattiq disk', 'Monitor', 'Klaviatura', 'Sichqoncha'],
-        item_images: [null, img('operativ-xotira'), img('qattiq-disk'), img('monitor'), img('klaviatura'), img('sichqoncha')],
+        item_images: [img('protsessor'), img('operativ-xotira'), img('qattiq-disk'), img('monitor'), img('klaviatura'), img('sichqoncha')],
         item_groups: [0, 0, 0, 1, 1, 1],
         explain: 'Protsessor, operativ xotira va qattiq disk qutining ichida turadi. Monitor, klaviatura va sichqoncha esa tashqarida ulanadi.',
         hint: 'Qutini ochganda ichida nimalarni ko\'rgan eding?' },
       { type: 'choice', kind: 'general', prompt: "Kompyuter o'chganda ham fayllaring qayerda saqlanib qoladi?",
         options: ['Qattiq disk', 'Operativ xotira', 'Protsessor'], answer: 0,
-        option_images: [img('qattiq-disk'), img('operativ-xotira'), null],
+        option_images: [img('qattiq-disk'), img('operativ-xotira'), img('protsessor')],
         explain: "Qattiq disk fayllarni kompyuter o'chganda ham saqlaydi.",
         hint: "Operativ xotira kompyuter o'chganda tozalanadi." },
       { type: 'choice', kind: 'predict', prompt: 'Klaviaturada «A» ni bosding. Keyin nima bo\'ladi?',
@@ -103,7 +108,7 @@ export const LESSON = {
 };
 
 /** Rasmni bazaga qo'shadi (bor bo'lsa, borini qaytaradi). */
-async function putImage(run, name) {
+export async function putImage(run, name) {
   const buf = await readFile(new URL(`${name}.webp`, ASSETS));
   const sha = crypto.createHash('sha256').update(buf).digest('hex');
   const [w, h] = IMAGES[name];
@@ -118,7 +123,7 @@ async function putImage(run, name) {
 }
 
 /** «@nom» belgilarini rasm ID'lariga almashtiradi. */
-function withImages(value, ids) {
+export function withImages(value, ids) {
   if (typeof value === 'string' && value.startsWith('@')) return ids[value.slice(1)];
   if (Array.isArray(value)) return value.map((v) => withImages(v, ids));
   if (value && typeof value === 'object') return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, withImages(v, ids)]));

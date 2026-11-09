@@ -13,6 +13,7 @@ const COLORS = ['#E5383B', '#2EC4B6', '#3A86FF', '#FFB703', '#9D4EDD', '#FF6FB5'
 const hash = (s) => { let h = 0; for (const c of String(s)) h = (h * 31 + c.charCodeAt(0)) >>> 0; return h; };
 
 import { carSrc } from './cars.js';
+import { t } from '../../i18n/index.js';
 const CAR = `<svg viewBox="0 0 100 42" aria-hidden="true">
   <ellipse cx="50" cy="40" rx="42" ry="2.6" fill="#0006"/>
   <path d="M2 11h9v3H8v7H2z" style="fill:var(--car)" stroke="#000" stroke-opacity=".5" stroke-width="1"/>
@@ -62,7 +63,7 @@ export function renderBoard(el, snap, { meId = null, meNick = '', kickable = fal
     el._leader.hidden = true;
     el._view.hidden = true;
     el._more.hidden = false;
-    el._more.textContent = "Hozircha o'quvchi yo'q";
+    el._more.textContent = t('ty.noStudents');
     return;
   }
   el._view.hidden = false;
@@ -120,7 +121,7 @@ export function renderBoard(el, snap, { meId = null, meNick = '', kickable = fal
         kick.className = 'kick rc-kick';
         kick.type = 'button';
         kick.textContent = '✕';
-        kick.setAttribute('aria-label', 'Chiqarish');
+        kick.setAttribute('aria-label', t('host.kick'));
         lane.querySelector('.rc-lane__head').appendChild(kick);
       }
       kick.dataset.kick = String(p.id);
@@ -150,5 +151,5 @@ export function renderBoard(el, snap, { meId = null, meNick = '', kickable = fal
   if (leadHidden) el._leader.textContent = `🥇 ${lead.nickname} · ${pctOf(lead)}%`;
 
   el._more.hidden = n <= vis;
-  el._more.textContent = n > vis ? `${n} ta o'quvchi · hammasini ko'rish uchun aylantiring ↕` : '';
+  el._more.textContent = n > vis ? t('ty.scrollAll', { n }) : '';
 }

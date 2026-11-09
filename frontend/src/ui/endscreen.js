@@ -28,7 +28,7 @@ export function renderEndScreen(el, { title, players, meId = null, meNick = '', 
   el.hidden = false;
   if (modal) el.className = 'modal';
   el.innerHTML = `<div class="modal__card end">
-    <div class="end-h"><h2>${esc(title || t('end.title'))}</h2><span class="end-n">${sorted.length} ta o'yinchi</span></div>
+    <div class="end-h"><h2>${esc(title || t('end.title'))}</h2><span class="end-n">${t('end.players', { n: sorted.length })}</span></div>
     <ol class="end-list">${sorted.map((p, i) => {
       const me = isMe(p);
       const badge = p.kicked ? ' 🚫' : p.eliminated ? ' 💀' : p.finished ? ' 🏁' : '';

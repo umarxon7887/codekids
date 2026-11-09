@@ -7,7 +7,7 @@ import { disconnectSocket } from './core/socket.js';
 import { initTheme, isLowPower, setLowPower } from './core/settings.js';
 import { toast } from './core/toast.js';
 import { BASE_URL } from './core/config.js';
-import { t } from './i18n/index.js';
+import { t, getLang, setLang } from './i18n/index.js';
 import { mountAuth } from './ui/auth.js';
 import { html } from './utils/dom.js';
 
@@ -18,7 +18,8 @@ let seq = 0; // kechikkan render natijalarini bekor qilish
 
 function mountSettings() {
   const bar = html(`<div id="settings">
-    <button id="btn-lp" aria-label="${t('lowpower.toggle')}" title="${t('lowpower.toggle')}" aria-pressed="${isLowPower()}">🔋</button></div>`);
+    <button id="btn-lp" aria-label="${t('lowpower.toggle')}" title="${t('lowpower.toggle')}" aria-pressed="${isLowPower()}">🔋</button>
+    <button id="btn-lang" class="lang-btn" aria-label="${t('lang.toggle')}" title="${t('lang.toggle')}">${getLang() === 'uz' ? 'RU' : 'UZ'}</button></div>`);
   document.body.appendChild(bar);
   bar.querySelector('#btn-lp').onclick = (e) => {
     const on = !isLowPower();
@@ -26,6 +27,9 @@ function mountSettings() {
     e.currentTarget.setAttribute('aria-pressed', String(on));
     toast(t(on ? 'lowpower.on' : 'lowpower.off'));
   };
+  bar.querySelector('#btn-lang').onclick = () => setLang(getLang() === 'uz' ? 'ru' : 'uz');
+  // Ekranlardagi til tugmalari (data-lang-toggle)
+  document.addEventListener('click', (e) => { if (e.target.closest('[data-lang-toggle]')) setLang(getLang() === 'uz' ? 'ru' : 'uz'); });
 }
 
 function parseHash() {
@@ -35,16 +39,16 @@ function parseHash() {
 
 function home(root, user) {
   const teacher = user.role === 'teacher';
-  const name = (user.nickname || "do'st").replace(/[<>&"']/g, '');
+  const name = (user.nickname || t('app.friend')).replace(/[<>&"']/g, '');
   root.replaceChildren(html(`
     <section class="home">
       <h1>${t('home.hello', { name })}</h1>
-      ${teacher ? '<a class="tile" href="#/teacher">👩‍🏫 Ustoz paneli</a>' : `
+      ${teacher ? `<a class="tile" href="#/teacher">👩‍🏫 ${t('home.teacherPanel')}</a>` : `
         <a class="tile" href="#/typing">⌨️ Typing Race</a>
-        <div class="tile tile--form"><span>🧩 Xonaga kirish</span>
-          <input id="code" maxlength="6" inputmode="numeric" pattern="[0-9]*" placeholder="6 xonali raqam" aria-label="Xona kodi">
-          <button id="join" class="btn">Kirish</button></div>`}
-      <button id="out" class="btn btn--ghost">Chiqish</button>
+        <div class="tile tile--form"><span>🧩 ${t('home.join')}</span>
+          <input id="code" maxlength="6" inputmode="numeric" pattern="[0-9]*" placeholder="${t('home.codePh')}" aria-label="${t('home.codeLabel')}">
+          <button id="join" class="btn">${t('home.enter')}</button></div>`}
+      <button id="out" class="btn btn--ghost">${t('app.logout')}</button>
     </section>`));
   root.querySelector('#out').onclick = async () => { await auth.logout(); disconnectSocket(); route(); };
   root.querySelector('#join')?.addEventListener('click', () => {

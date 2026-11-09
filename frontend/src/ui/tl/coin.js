@@ -1,5 +1,6 @@
 /** @file CodeKids coini ("Tugma tanga"): oltin tanga, klaviatura tugmasi va "K" harfi (public/coin/*.webp). */
 import { BASE_URL } from '../../core/config.js';
+import { t } from '../../i18n/index.js';
 
 /**
  * Tanga rasmi. Kichik o'lchamda 96px, kattada 256px fayl ishlatiladi.
@@ -13,4 +14,4 @@ export function coinSvg(size = 24, cls = '') {
 
 /** Coin soni bilan pill (sarlavhalarda). */
 export const coinPill = (coins, size = 22) =>
-  `<span class="ck-coins" title="Coinlar">${coinSvg(size)}<b>${Number(coins) || 0}</b><span class="sr">coin</span></span>`;
+  `<span class="ck-coins" title="${t('home.coins')}">${coinSvg(size)}<b>${Number(coins) || 0}</b><span class="sr">coin</span></span>`;

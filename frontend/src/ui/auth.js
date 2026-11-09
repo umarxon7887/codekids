@@ -3,6 +3,7 @@ import '../styles/auth.css';
 import { auth } from '../core/api.js';
 import { showError, toast } from '../core/toast.js';
 import { html } from '../utils/dom.js';
+import { t } from '../i18n/index.js';
 
 const P = {
   logo: '<path d="M8 7l-5 5 5 5M16 7l5 5-5 5M14 4l-4 16"/>',
@@ -29,7 +30,7 @@ export function mountAuth(root, onDone) {
       <div class="au-hero">
         <div class="au-logo">${svg('logo', 38)}</div>
         <div class="au-name">CodeKids</div>
-        <div class="au-tag">O'yin orqali mantiqiy fikrlashni o'rgan</div>
+        <div class="au-tag">${t('au.tag')}</div>
         <div class="au-dots">
           <span style="background:var(--sky);color:#1F5C8A">${svg('kb', 24)}</span>
           <span style="background:var(--mint);color:#1F5C41">${svg('maze', 24)}</span>
@@ -37,31 +38,31 @@ export function mountAuth(root, onDone) {
         </div>
       </div>
       <form class="au-card" novalidate>
-        <h1 id="ttl">Kirish</h1>
+        <h1 id="ttl">${t('au.login')}</h1>
         <div id="reg" hidden>
-          <div class="au-role" role="group" aria-label="Rol">
-            <button type="button" data-role="student" aria-pressed="true">O'quvchi</button>
-            <button type="button" data-role="teacher" aria-pressed="false">Ustoz</button>
+          <div class="au-role" role="group" aria-label="${t('au.role')}">
+            <button type="button" data-role="student" aria-pressed="true">${t('au.student')}</button>
+            <button type="button" data-role="teacher" aria-pressed="false">${t('au.teacher')}</button>
           </div>
         </div>
-        <div id="nickw" hidden>${field('nick', 'Nikneym', 'user', 'maxlength="40" placeholder="Masalan, Ali" autocomplete="nickname"')}</div>
-        ${field('email', 'Email', 'mail', 'type="email" placeholder="Email manzilingiz" autocomplete="username"')}
-        ${field('pass', 'Parol', 'lock', 'type="password" placeholder="Parolingizni yozing" autocomplete="current-password"',
-          `<button type="button" class="au-eye" id="eye" aria-label="Parolni ko'rsatish" aria-pressed="false">${svg('eye')}</button>`)}
+        <div id="nickw" hidden>${field('nick', t('au.nick'), 'user', `maxlength="40" placeholder="${t('au.nickPh')}" autocomplete="nickname"`)}</div>
+        ${field('email', 'Email', 'mail', `type="email" placeholder="${t('au.emailPh')}" autocomplete="username"`)}
+        ${field('pass', t('au.pass'), 'lock', `type="password" placeholder="${t('au.passPh')}" autocomplete="current-password"`,
+          `<button type="button" class="au-eye" id="eye" aria-label="${t('au.show')}" aria-pressed="false">${svg('eye')}</button>`)}
         <div id="teacher" class="au-teach" hidden>
-          <b>Ustoz ma'lumotlari</b>
-          ${field('full', "To'liq ism", 'user', 'placeholder="Ism va familiya" autocomplete="name"')}
-          ${field('school', 'Maktab / markaz', 'school', 'placeholder="Ixtiyoriy"')}
-          ${field('subj', 'Fanlar', 'book', 'placeholder="math, it"')}
+          <b>${t('au.teacherInfo')}</b>
+          ${field('full', t('au.full'), 'user', `placeholder="${t('au.fullPh')}" autocomplete="name"`)}
+          ${field('school', t('au.school'), 'school', `placeholder="${t('au.optional')}"`)}
+          ${field('subj', t('au.subj'), 'book', 'placeholder="math, it"')}
           <div class="au-two">
-            ${field('exp', 'Tajriba (yil)', 'user', 'type="number" min="0" inputmode="numeric" placeholder="0"')}
-            ${field('age', 'Yosh guruhi', 'user', 'placeholder="7-9"')}
+            ${field('exp', t('au.exp'), 'user', 'type="number" min="0" inputmode="numeric" placeholder="0"')}
+            ${field('age', t('au.age'), 'user', 'placeholder="7-9"')}
           </div>
         </div>
-        <button id="go" type="submit" class="btn au-go">Kirish</button>
+        <button id="go" type="submit" class="btn au-go">${t('au.login')}</button>
       </form>
-      <a id="guest" class="btn btn--ghost au-guest" href="#/guest">Mehmon sifatida mashq qilish</a>
-      <div class="au-alt"><span id="altq">Hisobingiz yo'qmi?</span> <button id="sw" type="button">Ro'yxatdan o'tish</button></div>
+      <a id="guest" class="btn btn--ghost au-guest" href="#/guest">${t('au.guest')}</a>
+      <div class="au-alt"><span id="altq">${t('au.noAcc')}</span> <button id="sw" type="button">${t('au.register')}</button></div>
     </section>`);
   const $ = (s) => view.querySelector(s);
 
@@ -71,11 +72,11 @@ export function mountAuth(root, onDone) {
     $('#nickw').hidden = !reg;
     $('#teacher').hidden = !reg || role !== 'teacher';
     $('#guest').hidden = reg;
-    $('#ttl').textContent = reg ? "Ro'yxatdan o'tish" : 'Kirish';
-    $('#go').textContent = reg ? "Ro'yxatdan o'tish" : 'Kirish';
-    $('#altq').textContent = reg ? 'Hisobingiz bormi?' : "Hisobingiz yo'qmi?";
-    $('#sw').textContent = reg ? 'Kirish' : "Ro'yxatdan o'tish";
-    $('#pass').placeholder = reg ? 'Kamida 8 belgi' : 'Parolingizni yozing';
+    $('#ttl').textContent = reg ? t('au.register') : t('au.login');
+    $('#go').textContent = reg ? t('au.register') : t('au.login');
+    $('#altq').textContent = reg ? t('au.hasAcc') : t('au.noAcc');
+    $('#sw').textContent = reg ? t('au.login') : t('au.register');
+    $('#pass').placeholder = reg ? t('au.min8') : t('au.passPh');
     $('#pass').autocomplete = reg ? 'new-password' : 'current-password';
     view.querySelectorAll('[data-role]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.role === role)));
   };
@@ -85,7 +86,7 @@ export function mountAuth(root, onDone) {
     const show = $('#pass').type === 'password';
     $('#pass').type = show ? 'text' : 'password';
     e.currentTarget.setAttribute('aria-pressed', String(show));
-    e.currentTarget.setAttribute('aria-label', show ? 'Parolni yashirish' : "Parolni ko'rsatish");
+    e.currentTarget.setAttribute('aria-label', show ? t('au.hide') : t('au.show'));
   };
 
   $('form').onsubmit = async (ev) => {
@@ -106,7 +107,7 @@ export function mountAuth(root, onDone) {
         }
         await auth.register(body);
       }
-      toast('Xush kelibsiz!', 'success');
+      toast(t('au.welcome'), 'success');
       onDone();
     } catch (e) { showError(e); } finally { btn.disabled = false; }
   };

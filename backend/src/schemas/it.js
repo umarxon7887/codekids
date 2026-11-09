@@ -69,6 +69,7 @@ const sortExercise = z.object({
   prompt: text(400),
   image,
   groups: z.array(text(40)).min(2).max(3),
+  group_images: images(3),
   items: z.array(label(80)).min(2).max(8),
   item_images: images(8),
   item_groups: z.array(z.number().int().min(0).max(2)).max(8),
@@ -176,6 +177,7 @@ const draftExercise = z.discriminatedUnion('type', [
     prompt: dText(400),
     image,
     groups: z.array(dText(40)).max(3).default([]),
+    group_images: images(3),
     items: z.array(dText(80)).max(8).default([]),
     item_images: images(8),
     item_groups: z.array(z.number().int().min(0).max(2)).max(8).default([]),
@@ -243,12 +245,14 @@ export const sectionCreateSchema = z.object({
   title,
   method: z.string().trim().max(120).default(''),
   description: z.string().trim().max(1000).default(''),
+  lang: z.enum(['uz', 'ru']).default('uz'),
 }).strict();
 
 export const sectionUpdateSchema = z.object({
   title: title.optional(),
   method: z.string().trim().max(120).optional(),
   description: z.string().trim().max(1000).optional(),
+  lang: z.enum(['uz', 'ru']).optional(),
   is_published: z.boolean().optional(),
 }).strict().refine(atLeastOne, nothing);
 

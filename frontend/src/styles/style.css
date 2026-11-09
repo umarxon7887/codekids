@@ -204,3 +204,8 @@ h1, h2, h3, .tab, .btn, .tile { font-family: 'Fredoka', 'Nunito', system-ui, san
 .typing__text .ch--cur { background: #EDE7F8; border-bottom: 3px solid #8B7BC7; }
 #t-time, #t-wpm { font-family: 'Fredoka', sans-serif; font-weight: 700; color: #8B7BC7; }
 #t-time, #t-wpm { background: #EDE7F8; border-radius: 999px; padding: 6px 14px; }
+
+/* Til tugmasi (UZ/RU) */
+.lang-pill { min-width: 44px; height: 40px; padding: 0 10px; border-radius: 999px; border: 1.5px solid var(--line, #E5D5C3); background: var(--white, #fff); color: var(--ink, #2B2222); font: inherit; font-size: 14px; font-weight: 700; letter-spacing: .5px; cursor: pointer; }
+.lang-pill:hover { border-color: var(--ink, #2B2222); }
+#settings #btn-lang { font-size: 14px; font-weight: 700; }

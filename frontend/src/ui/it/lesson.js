@@ -9,9 +9,10 @@ import { showError } from '../../core/toast.js';
 import { html, esc } from '../../utils/dom.js';
 import { ic, castleSrc, asset, kindLabel, shuffle, youtubeEmbed, imgTag } from './common.js';
 import { typingUi, mazeUi } from './games.js';
+import { t } from '../../i18n/index.js';
 
 // To'g'ri javobdan keyin Kibining qisqa maqtovi
-const PRAISE = ["To'g'ri!", "Zo'r, {ism}!", 'Barakalla!', "To'ppa-to'g'ri!"];
+const PRAISE = t('it.l.praise', { ism: '{ism}' }).split('|');
 
 /** @param {HTMLElement} root @param {string} id mavzu ID @returns {Promise<()=>void>} */
 export async function mountItLesson(root, id) {
@@ -24,8 +25,8 @@ export async function mountItLesson(root, id) {
     const locked = e.code === 'LESSON_LOCKED';
     if (!locked) showError(e);
     view.innerHTML = `<div class="it-empty"><img src="${asset('door-locked')}" alt="" width="96" height="110">
-      <p>${locked ? 'Bu eshik hali qulf. Avval oldingi mavzularni tugat.' : "Darsni ochib bo'lmadi."}</p>
-      <a class="btn" href="#/it">Qasrlar yo'liga</a></div>`;
+      <p>${locked ? t('it.l.locked') : t('tl.openFail')}</p>
+      <a class="btn" href="#/it">${t('it.toPath')}</a></div>`;
     return () => {};
   }
   runLesson(view, data.lesson, {
@@ -63,30 +64,44 @@ export function runLesson(view, L, opts = {}) {
   const solved = new Set();
   let mistakes = 0;
   let finished = false;
+  let combo = 0; // ketma-ket to'g'ri javoblar (yumshoq seriya: xatoda jim nolga tushadi)
+  let best = 0;
 
   view.innerHTML = `
     <header class="ls-top">
-      <button type="button" class="ls-x" aria-label="Darsdan chiqish">${ic('x', 22)}</button>
-      <div class="ls-bar" role="progressbar" aria-label="Bajarilgan mashqlar" aria-valuemin="0" aria-valuemax="${exercises.length}" aria-valuenow="0"><i></i></div>
+      <button type="button" class="ls-x" aria-label="${t('tl.exit')}">${ic('x', 22)}</button>
+      <div class="ls-bar" role="progressbar" aria-label="${t('it.l.doneEx')}" aria-valuemin="0" aria-valuemax="${exercises.length}" aria-valuenow="0"><i></i></div>
+      <span class="ls-streak" hidden>${ic('fire', 18)}<b>0</b></span>
       <span class="ls-n">0 / ${exercises.length}</span>
     </header>
     <main class="ls-stage" tabindex="-1"></main>
     <footer class="ls-foot"><div class="ls-fb" role="status" hidden></div><div class="ls-btns"></div></footer>`;
   const stage = view.querySelector('.ls-stage');
   const fb = view.querySelector('.ls-fb');
+  const foot = view.querySelector('.ls-foot');
   const btns = view.querySelector('.ls-btns');
 
   view.querySelector('.ls-x').onclick = () => {
     if (preview) { opts.onRestart?.(); return; }
-    if (finished || confirm("Darsdan chiqasanmi? Bu mavzu hali tugamaydi.")) location.hash = `#/it/section/${L.section.id}`;
+    if (finished || confirm(t('it.l.confirmExit'))) location.hash = `#/it/section/${L.section.id}`;
   };
-  if (preview) view.querySelector('.ls-x').setAttribute('aria-label', 'Boshidan ko\'rish');
+  if (preview) view.querySelector('.ls-x').setAttribute('aria-label', t('it.l.restart'));
 
   const progress = () => {
     const n = solved.size;
     view.querySelector('.ls-bar i').style.width = `${exercises.length ? (n / exercises.length) * 100 : 0}%`;
     view.querySelector('.ls-bar').setAttribute('aria-valuenow', String(n));
     view.querySelector('.ls-n').textContent = `${n} / ${exercises.length}`;
+  };
+  /** Seriya belgisi: 2 tadan boshlab ko'rinadi, 3 dan progress chizig'i "qiziydi". */
+  const streakUi = () => {
+    const el = view.querySelector('.ls-streak');
+    el.hidden = combo < 2;
+    el.querySelector('b').textContent = String(combo);
+    el.setAttribute('aria-label', t('it.l.comboAria', { n: combo }));
+    el.classList.remove('is-bump');
+    if (combo >= 2) { void el.offsetWidth; el.classList.add('is-bump'); }
+    view.querySelector('.ls-bar').classList.toggle('is-hot', combo >= 3);
   };
   /** Pastki tugma(lar)ni o'rnatadi. */
   const actions = (list) => {
@@ -97,22 +112,23 @@ export function runLesson(view, L, opts = {}) {
     return btns.querySelector('[data-k="0"]');
   };
   /** Matn: {ism} o'rniga bolaning ismi. */
-  const say = (t) => esc(String(t || '')).replace(/\{ism\}/g, `<b>${esc(learnerName || "do'stim")}</b>`);
+  const say = (s) => esc(String(s || '')).replace(/\{ism\}/g, `<b>${esc(learnerName || t('it.l.friend'))}</b>`);
   const kibiImg = (pose, cls = 'ls-kibi-img') => `<img class="${cls}" src="${asset(`kibi/${pose}`)}" alt="" draggable="false">`;
   /** Kibi va uning gap pufakchasi. */
   const kibi = (pose, text, extra = '') => `<div class="ls-kibi">
       <div class="ls-bubble"><p>${say(text)}</p>${extra}</div>${kibiImg(pose)}</div>`;
   /** Yordamchi karta matni: bir necha qator bo'lsa, raqamli ro'yxat (masalan, yoqish zanjiri). */
-  const helperBody = (t) => {
-    const rows = String(t || '').split('\n').map((x) => x.trim()).filter(Boolean);
+  const helperBody = (s) => {
+    const rows = String(s || '').split('\n').map((x) => x.trim()).filter(Boolean);
     if (rows.length > 1) return `<ol class="ls-steps">${rows.map((x) => `<li>${esc(x)}</li>`).join('')}</ol>`;
     return rows.length ? `<p>${esc(rows[0])}</p>` : '';
   };
-  const helperCard = () => `<div class="ls-card ls-helper"><span class="ls-chip">${ic('bulb', 16)}Yordamchi karta</span>
+  const helperCard = () => `<div class="ls-card ls-helper"><span class="ls-chip">${ic('bulb', 16)}${t('it.l.helper')}</span>
     ${c.helper.title ? `<h2>${esc(c.helper.title)}</h2>` : ''}${imgTag(c.helper.image)}${helperBody(c.helper.text)}</div>`;
   const show = (markup) => {
     fb.hidden = true;
     fb.className = 'ls-fb';
+    foot.className = 'ls-foot';
     stage.innerHTML = markup;
     stage.scrollTop = 0;
     stage.focus({ preventScroll: true });
@@ -127,19 +143,19 @@ export function runLesson(view, L, opts = {}) {
     else if (k === 'story') {
       show(`<div class="ls-card ls-story">
         <img class="ls-castle" src="${L.kind === 'test' ? castleSrc('boss') : asset('door-ready')}" alt="" width="112" height="112">
-        <span class="ls-kicker">${esc(L.section.title)} · ${L.kind === 'test' ? "bo'lim testi" : `${L.section.index + 1}-mavzu`}</span>
+        <span class="ls-kicker">${esc(L.section.title)} · ${L.kind === 'test' ? t('it.secTest').toLowerCase() : t('it.topicN', { n: L.section.index + 1 })}</span>
         <h1>${esc(L.title)}</h1>${imgTag(c.story_image)}<p>${esc(c.story)}</p></div>`);
-      actions([{ label: L.kind === 'test' ? 'Testni boshlash' : 'Boshladik', onClick: nextIntro }]);
+      actions([{ label: L.kind === 'test' ? t('it.l.startTest') : t('it.l.letsGo'), onClick: nextIntro }]);
     } else if (k === 'video') {
       playVideo(nextIntro);
     } else if (k === 'helper') {
       show(helperCard());
-      actions([{ label: 'Tushundim', onClick: nextIntro }]);
+      actions([{ label: t('it.l.gotIt'), onClick: nextIntro }]);
     } else {
-      show(`<div class="ls-card ls-tool"><span class="ls-chip">${ic('tool', 16)}Fikrlash quroli</span>
+      show(`<div class="ls-card ls-tool"><span class="ls-chip">${ic('tool', 16)}${t('it.l.tool')}</span>
         <h2>${esc(L.tool.name)}</h2><p>${esc(L.tool.body || L.tool.short || '')}</p>
-        <small>Mavzuni tugatsang, bu qurol sumkangga qo'shiladi.</small></div>`);
-      actions([{ label: "Mashqlarga o'tish", onClick: nextIntro }]);
+        <small>${t('it.l.toolHint')}</small></div>`);
+      actions([{ label: t('it.l.toExercises'), onClick: nextIntro }]);
     }
   }
 
@@ -162,26 +178,26 @@ export function runLesson(view, L, opts = {}) {
   }
   function line(d, next) {
     show(kibi(d.pose, d.text));
-    const bs = d.buttons?.length ? d.buttons : [{ label: 'Davom' }];
+    const bs = d.buttons?.length ? d.buttons : [{ label: t('it.l.next') }];
     actions(bs.map((b, i) => ({
       label: esc(b.label),
       ghost: i > 0,
       onClick: () => {
         if (!b.reply) { next(); return; }
         show(kibi(b.reply_pose || 'maqtash', b.reply));
-        actions([{ label: 'Davom', onClick: next }]);
+        actions([{ label: esc(t('it.l.next')), onClick: next }]);
       },
     })));
   }
   const NAME_RE = /^\p{L}[\p{L}\p{M}'’ʻʼ‘` -]*$/u;
   function askName(d, next) {
-    show(kibi(d.pose, d.text, `<input class="ls-name-in" maxlength="20" autocomplete="given-name" autocapitalize="words" enterkeyhint="done" placeholder="Ismingni yoz" aria-label="Isming">
+    show(kibi(d.pose, d.text, `<input class="ls-name-in" maxlength="20" autocomplete="given-name" autocapitalize="words" enterkeyhint="done" placeholder="${t('it.l.namePh')}" aria-label="${t('it.l.name')}">
       <small class="ls-name-msg" role="status"></small>`));
     const inp = stage.querySelector('.ls-name-in');
     const msg = stage.querySelector('.ls-name-msg');
     const value = () => inp.value.trim().replace(/\s+/g, ' ');
     const ok = () => value().length >= 2 && NAME_RE.test(value());
-    const btn = actions([{ label: esc(d.buttons?.[0]?.label || 'Davom'), disabled: true, onClick: submit }]);
+    const btn = actions([{ label: esc(d.buttons?.[0]?.label || t('it.l.next')), disabled: true, onClick: submit }]);
     async function submit() {
       if (!ok()) return;
       btn.disabled = true;
@@ -189,13 +205,13 @@ export function runLesson(view, L, opts = {}) {
         learnerName = preview || !opts.saveName ? value() : (await opts.saveName(value())).name;
         next();
       } catch (e) {
-        msg.textContent = e.message || "Ismni saqlab bo'lmadi, qayta urinib ko'r";
+        msg.textContent = t('it.l.nameFail');
         btn.disabled = false;
       }
     }
     inp.oninput = () => {
       btn.disabled = !ok();
-      msg.textContent = value() && !NAME_RE.test(value()) ? 'Faqat harflar bilan yoz' : '';
+      msg.textContent = value() && !NAME_RE.test(value()) ? t('it.l.lettersOnly') : '';
     };
     inp.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); submit(); } };
     setTimeout(() => inp.focus(), 50);
@@ -204,20 +220,20 @@ export function runLesson(view, L, opts = {}) {
   // ---------- Video va «Tushundingmi?» ----------
   // Saytdagi video faylda «Davom» video oxirigacha ko'rilgandan keyin ochiladi (ko'rinishda va qayta o'tishda darhol).
   function playVideo(after, { again = false, plain = false } = {}) {
-    const t = c.video.title || 'Video';
+    const vt = c.video.title || 'Video';
     const file = Boolean(c.video.file);
     const player = file
       ? `<video class="ls-vid" src="${video}" poster="${video.replace(/\.mp4$/, '.jpg')}" controls playsinline preload="metadata"></video>`
-      : `<iframe src="${video}" title="${esc(t)}" loading="lazy"
+      : `<iframe src="${video}" title="${esc(vt)}" loading="lazy"
           allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
           allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>`;
     const free = !file || preview || L.status === 'done';
-    show(`<div class="ls-card ls-video"><span class="ls-chip">${ic('play', 16)}Video</span>
+    show(`<div class="ls-card ls-video"><span class="ls-chip">${ic('play', 16)}${t('it.l.video')}</span>
       ${c.video.title ? `<h2>${esc(c.video.title)}</h2>` : ''}
       <div class="ls-player${file ? ' is-file' : ''}">${player}</div>
-      ${free ? '' : '<small class="ls-vid-note">Video tugagach «Davom» tugmasi ochiladi.</small>'}</div>`);
+      ${free ? '' : `<small class="ls-vid-note">${t('it.l.vidNote')}</small>`}</div>`);
     const go = () => (checkVideo && !plain ? askUnderstood(after) : after());
-    const btn = actions([{ label: checkVideo || plain ? 'Davom' : "Ko'rdim, davom etamiz", disabled: !free, onClick: go }]);
+    const btn = actions([{ label: checkVideo || plain ? t('it.l.next') : t('it.l.watched'), disabled: !free, onClick: go }]);
     if (!file) return;
     const el = stage.querySelector('video');
     const open = () => {
@@ -230,22 +246,22 @@ export function runLesson(view, L, opts = {}) {
     if (again) el.play().catch(() => {});
   }
   function askUnderstood(after) {
-    show(kibi('oylash', "Xo'sh, {ism}, mavzuni tushundingmi?"));
+    show(kibi('oylash', t('it.l.understood', { ism: '{ism}' })));
     actions([
-      { label: 'Ha', onClick: () => {
-        show(kibi('maqtash', "Zo'r! Unda kel, davom etamiz. Endi navbat savollarga!"));
-        actions([{ label: 'Savollarga', onClick: after }]);
+      { label: t('it.l.yes'), onClick: () => {
+        show(kibi('maqtash', t('it.l.yesReply')));
+        actions([{ label: t('it.l.toQuestions'), onClick: after }]);
       } },
-      { label: "Yo'q", ghost: true, onClick: () => {
+      { label: t('it.l.no'), ghost: true, onClick: () => {
         videoNo += 1;
         if (videoNo >= 2) {
-          show(kibi('dalda', 'Mayli, savollar davomida senga yordam beraman.'));
-          actions([{ label: 'Davom', onClick: after }]);
+          show(kibi('dalda', t('it.l.helpLater')));
+          actions([{ label: t('it.l.next'), onClick: after }]);
           return;
         }
-        show(kibi('dalda', "Hechqisi yo'q, keling, oddiyroq tushuntiraman."));
-        const replay = { label: "Videoni yana ko'raman", onClick: () => playVideo(after, { again: true }) };
-        actions([{ label: 'Davom', onClick: () => {
+        show(kibi('dalda', t('it.l.simpler')));
+        const replay = { label: t('it.l.rewatch'), onClick: () => playVideo(after, { again: true }) };
+        actions([{ label: t('it.l.next'), onClick: () => {
           if (!hasHelper) { playVideo(after, { again: true }); return; }
           show(helperCard());
           actions([replay]);
@@ -259,11 +275,11 @@ export function runLesson(view, L, opts = {}) {
     progress();
     const ex = queue[0];
     if (!ex) return finish();
-    const again = ex.wrong ? '<span class="ls-again">Yana bir bor</span>' : '';
+    const again = ex.wrong ? `<span class="ls-again">${t('it.l.again')}</span>` : '';
     const q = `<div class="ls-q"><span class="ls-chip">${esc(kindLabel(ex))}</span>${again}<h2>${esc(ex.prompt)}</h2>${imgTag(ex.image, 'ls-img ls-q-img')}</div>`;
     const ui = { order: orderUi, match: matchUi, sort: sortUi, typing: typingUi, maze: mazeUi }[ex.type]?.(ex) || choiceUi(ex);
     show(q + ui.markup);
-    const checkBtn = actions([{ label: 'Tekshirish', disabled: true, onClick: () => check(ex, ui) }]);
+    const checkBtn = actions([{ label: t('it.l.check'), disabled: true, onClick: () => check(ex, ui) }]);
     ui.mount(stage, (ready) => { checkBtn.disabled = !ready; });
   }
 
@@ -271,25 +287,31 @@ export function runLesson(view, L, opts = {}) {
     btns.querySelectorAll('button').forEach((b) => { b.disabled = true; });
     const right = await ui.evaluate();
     ui.lock();
+    foot.className = `ls-foot is-${right ? 'ok' : 'bad'}`;
     if (right) {
       solved.add(ex.i);
       queue.shift();
+      combo += 1;
+      best = Math.max(best, combo);
       fb.className = `ls-fb is-ok${kibiOn ? ' has-kibi' : ''}`;
-      const praise = kibiOn ? say(PRAISE[(solved.size + mistakes) % PRAISE.length]) : "To'g'ri!";
-      fb.innerHTML = `${kibiOn ? kibiImg('maqtash', 'ls-fb-kibi') : ''}<div><b>${ic('check', 18)}${praise}</b>${ex.explain ? `<p>${esc(ex.explain)}</p>` : ''}</div>`;
+      const praise = kibiOn ? say(PRAISE[(solved.size + mistakes) % PRAISE.length]) : esc(PRAISE[0]);
+      const hot = combo >= 3 ? `<span class="ls-combo">${ic('fire', 16)}${t('it.l.combo', { n: combo })}</span>` : '';
+      fb.innerHTML = `${kibiOn ? kibiImg('maqtash', 'ls-fb-kibi') : ''}<div><b>${ic('check', 18)}<span>${praise}</span>${hot}</b>${ex.explain ? `<p>${esc(ex.explain)}</p>` : ''}</div>`;
     } else {
       mistakes += 1;
+      combo = 0;
       ex.wrong = true;
       queue.push(queue.shift());
       fb.className = `ls-fb is-bad${kibiOn ? ' has-kibi' : ''}`;
       const tip = ex.hint ? `<p>${esc(ex.hint)}</p>`
-        : c.helper?.text ? `<p><span>Yordamchi karta:</span> ${esc(c.helper.text.replace(/\s*\n\s*/g, ' → '))}</p>` : '';
-      fb.innerHTML = `${kibiOn ? kibiImg('dalda', 'ls-fb-kibi') : ''}<div><b>${ic('undo', 18)}Hali emas, hechqisi yo'q</b>
-        ${tip}<p class="ls-later">Bu savol dars oxirida yana chiqadi.</p></div>`;
+        : c.helper?.text ? `<p><span>${t('it.l.helper')}:</span> ${esc(c.helper.text.replace(/\s*\n\s*/g, ' → '))}</p>` : '';
+      fb.innerHTML = `${kibiOn ? kibiImg('dalda', 'ls-fb-kibi') : ''}<div><b>${ic('undo', 18)}${t('it.l.notYet')}</b>
+        ${tip}<p class="ls-later">${t('it.l.later')}</p></div>`;
     }
     fb.hidden = false;
+    streakUi();
     progress();
-    actions([{ label: 'Davom etish', onClick: nextExercise }]).focus();
+    actions([{ label: t('it.l.continue'), onClick: nextExercise }]).focus();
   }
 
   function choiceUi(ex) {
@@ -299,8 +321,8 @@ export function runLesson(view, L, opts = {}) {
     const im = ex.option_images || [];
     const withImg = im.some(Boolean);
     return {
-      markup: `<div class="ls-opts${withImg ? ' ls-opts--img' : ''}" role="radiogroup" aria-label="Javoblar">${order.map((k) =>
-        `<button type="button" class="ls-opt" role="radio" aria-checked="false" data-k="${k}"${ex.options[k] ? '' : ` aria-label="${k + 1}-rasm"`}>${imgTag(im[k], 'ls-opt-img')}${ex.options[k] ? `<span>${esc(ex.options[k])}</span>` : ''}</button>`).join('')}</div>`,
+      markup: `<div class="ls-opts${withImg ? ' ls-opts--img' : ''}" role="radiogroup" aria-label="${t('it.l.answers')}">${order.map((k) =>
+        `<button type="button" class="ls-opt" role="radio" aria-checked="false" data-k="${k}"${ex.options[k] ? '' : ` aria-label="${t('it.l.imgN', { n: k + 1 })}"`}>${imgTag(im[k], 'ls-opt-img')}${ex.options[k] ? `<span>${esc(ex.options[k])}</span>` : ''}</button>`).join('')}</div>`,
       mount(el, ready) {
         root2 = el;
         el.querySelectorAll('.ls-opt').forEach((b) => {
@@ -320,40 +342,94 @@ export function runLesson(view, L, opts = {}) {
     };
   }
 
+  // Tartibla: kartani ushlab sudrab joyiga qo'yiladi, qolganlari silliq suriladi (FLIP).
+  // Klaviaturada: kartani tanlab ↑/↓.
   function orderUi(ex) {
     const im = ex.item_images || [];
-    const lbl = (k) => `${imgTag(im[k], 'ls-chip-img')}${esc(ex.items[k])}`;
-    const pool = shuffle(ex.items.map((_, k) => k));
-    const ans = [];
-    let el;
-    let ready;
+    let ord = shuffle(ex.items.map((_, k) => k));
+    if (ord.length > 1 && ord.every((k, i) => k === i)) ord = [...ord.slice(1), ord[0]];
+    let list;
     let locked = false;
-    const draw = () => {
-      el.querySelector('.ls-slots').innerHTML = ex.items.map((_, idx) => (ans[idx] != null
-        ? `<li><button type="button" class="ls-chipbtn is-placed" data-a="${idx}" aria-label="${idx + 1}-qadam: ${esc(ex.items[ans[idx]] || 'rasm')}. Qaytarish uchun bosing"><i>${idx + 1}</i>${lbl(ans[idx])}</button></li>`
-        : `<li><span class="ls-slot"><i>${idx + 1}</i></span></li>`)).join('');
-      el.querySelector('.ls-pool').innerHTML = pool.map((k) =>
-        `<button type="button" class="ls-chipbtn" data-p="${k}"${ex.items[k] ? '' : ` aria-label="Rasmli qadam"`}>${lbl(k)}</button>`).join('')
-        || '<span class="ls-pool-done">Hammasi joyida. Tekshirib ko\'r!</span>';
-      el.querySelectorAll('[data-p]').forEach((b) => { b.onclick = () => { if (locked) return; const k = Number(b.dataset.p); pool.splice(pool.indexOf(k), 1); ans.push(k); draw(); }; });
-      el.querySelectorAll('[data-a]').forEach((b) => { b.onclick = () => { if (locked) return; const idx = Number(b.dataset.a); pool.push(ans[idx]); ans.splice(idx, 1); draw(); }; });
-      ready(pool.length === 0);
+    const renumber = () => list.querySelectorAll('.ls-ord-n').forEach((n, i) => { n.textContent = String(i + 1); });
+    // DOM o'zgarishidan oldingi joydan yangi joyga boshqa kartalar silliq suriladi
+    const flip = (li, change) => {
+      const sibs = [...list.children].filter((x) => x !== li);
+      const was = new Map(sibs.map((x) => [x, x.getBoundingClientRect().top]));
+      change();
+      for (const x of sibs) {
+        x.style.transition = 'none';
+        x.style.transform = '';
+        const d = was.get(x) - x.getBoundingClientRect().top;
+        if (d) {
+          x.style.transform = `translateY(${d}px)`;
+          void x.offsetWidth;
+        }
+        x.style.transition = '';
+        x.style.transform = '';
+      }
+      renumber();
+    };
+    function drag(e, li) {
+      if (locked || e.button > 0) return;
+      e.preventDefault();
+      li.setPointerCapture(e.pointerId);
+      li.focus({ preventScroll: true });
+      let startY = e.clientY;
+      let base = li.offsetTop;
+      li.classList.add('is-drag');
+      const follow = (y) => { li.style.transform = `translateY(${y - startY}px) scale(1.03)`; };
+      li.onpointermove = (m) => {
+        follow(m.clientY);
+        const mid = base + (m.clientY - startY) + li.offsetHeight / 2;
+        const prev = li.previousElementSibling;
+        const next = li.nextElementSibling;
+        if (next && mid > next.offsetTop + next.offsetHeight / 2) flip(li, () => list.insertBefore(next, li));
+        else if (prev && mid < prev.offsetTop + prev.offsetHeight / 2) flip(li, () => list.insertBefore(li, prev));
+        else return;
+        startY += li.offsetTop - base;
+        base = li.offsetTop;
+        follow(m.clientY);
+      };
+      li.onpointerup = li.onpointercancel = () => {
+        li.onpointermove = li.onpointerup = li.onpointercancel = null;
+        li.classList.remove('is-drag');
+        li.style.transform = '';
+        ord = [...list.children].map((x) => Number(x.dataset.k));
+      };
+    }
+    const key = (e, li) => {
+      if (locked || (e.key !== 'ArrowUp' && e.key !== 'ArrowDown')) return;
+      e.preventDefault();
+      const to = e.key === 'ArrowUp' ? li.previousElementSibling : li.nextElementSibling?.nextElementSibling ?? null;
+      if (e.key === 'ArrowUp' && !to) return;
+      if (e.key === 'ArrowDown' && !li.nextElementSibling) return;
+      flip(li, () => list.insertBefore(li, to));
+      ord = [...list.children].map((x) => Number(x.dataset.k));
+      li.focus();
     };
     return {
-      markup: `<ol class="ls-slots" aria-label="Sening tartibing"></ol>
-        <div class="ls-pool" aria-label="Qadamlar: bosib tartibga qo'y"></div>`,
-      mount(root2, r) { el = root2; ready = r; draw(); },
+      markup: `<p class="ls-hint">${t('it.l.orderHint')}</p>
+        <ol class="ls-ords" aria-label="${t('it.l.yourOrder')}">${ord.map((k, i) => `<li class="ls-ord" data-k="${k}" tabindex="0">
+          <i class="ls-ord-n">${i + 1}</i>${imgTag(im[k], 'ls-ord-img')}<span class="ls-ord-t">${esc(ex.items[k] || '')}</span>
+          <span class="ls-ord-g" aria-hidden="true"></span></li>`).join('')}</ol>`,
+      mount(root2, ready) {
+        list = root2.querySelector('.ls-ords');
+        list.querySelectorAll('.ls-ord').forEach((li) => {
+          li.onpointerdown = (e) => drag(e, li);
+          li.onkeydown = (e) => key(e, li);
+        });
+        ready(true);
+      },
       evaluate() {
         let all = true;
-        el.querySelectorAll('[data-a]').forEach((b) => {
-          const idx = Number(b.dataset.a);
-          const ok = ans[idx] === idx;
+        list.querySelectorAll('.ls-ord').forEach((li, i) => {
+          const ok = Number(li.dataset.k) === i;
           if (!ok) all = false;
-          b.classList.add(ok ? 'is-right' : 'is-wrong');
+          li.classList.add(ok ? 'is-right' : 'is-wrong');
         });
         return all;
       },
-      lock() { locked = true; el.querySelectorAll('.ls-chipbtn').forEach((b) => { b.disabled = true; }); },
+      lock() { locked = true; list.querySelectorAll('.ls-ord').forEach((li) => { li.tabIndex = -1; }); },
     };
   }
 
@@ -383,10 +459,10 @@ export function runLesson(view, L, opts = {}) {
       ready(pairOf.size === n);
     };
     return {
-      markup: `<p class="ls-hint">Chapdan birini, keyin o'ngdan unga mosini bos.</p>
+      markup: `<p class="ls-hint">${t('it.l.matchHint')}</p>
         <div class="ls-match">
-          <div class="ls-col">${ex.pairs.map((p, k) => `<button type="button" class="ls-mt" data-l="${k}"${p[0] ? '' : ` aria-label="Chap, ${k + 1}-rasm"`}><i></i>${imgTag(pim[k]?.[0], 'ls-chip-img')}${esc(p[0])}</button>`).join('')}</div>
-          <div class="ls-col">${rights.map((k) => `<button type="button" class="ls-mt" data-r="${k}"${ex.pairs[k][1] ? '' : ` aria-label="O'ng, rasm"`}><i></i>${imgTag(pim[k]?.[1], 'ls-chip-img')}${esc(ex.pairs[k][1])}</button>`).join('')}</div>
+          <div class="ls-col">${ex.pairs.map((p, k) => `<button type="button" class="ls-mt" data-l="${k}"${p[0] ? '' : ` aria-label="${t('it.l.leftImg', { n: k + 1 })}"`}><i></i>${imgTag(pim[k]?.[0], 'ls-chip-img')}${esc(p[0])}</button>`).join('')}</div>
+          <div class="ls-col">${rights.map((k) => `<button type="button" class="ls-mt" data-r="${k}"${ex.pairs[k][1] ? '' : ` aria-label="${t('it.l.rightImg')}"`}><i></i>${imgTag(pim[k]?.[1], 'ls-chip-img')}${esc(ex.pairs[k][1])}</button>`).join('')}</div>
         </div>`,
       mount(root2, r) {
         el = root2; ready = r;
@@ -427,53 +503,117 @@ export function runLesson(view, L, opts = {}) {
     };
   }
 
+  // Saralash: qism bittadan katta kartada chiqadi. Bola kartani rasmli qutiga sudraydi yoki qutini bosadi,
+  // karta qutiga uchib kiradi. Qutidagi kichik rasmni bossa, qism kartaga qaytadi.
   function sortUi(ex) {
     const im = ex.item_images || [];
-    const order = shuffle(ex.items.map((_, k) => k));
+    const gim = ex.group_images || [];
+    let deck = shuffle(ex.items.map((_, k) => k));
     const pick = new Map(); // narsa -> tanlangan guruh
     let el;
+    let ready;
     let locked = false;
+    let busy = false;
+    const name = (k) => esc(ex.items[k] || t('it.l.img'));
+    const face = (k, cls) => (im[k] ? imgTag(im[k], cls) : `<span class="${cls} is-letter" aria-hidden="true">${esc((ex.items[k] || '?').charAt(0).toUpperCase())}</span>`);
+    const zones = () => [...el.querySelectorAll('.ls-sx-z')];
+    const draw = (fresh) => {
+      const k = deck[0];
+      el.querySelector('.ls-sx-deck').innerHTML = k == null
+        ? `<p class="ls-sx-done">${t('it.l.allPlaced')}</p>`
+        : `<div class="ls-sx-card${deck.length > 1 ? ' is-stack' : ''}" data-k="${k}">${face(k, 'ls-sx-img')}<b>${name(k)}</b></div>
+          <small class="ls-sx-left">${t('it.l.sortLeft', { n: deck.length })}</small>`;
+      zones().forEach((z) => {
+        const g = Number(z.dataset.g);
+        z.querySelector('.ls-sx-zb').disabled = locked || k == null;
+        z.querySelector('.ls-sx-in').innerHTML = [...pick].filter(([, v]) => v === g).map(([x]) =>
+          `<button type="button" class="ls-sx-th${x === fresh ? ' is-new' : ''}" data-k="${x}" title="${name(x)}" aria-label="${name(x)}: ${t('it.l.sortBack')}">${face(x, 'ls-sx-thimg')}</button>`).join('');
+      });
+      el.querySelectorAll('.ls-sx-th').forEach((b) => {
+        b.onclick = () => {
+          if (locked || busy) return;
+          const x = Number(b.dataset.k);
+          pick.delete(x);
+          deck = [x, ...deck];
+          draw();
+        };
+      });
+      const card = el.querySelector('.ls-sx-card');
+      if (card) card.onpointerdown = (e) => drag(e, card);
+      ready(pick.size === ex.items.length);
+    };
+    // Karta qutiga uchib kiradi, keyin qutida kichik rasm paydo bo'ladi
+    const place = (g, card, from = [0, 0]) => {
+      if (locked || busy || deck[0] == null) return;
+      const k = deck[0];
+      const z = zones()[g];
+      const done = () => { busy = false; pick.set(k, g); deck = deck.slice(1); draw(k); z.classList.remove('is-hit'); void z.offsetWidth; z.classList.add('is-hit'); };
+      if (!card || matchMedia('(prefers-reduced-motion: reduce)').matches) { done(); return; }
+      busy = true;
+      const c = card.getBoundingClientRect();
+      const t2 = z.querySelector('.ls-sx-in').getBoundingClientRect();
+      const dx = from[0] + (t2.left + t2.width / 2) - (c.left + c.width / 2);
+      const dy = from[1] + (t2.top + Math.min(t2.height, 40) / 2) - (c.top + c.height / 2);
+      card.classList.add('is-fly');
+      card.style.transform = `translate(${dx}px, ${dy}px) scale(.22)`;
+      setTimeout(done, 320);
+    };
+    function drag(e, card) {
+      if (locked || busy || e.button > 0) return;
+      e.preventDefault();
+      card.setPointerCapture(e.pointerId);
+      const x0 = e.clientX;
+      const y0 = e.clientY;
+      let pos = [0, 0];
+      let over = null;
+      card.classList.add('is-drag');
+      card.onpointermove = (m) => {
+        pos = [m.clientX - x0, m.clientY - y0];
+        card.style.transform = `translate(${pos[0]}px, ${pos[1]}px) rotate(${Math.max(-8, Math.min(8, pos[0] / 12))}deg) scale(1.04)`;
+        over = zones().find((z) => { const r = z.getBoundingClientRect(); return m.clientX > r.left && m.clientX < r.right && m.clientY > r.top && m.clientY < r.bottom; }) || null;
+        zones().forEach((z) => z.classList.toggle('is-over', z === over));
+      };
+      card.onpointerup = card.onpointercancel = () => {
+        card.onpointermove = card.onpointerup = card.onpointercancel = null;
+        card.classList.remove('is-drag');
+        zones().forEach((z) => z.classList.remove('is-over'));
+        if (over) { card.style.transform = `translate(${pos[0]}px, ${pos[1]}px)`; place(Number(over.dataset.g), card); return; }
+        card.style.transform = '';
+      };
+    }
     return {
-      markup: `<p class="ls-hint">Har birini to'g'ri guruhga ajrat.</p>
-        <div class="ls-sort">${order.map((k) => `
-          <div class="ls-srt" data-k="${k}">
-            <span class="ls-srt-l">${imgTag(im[k], 'ls-srt-img')}${ex.items[k] ? `<span>${esc(ex.items[k])}</span>` : ''}</span>
-            <span class="ls-srt-g" role="radiogroup" aria-label="${esc(ex.items[k] || 'Rasm')}: qaysi guruhga?">${ex.groups.map((g, j) =>
-              `<button type="button" class="ls-srt-b c${j}" role="radio" aria-checked="false" data-g="${j}">${esc(g)}</button>`).join('')}</span>
-          </div>`).join('')}</div>`,
-      mount(root2, ready) {
-        el = root2;
-        el.querySelectorAll('.ls-srt').forEach((row) => {
-          const k = Number(row.dataset.k);
-          row.querySelectorAll('[data-g]').forEach((b) => {
-            b.onclick = () => {
-              if (locked) return;
-              pick.set(k, Number(b.dataset.g));
-              row.querySelectorAll('[data-g]').forEach((x) => x.setAttribute('aria-checked', String(x === b)));
-              row.classList.add('is-set');
-              ready(pick.size === ex.items.length);
-            };
-          });
+      markup: `<p class="ls-hint">${t('it.l.sortHint')}</p>
+        <div class="ls-sx">
+          <div class="ls-sx-deck" aria-live="polite"></div>
+          <div class="ls-sx-zones">${ex.groups.map((g, j) => `<div class="ls-sx-z c${j}" data-g="${j}">
+            <button type="button" class="ls-sx-zb">${gim[j] ? imgTag(gim[j], 'ls-sx-zimg') : ''}<b>${esc(g)}</b></button>
+            <div class="ls-sx-in"></div></div>`).join('')}</div>
+        </div>`,
+      mount(root2, r) {
+        el = root2; ready = r;
+        zones().forEach((z) => {
+          z.querySelector('.ls-sx-zb').onclick = () => place(Number(z.dataset.g), el.querySelector('.ls-sx-card'));
         });
+        draw();
       },
       evaluate() {
         let all = true;
-        el.querySelectorAll('.ls-srt').forEach((row) => {
-          const k = Number(row.dataset.k);
+        el.querySelectorAll('.ls-sx-th').forEach((b) => {
+          const k = Number(b.dataset.k);
           const ok = pick.get(k) === ex.item_groups[k];
           if (!ok) all = false;
-          row.classList.add(ok ? 'is-right' : 'is-wrong');
+          b.classList.add(ok ? 'is-right' : 'is-wrong');
         });
         return all;
       },
-      lock() { locked = true; el.querySelectorAll('.ls-srt-b').forEach((b) => { b.disabled = true; }); },
+      lock() { locked = true; el.querySelectorAll('.ls-sx-zb, .ls-sx-th').forEach((b) => { b.disabled = true; }); },
     };
   }
 
   // ---------- Yakun: termin, XP, qurol ----------
   async function finish() {
     progress();
-    show('<div class="ls-card ls-wait"><div class="skeleton" aria-busy="true"></div><p>Qasr ochilmoqda...</p></div>');
+    show(`<div class="ls-card ls-wait"><div class="skeleton" aria-busy="true"></div><p>${t('it.l.opening')}</p></div>`);
     actions([]);
     let r;
     if (preview) {
@@ -481,15 +621,15 @@ export function runLesson(view, L, opts = {}) {
       r = { first: true, xp_gained: L.xp, tool: L.tool, section_done: false, next_lesson_id: null, stats: { streak: 1, today: 1, goal: 2 } };
       finished = true;
       showWin(r);
-      actions([{ label: "Boshidan ko'rish", onClick: () => opts.onRestart?.() }]);
+      actions([{ label: t('it.l.restart'), onClick: () => opts.onRestart?.() }]);
       return;
     }
     try {
       r = await opts.complete(mistakes);
     } catch (e) {
       showError(e);
-      show(`<div class="ls-card"><h2>Natijani saqlab bo'lmadi</h2><p>Internetni tekshirib, qayta urinib ko'r.</p></div>`);
-      actions([{ label: 'Qayta urinish', onClick: finish }]);
+      show(`<div class="ls-card"><h2>${t('it.l.saveFail')}</h2><p>${t('it.l.checkNet')}</p></div>`);
+      actions([{ label: t('app.retry'), onClick: finish }]);
       return;
     }
     finished = true;
@@ -499,12 +639,12 @@ export function runLesson(view, L, opts = {}) {
       const hall = `#/it/section/${L.section.id}`;
       // Savollarning yarmidan ko'piga xato javob berilgan bo'lsa, Kibi videoni yana ko'rishni taklif qiladi
       const rewatch = video && kibiOn && mistakes * 2 > exercises.length
-        ? [{ label: "Videoni yana ko'rish", ghost: true, onClick: () => { L.status = 'done'; playVideo(done, { plain: true }); } }] : [];
+        ? [{ label: t('it.l.rewatch2'), ghost: true, onClick: () => { L.status = 'done'; playVideo(done, { plain: true }); } }] : [];
       actions([...(next && r.next_section_id === L.section.id
-        ? [{ label: 'Keyingi eshik', href: `${hall}?unlock=${next}` }, { label: 'Zalga qaytish', href: hall, ghost: true }]
+        ? [{ label: t('it.l.nextDoor'), href: `${hall}?unlock=${next}` }, { label: t('it.l.toHall'), href: hall, ghost: true }]
         : next
-          ? [{ label: 'Keyingi qasr', href: `#/it?opened=${r.next_section_id}` }, { label: 'Zalga qaytish', href: hall, ghost: true }]
-          : [{ label: "Qasrlar yo'liga qaytish", href: '#/it' }]), ...rewatch]);
+          ? [{ label: t('it.l.nextCastle'), href: `#/it?opened=${r.next_section_id}` }, { label: t('it.l.toHall'), href: hall, ghost: true }]
+          : [{ label: t('it.l.toPath'), href: '#/it' }]), ...rewatch]);
     };
     done();
   }
@@ -513,29 +653,30 @@ export function runLesson(view, L, opts = {}) {
   function showWin(r) {
     const sameNext = nextOf(r) && r.next_section_id === L.section.id;
     const gains = [
-      r.first ? `<span class="it-pill is-xp">${ic('star', 16)}<b>+${r.xp_gained} XP</b></span>` : '<span class="it-pill">Takrorlash</span>',
-      `<span class="it-pill is-fire">${ic('fire', 16)}<b>${r.stats.streak}</b>&nbsp;kun</span>`,
+      r.first ? `<span class="it-pill is-xp">${ic('star', 16)}<b>+${r.xp_gained} XP</b></span>` : `<span class="it-pill">${t('it.l.repeat')}</span>`,
+      `<span class="it-pill is-fire">${ic('fire', 16)}<b>${r.stats.streak}</b>&nbsp;${t('it.l.days', { n: r.stats.streak })}</span>`,
+      best >= 3 ? `<span class="it-pill">${ic('check', 16)}<b>${best}</b>&nbsp;${t('it.l.inRow')}</span>` : '',
     ].join('');
     show(`<div class="ls-card ls-win">
       ${kibiOn ? kibiImg('galaba', 'ls-kibi-win ls-pop') : `<img class="ls-castle ls-pop" src="${r.section_done ? castleSrc('open') : asset('door-done')}" alt="" width="140" height="140">`}
-      <h1>${r.section_done ? 'Qasr zabt etildi!' : 'Mavzu o\'zlashtirildi!'}</h1>
-      ${r.section_done ? `<p class="ls-sub">«${esc(L.section.title)}» bo'limi to'liq tugatildi.</p>`
-        : sameNext ? '<p class="ls-sub">Keyingi eshikning qulfi ochildi!</p>' : ''}
-      ${L.term ? `<span class="ls-kicker">Bugun o'rgangan so'zing</span><div class="ls-term">${esc(L.term)}</div>` : ''}
+      <h1>${r.section_done ? t('it.l.castleWon') : t('it.l.topicDone')}</h1>
+      ${r.section_done ? `<p class="ls-sub">${t('it.l.secDone', { s: esc(L.section.title) })}</p>`
+        : sameNext ? `<p class="ls-sub">${t('it.l.doorOpened')}</p>` : ''}
+      <div class="ls-gains">${gains}</div>
+      ${L.term ? `<span class="ls-kicker">${t('it.l.word')}</span><div class="ls-term">${esc(L.term)}</div>` : ''}
       ${imgTag(c.term_image)}
       ${c.term_text ? `<p>${say(c.term_text)}</p>` : ''}
-      <div class="ls-gains">${gains}</div>
-      ${r.tool ? `<div class="ls-newtool">${ic('tool', 18)}<span>Sumkangga yangi qurol: <b>${esc(r.tool.name)}</b></span></div>` : ''}
-      ${mistakes === 0 ? '<p class="ls-perfect">Bitta ham xatosiz!</p>' : ''}
+      ${r.tool ? `<div class="ls-newtool">${ic('tool', 18)}<span>${t('it.l.newTool')}: <b>${esc(r.tool.name)}</b></span></div>` : ''}
+      ${mistakes === 0 ? `<p class="ls-perfect">${t('it.l.perfect')}</p>` : ''}
       ${kibiOn && video && mistakes * 2 > exercises.length
-        ? kibi('dalda', "Videoni yana bir ko'rib chiqsang, hammasi yanada oydinlashadi.") : ''}
-      ${r.stats.today >= r.stats.goal ? '<p class="ls-goal">Bugungi maqsad bajarildi!</p>' : ''}
+        ? kibi('dalda', t('it.l.rewatchTip')) : ''}
+      ${r.stats.today >= r.stats.goal ? `<p class="ls-goal">${t('it.l.goal')}</p>` : ''}
     </div>`);
   }
 
   if (!exercises.length && !preview) {
-    show('<div class="it-empty"><p>Bu mavzuda hali mashq yo\'q.</p></div>');
-    actions([{ label: 'Zalga qaytish', href: `#/it/section/${L.section.id}` }]);
+    show(`<div class="it-empty"><p>${t('it.l.noEx')}</p></div>`);
+    actions([{ label: t('it.l.toHall'), href: `#/it/section/${L.section.id}` }]);
     return;
   }
   // Ko'rinishda kerakli joydan boshlanadi (muharrirda qaysi maydon tahrirlanayotgan bo'lsa)

@@ -5,6 +5,7 @@ import { getUser, setUser } from '../core/state.js';
 import { showError, toast } from '../core/toast.js';
 import { html, esc } from '../utils/dom.js';
 import { coinSvg } from './tl/coin.js';
+import { t } from '../i18n/index.js';
 
 const P = {
   x: '<path d="M6 6l12 12M18 6L6 18"/>',
@@ -25,16 +26,16 @@ const P = {
 };
 const ic = (k, s = 20) => `<svg aria-hidden="true" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${P[k]}</svg>`;
 
-const MONTHS = ['yanvar', 'fevral', 'mart', 'aprel', 'may', 'iyun', 'iyul', 'avgust', 'sentyabr', 'oktyabr', 'noyabr', 'dekabr'];
+const MONTHS = t('date.months').split(',');
 const since = (iso) => {
   const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? '' : `${d.getFullYear()}-yil ${MONTHS[d.getMonth()]}dan beri`;
+  return Number.isNaN(d.getTime()) ? '' : t('pf.since', { y: d.getFullYear(), m: MONTHS[d.getMonth()] });
 };
 const day = (iso) => {
   const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? '' : `${d.getDate()}-${MONTHS[d.getMonth()]}`;
+  return Number.isNaN(d.getTime()) ? '' : t('date.day', { d: d.getDate(), m: MONTHS[d.getMonth()] });
 };
-const EMPTY = '<span class="pf-none">Kiritilmagan</span>';
+const EMPTY = `<span class="pf-none">${t('pf.empty')}</span>`;
 const row = (icon, label, value) => `<div class="pf-row"><span class="pf-ri">${ic(icon)}</span>
   <div class="pf-rt"><span>${label}</span><b>${value}</b></div></div>`;
 const tile = (value, label, unit = '') => `<div class="pf-tile"><b>${value}${unit ? `<small>${unit}</small>` : ''}</b><span>${label}</span></div>`;
@@ -52,8 +53,8 @@ export async function openProfile({ onLogout, onChange } = {}) {
   const opener = document.activeElement;
   const wrap = html(`<div class="pf-wrap">
     <section class="pf" role="dialog" aria-modal="true" aria-labelledby="pf-title">
-      <header class="pf-head"><h1 id="pf-title">Profil</h1>
-        <button type="button" class="pf-x" aria-label="Yopish">${ic('x')}</button></header>
+      <header class="pf-head"><h1 id="pf-title">${t('pf.title')}</h1>
+        <button type="button" class="pf-x" aria-label="${t('app.close')}">${ic('x')}</button></header>
       <div class="pf-body"><div class="skeleton pf-skel" aria-busy="true"></div></div>
     </section></div>`);
   const body = wrap.querySelector('.pf-body');
@@ -89,8 +90,8 @@ export async function openProfile({ onLogout, onChange } = {}) {
       if (closeOpen === close) showView();
     } catch (e) {
       showError(e);
-      body.innerHTML = `<div class="pf-card pf-fail"><p>Profilni yuklab bo'lmadi.</p>
-        <button type="button" class="btn btn--ghost" data-retry>Qayta urinish</button></div>`;
+      body.innerHTML = `<div class="pf-card pf-fail"><p>${t('pf.loadFail')}</p>
+        <button type="button" class="btn btn--ghost" data-retry>${t('app.retry')}</button></div>`;
       body.querySelector('[data-retry]').onclick = load;
     }
   }
@@ -106,13 +107,13 @@ export async function openProfile({ onLogout, onChange } = {}) {
         <div class="pf-who">
           <h2>${esc(name)}</h2>
           <div class="pf-mail">${esc(user.email || '')}</div>
-          <div class="pf-chips"><span>${teacher ? 'Ustoz' : "O'quvchi"}</span>${user.created_at ? `<span>${esc(since(user.created_at))}</span>` : ''}</div>
+          <div class="pf-chips"><span>${teacher ? t('au.teacher') : t('au.student')}</span>${user.created_at ? `<span>${esc(since(user.created_at))}</span>` : ''}</div>
         </div>
       </div>
       ${teacher ? teacherView(user, stats) : studentView(stats)}
       <div class="pf-actions">
-        <button type="button" class="btn" data-edit>${ic('pen')}Tahrirlash</button>
-        <button type="button" class="btn btn--ghost" data-out>${ic('out')}Chiqish</button>
+        <button type="button" class="btn" data-edit>${ic('pen')}${t('pf.edit')}</button>
+        <button type="button" class="btn btn--ghost" data-out>${ic('out')}${t('app.logout')}</button>
       </div>`;
     body.querySelector('[data-edit]').onclick = showEdit;
     body.querySelector('[data-out]').onclick = () => { close(); onLogout?.(); };
@@ -124,19 +125,19 @@ export async function openProfile({ onLogout, onChange } = {}) {
     const teacher = u.role === 'teacher';
     body.innerHTML = `
       <form class="pf-card pf-form" novalidate>
-        <h2>Ma'lumotlarni tahrirlash</h2>
-        ${field('pf-nick', 'Nikneym', 'user', `value="${esc(u.nickname || '')}" maxlength="40" required autocomplete="nickname"`)}
+        <h2>${t('pf.editTitle')}</h2>
+        ${field('pf-nick', t('au.nick'), 'user', `value="${esc(u.nickname || '')}" maxlength="40" required autocomplete="nickname"`)}
         ${teacher ? `
-          ${field('pf-full', "To'liq ism", 'user', `value="${esc(u.full_name || '')}" maxlength="120" required autocomplete="name"`)}
-          ${field('pf-school', 'Maktab / markaz', 'school', `value="${esc(u.school || '')}" maxlength="200" placeholder="Ixtiyoriy"`)}
-          ${field('pf-subj', 'Fanlar', 'book', `value="${esc((u.subjects || []).join(', '))}" placeholder="math, it" aria-describedby="pf-subj-h"`, 'Vergul bilan ajrating')}
+          ${field('pf-full', t('au.full'), 'user', `value="${esc(u.full_name || '')}" maxlength="120" required autocomplete="name"`)}
+          ${field('pf-school', t('au.school'), 'school', `value="${esc(u.school || '')}" maxlength="200" placeholder="${t('au.optional')}"`)}
+          ${field('pf-subj', t('au.subj'), 'book', `value="${esc((u.subjects || []).join(', '))}" placeholder="math, it" aria-describedby="pf-subj-h"`, t('pf.comma'))}
           <div class="pf-two">
-            ${field('pf-exp', 'Tajriba (yil)', 'case', `value="${u.experience_years ?? ''}" type="number" min="0" max="70" inputmode="numeric" placeholder="0"`)}
-            ${field('pf-age', 'Yosh guruhi', 'group', `value="${esc(u.age_group || '')}" maxlength="20" placeholder="7-9"`)}
+            ${field('pf-exp', t('au.exp'), 'case', `value="${u.experience_years ?? ''}" type="number" min="0" max="70" inputmode="numeric" placeholder="0"`)}
+            ${field('pf-age', t('au.age'), 'group', `value="${esc(u.age_group || '')}" maxlength="20" placeholder="7-9"`)}
           </div>` : ''}
         <div class="pf-actions">
-          <button type="submit" class="btn">Saqlash</button>
-          <button type="button" class="btn btn--ghost" data-cancel>Bekor qilish</button>
+          <button type="submit" class="btn">${t('app.save')}</button>
+          <button type="button" class="btn btn--ghost" data-cancel>${t('app.cancel')}</button>
         </div>
       </form>`;
     const form = body.querySelector('form');
@@ -149,16 +150,16 @@ export async function openProfile({ onLogout, onChange } = {}) {
       form.querySelectorAll('[aria-invalid]').forEach((i) => i.removeAttribute('aria-invalid'));
       const bad = (sel, msg) => { const i = $(sel); i.setAttribute('aria-invalid', 'true'); i.focus(); toast(msg, 'error'); };
       const nick = $('#pf-nick').value.trim();
-      if (nick.length < 2) return bad('#pf-nick', "Nikneym kamida 2 belgi bo'lishi kerak");
+      if (nick.length < 2) return bad('#pf-nick', t('pf.nickMin'));
 
       const changes = {};
       if (nick !== u.nickname) changes.nickname = nick;
       if (teacher) {
         const full = $('#pf-full').value.trim();
-        if (full.length < 2) return bad('#pf-full', "To'liq ism kamida 2 belgi bo'lishi kerak");
+        if (full.length < 2) return bad('#pf-full', t('pf.fullMin'));
         const expRaw = $('#pf-exp').value.trim();
         const exp = expRaw === '' ? null : Number(expRaw);
-        if (exp !== null && (!Number.isInteger(exp) || exp < 0 || exp > 70)) return bad('#pf-exp', "Tajriba 0 dan 70 gacha butun son bo'lsin");
+        if (exp !== null && (!Number.isInteger(exp) || exp < 0 || exp > 70)) return bad('#pf-exp', t('pf.expRange'));
         const subjects = [...new Set($('#pf-subj').value.split(',').map((x) => x.trim()).filter(Boolean))];
         const school = $('#pf-school').value.trim();
         const age = $('#pf-age').value.trim();
@@ -172,18 +173,18 @@ export async function openProfile({ onLogout, onChange } = {}) {
 
       const btn = $('[type="submit"]');
       btn.disabled = true;
-      btn.textContent = 'Saqlanmoqda...';
+      btn.textContent = t('app.saving');
       try {
         data = await api.put('/profile', changes);
         const me = getUser();
         if (me) setUser({ ...me, nickname: data.user.nickname });
         onChange?.(data.user);
-        toast('Saqlandi', 'success');
+        toast(t('app.saved'), 'success');
         if (closeOpen === close) showView();
       } catch (e) {
         showError(e);
         btn.disabled = false;
-        btn.textContent = 'Saqlash';
+        btn.textContent = t('app.save');
       }
     };
   }
@@ -195,49 +196,49 @@ function teacherView(u, s) {
   const subjects = (u.subjects || []).length
     ? `<span class="pf-tags">${u.subjects.map((x) => `<i>${esc(x)}</i>`).join('')}</span>` : EMPTY;
   return `
-    <div class="pf-tiles">${tile(s.classes, 'Sinflar')}${tile(s.students, "O'quvchilar")}${tile(s.rooms, 'Xonalar')}</div>
+    <div class="pf-tiles">${tile(s.classes, t('pf.classes'))}${tile(s.students, t('pf.students'))}${tile(s.rooms, t('pf.rooms'))}</div>
     <section class="pf-card">
-      <h3>Ma'lumotlar</h3>
+      <h3>${t('pf.info')}</h3>
       <div class="pf-rows">
-        ${row('user', "To'liq ism", u.full_name ? esc(u.full_name) : EMPTY)}
-        ${row('school', 'Maktab / markaz', u.school ? esc(u.school) : EMPTY)}
-        ${row('book', 'Fanlar', subjects)}
-        ${row('case', 'Tajriba', u.experience_years != null ? `${u.experience_years} yil` : EMPTY)}
-        ${row('group', 'Yosh guruhi', u.age_group ? esc(u.age_group) : EMPTY)}
+        ${row('user', t('au.full'), u.full_name ? esc(u.full_name) : EMPTY)}
+        ${row('school', t('au.school'), u.school ? esc(u.school) : EMPTY)}
+        ${row('book', t('au.subj'), subjects)}
+        ${row('case', t('pf.exp'), u.experience_years != null ? t('pf.years', { n: u.experience_years }) : EMPTY)}
+        ${row('group', t('au.age'), u.age_group ? esc(u.age_group) : EMPTY)}
       </div>
     </section>`;
 }
 
 function studentView(s) {
-  const notYet = '<span class="pf-none">Hali yo\'q</span>';
+  const notYet = `<span class="pf-none">${t('pf.notYet')}</span>`;
   const wins = (s.typing_wins || 0) + (s.lab_wins || 0);
   const classes = s.classes.length
     ? `<div class="pf-tags pf-tags--lg">${s.classes.map((c) => `<i>${esc(c.name)}<small>${esc(c.teacher)}</small></i>`).join('')}</div>`
-    : '<p class="pf-empty">Hali sinfga qo\'shilmagansan. Ustozingdan seni sinfga qo\'shishini so\'ra.</p>';
+    : `<p class="pf-empty">${t('pf.noClass')}</p>`;
   return `
     <div class="pf-tiles">
-      ${tile(s.typing_games + s.lab_games, "O'yinlar")}
-      ${tile(s.best_wpm ?? '—', 'Rekord tezlik', s.best_wpm != null ? "so'z/daq" : '')}
-      ${tile(s.lab_correct, "To'g'ri javob")}
+      ${tile(s.typing_games + s.lab_games, t('pf.games'))}
+      ${tile(s.best_wpm ?? '—', t('pf.record'), s.best_wpm != null ? t('app.wpm') : '')}
+      ${tile(s.lab_correct, t('pf.correct'))}
     </div>
     <section class="pf-card">
-      <h3>Natijalarim</h3>
+      <h3>${t('pf.results')}</h3>
       <div class="pf-rows">
-        ${row('target', "Yozishdagi o'rtacha aniqlik", s.avg_accuracy != null ? `${s.avg_accuracy}%` : notYet)}
-        ${row('trophy', "1-o'rinlar", wins)}
-        ${row('maze', 'Labirintda eng yuqori daraja', s.lab_best_level != null ? `${s.lab_best_level}-daraja` : notYet)}
+        ${row('target', t('pf.avgAcc'), s.avg_accuracy != null ? `${s.avg_accuracy}%` : notYet)}
+        ${row('trophy', t('pf.firsts'), wins)}
+        ${row('maze', t('pf.labBest'), s.lab_best_level != null ? t('app.level', { n: s.lab_best_level }) : notYet)}
       </div>
     </section>
     ${lessonsCard(s.typing_lessons)}
     ${itCard(s.it)}
     <section class="pf-card">
-      <h3>Sinflarim</h3>
+      <h3>${t('pf.myClasses')}</h3>
       ${classes}
     </section>
     <section class="pf-card">
-      <h3>So'nggi o'yinlar</h3>
+      <h3>${t('pf.recent')}</h3>
       ${s.recent.length ? `<ul class="pf-list">${s.recent.map(recentItem).join('')}</ul>`
-        : '<p class="pf-empty">Hali o\'yin o\'ynamading. Typing Race yoki ustoz xonasidan boshla!</p>'}
+        : `<p class="pf-empty">${t('pf.noGames')}</p>`}
     </section>`;
 }
 
@@ -245,31 +246,31 @@ function studentView(s) {
 function langRow(lang, name, x) {
   if (!x) return '';
   const value = x.done
-    ? `${x.course_done ? 'Hammasi tugadi' : `${x.level}-daraja`} · ${x.done}/${x.total} dars · ${x.stars}★`
-    : '<span class="pf-none">Boshlanmagan</span>';
-  return row(lang === 'ru' ? 'book' : 'trophy', `${name} kurs`, value);
+    ? `${x.course_done ? t('pf.allDone') : t('app.level', { n: x.level })} · ${t('pf.lessonsOf', x)} · ${x.stars}★`
+    : `<span class="pf-none">${t('pf.notStarted')}</span>`;
+  return row(lang === 'ru' ? 'book' : 'trophy', name, value);
 }
 
 function lessonsCard(tl) {
   if (!tl) return '';
-  const stars = (n) => `<span class="pf-stars" aria-label="${n} yulduz">${'★'.repeat(n)}<i>${'★'.repeat(3 - n)}</i></span>`;
+  const stars = (n) => `<span class="pf-stars" aria-label="${t('app.stars', { n })}">${'★'.repeat(n)}<i>${'★'.repeat(3 - n)}</i></span>`;
   const recent = tl.recent.length
     ? `<ul class="pf-list">${tl.recent.map((r) => `<li class="pf-item">
         <span class="pf-ii is-kb">${ic(r.kind === 'exam' ? 'trophy' : 'kb')}</span>
-        <div class="pf-it"><b>${r.lang === 'ru' ? 'Ruscha · ' : ''}${r.level}-daraja · ${esc(r.kind === 'exam' ? 'Imtihon' : r.title)}</b>
-          <span>${esc(day(r.at))} · ${r.wpm} so'z/daq · ${r.accuracy}%</span></div>
-        ${r.stars ? stars(r.stars) : '<span class="pf-place">O\'tmadi</span>'}</li>`).join('')}</ul>`
-    : '<p class="pf-empty">Hali dars o\'tmading. Bosh sahifadagi "Typing darslari"dan boshla!</p>';
+        <div class="pf-it"><b>${r.lang === 'ru' ? `${t('pf.ruShort')} · ` : ''}${t('app.level', { n: r.level })} · ${esc(r.kind === 'exam' ? t('tl.exam') : r.title)}</b>
+          <span>${esc(day(r.at))} · ${r.wpm} ${t('app.wpm')} · ${r.accuracy}%</span></div>
+        ${r.stars ? stars(r.stars) : `<span class="pf-place">${t('pf.failed')}</span>`}</li>`).join('')}</ul>`
+    : `<p class="pf-empty">${t('pf.noLessons')}</p>`;
   return `
     <section class="pf-card pf-tlc">
-      <div class="pf-tlh"><h3>Typing darslari</h3><span class="pf-coins">${coinSvg(26)}<b>${tl.coins}</b> coin</span></div>
+      <div class="pf-tlh"><h3>${t('home.tl')}</h3><span class="pf-coins">${coinSvg(26)}<b>${tl.coins}</b> coin</span></div>
       <div class="pf-rows">
-        ${langRow('uz', "O'zbekcha", tl.langs?.uz)}
-        ${langRow('ru', 'Ruscha', tl.langs?.ru)}
-        ${row('kb', 'Darsdagi eng yaxshi tezlik', tl.best_wpm != null ? `${tl.best_wpm} so'z/daq` : '<span class="pf-none">Hali yo\'q</span>')}
-        ${row('target', "O'rtacha aniqlik", tl.avg_accuracy != null ? `${tl.avg_accuracy}%` : '<span class="pf-none">Hali yo\'q</span>')}
+        ${langRow('uz', t('pf.courseUz'), tl.langs?.uz)}
+        ${langRow('ru', t('pf.courseRu'), tl.langs?.ru)}
+        ${row('kb', t('pf.bestLessonWpm'), tl.best_wpm != null ? `${tl.best_wpm} ${t('app.wpm')}` : `<span class="pf-none">${t('pf.notYet')}</span>`)}
+        ${row('target', t('pf.avgAcc2'), tl.avg_accuracy != null ? `${tl.avg_accuracy}%` : `<span class="pf-none">${t('pf.notYet')}</span>`)}
       </div>
-      <h3 class="pf-sub">So'nggi darslar</h3>
+      <h3 class="pf-sub">${t('pf.recentLessons')}</h3>
       ${recent}
     </section>`;
 }
@@ -277,27 +278,27 @@ function lessonsCard(tl) {
 function itCard(it) {
   if (!it) return '';
   const tools = it.tools.length
-    ? `<div class="pf-bag">${it.tools.map((t) => `<span class="pf-tool"><b>${esc(t.name)}</b>${t.short ? `<small>${esc(t.short)}</small>` : ''}</span>`).join('')}</div>`
-    : '<p class="pf-empty">Hali qurol yo\'q. IT darslarida qasr ochib, fikrlash qurollarini yig\'.</p>';
+    ? `<div class="pf-bag">${it.tools.map((x) => `<span class="pf-tool"><b>${esc(x.name)}</b>${x.short ? `<small>${esc(x.short)}</small>` : ''}</span>`).join('')}</div>`
+    : `<p class="pf-empty">${t('pf.noTools')}</p>`;
   return `
     <section class="pf-card pf-itc">
-      <h3>IT darslari</h3>
+      <h3>${t('home.it')}</h3>
       <div class="pf-rows">
         ${row('star', 'XP', it.xp)}
-        ${row('castle', 'Ochilgan qasrlar', it.done)}
-        ${row('fire', 'Ketma-ket kunlar', it.streak)}
+        ${row('castle', t('pf.castles'), it.done)}
+        ${row('fire', t('pf.streak'), it.streak)}
       </div>
-      <h3 class="pf-sub">Qurollar sumkasi</h3>
+      <h3 class="pf-sub">${t('pf.bag')}</h3>
       ${tools}
     </section>`;
 }
 
 function recentItem(r) {
   const lab = r.kind === 'labyrinth';
-  const name = lab ? 'Labirint' : r.mode === 'race' ? 'Poyga' : 'Yakka mashq';
+  const name = lab ? t('pf.lab') : r.mode === 'race' ? t('pf.race') : t('pf.solo');
   const title = r.title ? ` · ${esc(r.title)}` : '';
-  const metric = lab ? `${r.correct ?? 0} to'g'ri · ${r.score ?? 0} ball` : `${r.wpm} so'z/daq · ${r.accuracy}%`;
-  const place = r.place ? `<span class="pf-place${r.place === 1 ? ' is-gold' : ''}">${r.place}-o'rin</span>` : '';
+  const metric = lab ? t('pf.labMetric', { c: r.correct ?? 0, s: r.score ?? 0 }) : `${r.wpm} ${t('app.wpm')} · ${r.accuracy}%`;
+  const place = r.place ? `<span class="pf-place${r.place === 1 ? ' is-gold' : ''}">${t('pf.place', { n: r.place })}</span>` : '';
   return `<li class="pf-item">
     <span class="pf-ii ${lab ? 'is-lab' : 'is-kb'}">${ic(lab ? 'maze' : 'kb')}</span>
     <div class="pf-it"><b>${name}${title}</b><span>${esc(day(r.at))} · ${metric}</span></div>${place}</li>`;

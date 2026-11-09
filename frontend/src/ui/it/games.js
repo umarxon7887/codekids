@@ -6,6 +6,7 @@
 import { BASE_URL } from '../../core/config.js';
 import { esc } from '../../utils/dom.js';
 import { ic } from './common.js';
+import { t } from '../../i18n/index.js';
 
 const reduced = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -112,8 +113,8 @@ export function mazeUi(ex) {
   const drawProgram = () => {
     const list = el.querySelector('.ls-prog');
     list.innerHTML = cmds.length
-      ? cmds.map((d, k) => `<li><button type="button" class="ls-cmd" data-k="${k}" aria-label="${k + 1}-buyruq: ${d === 'up' ? 'yuqoriga' : d === 'down' ? 'pastga' : d === 'left' ? 'chapga' : "o'ngga"}. O'chirish uchun bosing">${ARROW[d]}</button></li>`).join('')
-      : '<li class="ls-prog-empty">Buyruqlarni pastdan qo\'sh</li>';
+      ? cmds.map((d, k) => `<li><button type="button" class="ls-cmd" data-k="${k}" aria-label="${t('it.cmdN', { n: k + 1, d: t(`it.dir.${d}`).toLowerCase() })}">${ARROW[d]}</button></li>`).join('')
+      : `<li class="ls-prog-empty">${t('it.addCmds')}</li>`;
     list.querySelectorAll('[data-k]').forEach((b) => { b.onclick = () => { if (locked || busy) return; cmds.splice(Number(b.dataset.k), 1); drawProgram(); }; });
     el.querySelector('.ls-prog-n').textContent = `${cmds.length} / ${limit}`;
     el.querySelectorAll('[data-dir]').forEach((b) => { b.disabled = locked || cmds.length >= limit; });
@@ -121,7 +122,7 @@ export function mazeUi(ex) {
   };
 
   const pad = (label) => `<div class="ls-pad" role="group" aria-label="${label}">
-    ${['up', 'left', 'down', 'right'].map((d) => `<button type="button" class="ls-arrow is-${d}" data-dir="${d}" aria-label="${d === 'up' ? 'Yuqoriga' : d === 'down' ? 'Pastga' : d === 'left' ? 'Chapga' : "O'ngga"}">${ARROW[d]}</button>`).join('')}
+    ${['up', 'left', 'down', 'right'].map((d) => `<button type="button" class="ls-arrow is-${d}" data-dir="${d}" aria-label="${t(`it.dir.${d}`)}">${ARROW[d]}</button>`).join('')}
   </div>`;
 
   return {
@@ -129,31 +130,31 @@ export function mazeUi(ex) {
         ${boardMarkup(grid)}
         <p class="ls-maze-msg" role="status" aria-live="polite"></p>
         ${program ? `
-          <div class="ls-prog-h"><b>Dastur</b><span class="ls-prog-n"></span></div>
-          <ol class="ls-prog" aria-label="Sening buyruqlaring"></ol>
-          <div class="ls-mz-ctl">${pad("Buyruq qo'shish")}
-            <button type="button" class="ls-mini" data-clear>${ic('undo', 16)}Tozalash</button></div>`
-          : `<div class="ls-mz-ctl">${pad('Qahramonni yurgizish')}<span class="ls-moves" aria-live="polite"></span></div>`}
+          <div class="ls-prog-h"><b>${t('it.program')}</b><span class="ls-prog-n"></span></div>
+          <ol class="ls-prog" aria-label="${t('it.yourCmds')}"></ol>
+          <div class="ls-mz-ctl">${pad(t('it.addCmd'))}
+            <button type="button" class="ls-mini" data-clear>${ic('undo', 16)}${t('it.clear')}</button></div>`
+          : `<div class="ls-mz-ctl">${pad(t('it.moveHero'))}<span class="ls-moves" aria-live="polite"></span></div>`}
       </div>`,
     mount(root, r) {
       el = root;
       ready = r;
       place(false);
       if (program) {
-        say(ex.max_commands ? `Ko'pi bilan ${ex.max_commands} ta buyruq bilan qasrga olib bor.` : 'Buyruqlarni tuz, keyin «Tekshirish» bos.');
+        say(ex.max_commands ? t('it.maxCmds', { n: ex.max_commands }) : t('it.buildCmds'));
         el.querySelectorAll('[data-dir]').forEach((b) => {
           b.onclick = () => { if (locked || busy || cmds.length >= limit) return; cmds.push(b.dataset.dir); drawProgram(); };
         });
         el.querySelector('[data-clear]').onclick = () => { if (locked || busy) return; cmds.length = 0; drawProgram(); };
         drawProgram();
       } else {
-        say('Strelkalar bilan qahramonni qasrga olib bor.');
+        say(t('it.arrows'));
         const go = async (dir) => {
           if (locked || busy || atGoal()) return;
           if (!step(dir)) { busy = true; await bump(); busy = false; return; }
           moves += 1;
-          el.querySelector('.ls-moves').textContent = `${moves} qadam`;
-          if (atGoal()) { say('Qasrga yetding! Endi «Tekshirish» bos.', 'is-ok'); ready(true); }
+          el.querySelector('.ls-moves').textContent = t('it.steps', { n: moves });
+          if (atGoal()) { say(t('it.reachedCheck'), 'is-ok'); ready(true); }
         };
         el.querySelectorAll('[data-dir]').forEach((b) => { b.onclick = () => go(b.dataset.dir); });
         const board = el.querySelector('.ls-maze');
@@ -175,7 +176,7 @@ export function mazeUi(ex) {
         await wait(reduced() ? 0 : 320);
         if (!step(d)) {
           await bump();
-          say('Qahramon devorga urildi. Buyruqlarni tekshir.', 'is-bad');
+          say(t('it.wall'), 'is-bad');
           busy = false;
           return false;
         }
@@ -183,8 +184,8 @@ export function mazeUi(ex) {
       }
       await wait(reduced() ? 0 : 300);
       busy = false;
-      if (atGoal()) { say(`Qasrga yetding! ${cmds.length} ta buyruq.`, 'is-ok'); return true; }
-      say('Qahramon qasrga yetmadi.', 'is-bad');
+      if (atGoal()) { say(t('it.reachedN', { n: cmds.length }), 'is-ok'); return true; }
+      say(t('it.notReached'), 'is-bad');
       return false;
     },
     lock() {
@@ -200,7 +201,7 @@ export function typingUi(ex) {
   const target = ex.text || '';
   if (!target) {
     return {
-      markup: '<p class="ls-hint">Yoziladigan matn hali kiritilmagan.</p>',
+      markup: `<p class="ls-hint">${t('it.noText')}</p>`,
       mount(root, r) { r(false); },
       evaluate: () => false,
       lock() {},
@@ -226,13 +227,13 @@ export function typingUi(ex) {
   };
   return {
     markup: `<div class="ls-type">
-        <p class="sr">Yoziladigan matn: ${esc(target)}</p>
+        <p class="sr">${t('it.textToType')}: ${esc(target)}</p>
         <p class="ls-type-target" aria-hidden="true">${target.split(/( )/).map((w) => (w === ' '
           ? '<span class="ls-ch ls-sp"> </span>'
           : `<span class="ls-w">${[...w].map((ch) => `<span class="ls-ch">${esc(ch)}</span>`).join('')}</span>`)).join('')}</p>
         <textarea class="ls-type-in" rows="2" maxlength="${target.length}" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"
-          aria-label="Matnni shu yerga yoz" placeholder="Shu yerga yoz..."></textarea>
-        <div class="ls-type-stat"><span class="ls-acc">Aniqlik: <b>—</b></span><span>Kerak: ${ex.min_accuracy}%${ex.case_sensitive ? ' · katta-kichik harf muhim' : ''}</span></div>
+          aria-label="${t('tl.typeHere')}" placeholder="${t('it.typePh')}"></textarea>
+        <div class="ls-type-stat"><span class="ls-acc">${t('ty.acc')}: <b>—</b></span><span>${t('it.need')}: ${ex.min_accuracy}%${ex.case_sensitive ? ` · ${t('it.case')}` : ''}</span></div>
       </div>`,
     mount(root, r) {
       el = root;
@@ -252,7 +253,7 @@ export function typingUi(ex) {
     },
     evaluate() {
       const acc = score();
-      el.querySelector('.ls-acc').innerHTML = `Aniqlik: <b>${acc}%</b>`;
+      el.querySelector('.ls-acc').innerHTML = `${t('ty.acc')}: <b>${acc}%</b>`;
       return acc >= ex.min_accuracy;
     },
     lock() { input.readOnly = true; },

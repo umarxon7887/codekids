@@ -6,28 +6,32 @@ import { disconnectSocket } from '../core/socket.js';
 import { getUser } from '../core/state.js';
 import { showError, toast } from '../core/toast.js';
 import { html, esc, table } from '../utils/dom.js';
-import { t } from '../i18n/index.js';
+import { t, getLang, langButton } from '../i18n/index.js';
 
-const TABS = [['dash', 'Panel'], ['classes', 'Sinflar'], ['contents', 'Kontent'], ['rooms', 'Xona']];
+/** Savollar to'plami tili tanlovi. */
+const langSel = (id, v) => `<select id="${id}">${[['uz', "O'zbekcha"], ['ru', 'Русский']].map(([k, l]) => `<option value="${k}"${k === v ? ' selected' : ''}>${l}</option>`).join('')}</select>`;
+
+const TABS = [['dash', t('tp.tab.dash')], ['classes', t('pf.classes')], ['contents', t('tp.tab.contents')], ['rooms', t('tp.tab.rooms')]];
 const list = (r, key) => r[key] || r.items || (Array.isArray(r) ? r : []);
 
 /** @param {HTMLElement} root @returns {Promise<()=>void>} */
 export async function mountTeacher(root) {
-  const name = getUser()?.nickname || 'Ustoz';
+  const name = getUser()?.nickname || t('au.teacher');
   const LOGO = '<svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5M14 4l-4 16"/></svg>';
   const el = html(`
     <section class="tp">
       <header class="tp-top">
         <div class="hm-brand"><span class="hm-logo">${LOGO}</span>CodeKids</div>
         <div class="hm-right">
+          ${langButton()}
           <button class="hm-me" id="tp-me"><span class="hm-ava">${esc(name[0].toUpperCase())}</span>${esc(name)}</button>
-          <button class="btn btn--ghost tp-out tp-out--top" data-out>Chiqish</button>
+          <button class="btn btn--ghost tp-out tp-out--top" data-out>${t('app.logout')}</button>
         </div>
       </header>
-      <div class="tp-hi"><h1>Ustoz paneli</h1><p>Salom, ${esc(name)}!</p></div>
-      <nav class="tp-tabs" aria-label="Bo'limlar">${TABS.map(([k, l]) => `<button class="tab" data-t="${k}">${l}</button>`).join('')}</nav>
+      <div class="tp-hi"><h1>${t('home.teacherPanel')}</h1><p>${t('home.hi', { name: esc(name) })}</p></div>
+      <nav class="tp-tabs" aria-label="${t('tp.sections')}">${TABS.map(([k, l]) => `<button class="tab" data-t="${k}">${l}</button>`).join('')}</nav>
       <div id="tab"></div>
-      <button class="btn btn--ghost tp-out" data-out>Chiqish</button>
+      <button class="btn btn--ghost tp-out" data-out>${t('app.logout')}</button>
     </section>`);
   root.replaceChildren(el);
   const box = el.querySelector('#tab');
@@ -50,9 +54,9 @@ export async function mountTeacher(root) {
     openProfile({
       onLogout: logout,
       onChange: (u) => {
-        const n = u.nickname || 'Ustoz';
+        const n = u.nickname || t('au.teacher');
         el.querySelector('#tp-me').innerHTML = `<span class="hm-ava">${esc(n[0].toUpperCase())}</span>${esc(n)}`;
-        el.querySelector('.tp-hi p').textContent = `Salom, ${n}!`;
+        el.querySelector('.tp-hi p').textContent = t('home.hi', { name: n });
       },
     });
   };
@@ -66,14 +70,14 @@ async function dash(box) {
   const o = d.dashboard || d;
   const v = (...ks) => { for (const k of ks) if (o[k] != null) return o[k]; return 0; };
   box.innerHTML = `
-    <button class="tp-live" data-go="rooms"><span><i></i>Faol xonalar</span><b>${esc(v('active_rooms'))}</b></button>
+    <button class="tp-live" data-go="rooms"><span><i></i>${t('dash.active_rooms')}</span><b>${esc(v('active_rooms'))}</b></button>
     <div class="tp-stats">
-      <button class="tp-stat" data-go="rooms"><b>${esc(v('total_rooms', 'rooms'))}</b><span>Jami xonalar</span></button>
-      <button class="tp-stat" data-go="contents"><b>${esc(v('total_contents', 'contents'))}</b><span>Kontentlar</span></button>
-      <button class="tp-stat" data-go="classes"><b>${esc(v('total_classes', 'classes'))}</b><span>Sinflar</span></button>
-      <button class="tp-stat" data-go="classes"><b>${esc(v('total_students', 'students'))}</b><span>O'quvchilar</span></button>
+      <button class="tp-stat" data-go="rooms"><b>${esc(v('total_rooms', 'rooms'))}</b><span>${t('dash.total_rooms')}</span></button>
+      <button class="tp-stat" data-go="contents"><b>${esc(v('total_contents', 'contents'))}</b><span>${t('tp.contents')}</span></button>
+      <button class="tp-stat" data-go="classes"><b>${esc(v('total_classes', 'classes'))}</b><span>${t('pf.classes')}</span></button>
+      <button class="tp-stat" data-go="classes"><b>${esc(v('total_students', 'students'))}</b><span>${t('pf.students')}</span></button>
     </div>
-    <button class="btn tp-new" id="tp-new">＋ Yangi xona</button>`;
+    <button class="btn tp-new" id="tp-new">＋ ${t('tp.newRoom')}</button>`;
   const panel = box.closest('.tp');
   box.querySelectorAll('[data-go]').forEach((b) => { b.onclick = () => panel._open(b.dataset.go); });
   box.querySelector('#tp-new').onclick = async () => { await panel._open('rooms'); box.querySelector('#nr-toggle')?.click(); };
@@ -81,8 +85,8 @@ async function dash(box) {
 
 async function classes(box) {
   const items = list(await api.get('/teacher/classes'), 'classes');
-  box.innerHTML = `<div class="row2"><input id="cn" placeholder="Yangi sinf nomi"><button id="cadd" class="btn">+</button></div>
-    ${items.map((c) => `<button class="tile tile--sm" data-id="${esc(c.id)}">${esc(c.name)} <small>${esc(c.student_count ?? 0)} o'quvchi</small></button>`).join('')}`;
+  box.innerHTML = `<div class="row2"><input id="cn" placeholder="${t('tp.newClass')}"><button id="cadd" class="btn">+</button></div>
+    ${items.map((c) => `<button class="tile tile--sm" data-id="${esc(c.id)}">${esc(c.name)} <small>${t('hs.students', { n: c.student_count ?? 0 })}</small></button>`).join('')}`;
   box.querySelector('#cadd').onclick = async () => {
     try { await api.post('/teacher/classes', { name: box.querySelector('#cn').value.trim() }); await classes(box); } catch (e) { showError(e); }
   };
@@ -94,14 +98,14 @@ async function classDetail(box, id) {
   const c = r.class || r;
   const students = c.students || r.students || [];
   box.innerHTML = `<button id="bk" class="btn btn--ghost">←</button><h3>${esc(c.name)}</h3>
-    <div class="row2"><input id="em" type="email" placeholder="O'quvchi emaili"><button id="ad" class="btn">Qo'shish</button></div>
+    <div class="row2"><input id="em" type="email" placeholder="${t('tp.studentEmail')}"><button id="ad" class="btn">${t('tp.add')}</button></div>
     ${table(students)}
-    ${students.length ? `<div class="row2"><select id="sel">${students.map((s) => `<option value="${esc(s.id)}">${esc(s.nickname || s.email)}</option>`).join('')}</select><button id="rm" class="btn btn--ghost">Chiqarish</button></div>` : ''}
-    <div class="row2"><input id="rc" placeholder="room_code (ixtiyoriy)"><button id="an" class="btn">Tahlil</button></div><div id="out"></div>`;
+    ${students.length ? `<div class="row2"><select id="sel">${students.map((s) => `<option value="${esc(s.id)}">${esc(s.nickname || s.email)}</option>`).join('')}</select><button id="rm" class="btn btn--ghost">${t('host.kick')}</button></div>` : ''}
+    <div class="row2"><input id="rc" placeholder="room_code (${t('au.optional').toLowerCase()})"><button id="an" class="btn">${t('tp.analyze')}</button></div><div id="out"></div>`;
   const $ = (s) => box.querySelector(s);
   $('#bk').onclick = () => classes(box);
   $('#ad').onclick = async () => {
-    try { await api.post(`/teacher/classes/${id}/students`, { email: $('#em').value.trim() }); toast("Qo'shildi", 'success'); await classDetail(box, id); } catch (e) { showError(e); }
+    try { await api.post(`/teacher/classes/${id}/students`, { email: $('#em').value.trim() }); toast(t('tp.added'), 'success'); await classDetail(box, id); } catch (e) { showError(e); }
   };
   $('#rm')?.addEventListener('click', async () => {
     try { await api.del(`/teacher/classes/${id}/students/${$('#sel').value}`); await classDetail(box, id); } catch (e) { showError(e); }
@@ -111,13 +115,13 @@ async function classDetail(box, id) {
       const a = await api.get(`/teacher/classes/${id}/analytics`, { query: { room_code: $('#rc').value.trim() } });
       const sum = a.summary || {};
       $('#out').innerHTML = `<div class="grid2">${Object.entries(sum).filter(([, v]) => typeof v !== 'object').map(([k, v]) => `<div class="stat"><b>${esc(v)}</b><span>${esc(k)}</span></div>`).join('')}</div>
-        <h4>O'quvchilar</h4>${table(a.students)}<h4>Zaif mavzular</h4>${table(a.weak_topics)}`;
+        <h4>${t('pf.students')}</h4>${table(a.students)}<h4>${t('tp.weak')}</h4>${table(a.weak_topics)}`;
     } catch (e) { showError(e); }
   };
 }
 
 async function contents(box) {
-  const SAMPLE = 'question,option_a,option_b,option_c,option_d,correct\n2+2 nechta?,3,4,5,,B\nSuv qaysi formulada yoziladi?,H2O,CO2,O2,,A';
+  const SAMPLE = `question,option_a,option_b,option_c,option_d,correct\n${t('tp.sample')}`;
   const IC = {
     plus: '<path d="M12 5v14M5 12h14"/>', up: '<path d="M12 16V4M7 9l5-5 5 5M4 20h16"/>',
     doc: '<path d="M6 3h9l4 4v14H6zM14 3v5h5M9 13h6M9 17h4"/>', back: '<path d="M15 5l-7 7 7 7"/>',
@@ -136,29 +140,29 @@ async function contents(box) {
 
   function showList() {
     const g = {};
-    sets.forEach((s) => { const k = s.topic || 'Mavzusiz'; (g[k] = g[k] || []).push(s); });
+    sets.forEach((s) => { const k = s.topic || t('tp.noTopic'); (g[k] = g[k] || []).push(s); });
     const keys = Object.keys(g).sort();
     box.innerHTML = `
       <div class="ct-acts">
-        <button class="btn" id="cnew">${ic('plus')}Yangi to'plam</button>
-        <button class="btn btn--ghost" id="cbulk">${ic('up')}CSV yuklash</button>
+        <button class="btn" id="cnew">${ic('plus')}${t('tp.newSet')}</button>
+        <button class="btn btn--ghost" id="cbulk">${ic('up')}${t('tp.csvUpload')}</button>
       </div>
       <div id="cform"></div>
-      <details class="ct-fmt"><summary>CSV fayl qanday bo'lishi kerak?</summary>
-        <p>Ustunlar aynan shu tartibda: <code>question,option_a,option_b,option_c,option_d,correct</code></p>
-        <p>correct: A, B, C yoki D. option_c va option_d bo'sh bo'lishi mumkin. Bir faylda 1–100 savol.</p>
+      <details class="ct-fmt"><summary>${t('tp.csvHow')}</summary>
+        <p>${t('tp.csvCols')}: <code>question,option_a,option_b,option_c,option_d,correct</code></p>
+        <p>${t('tp.csvRules')}</p>
         <pre>${esc(SAMPLE)}</pre>
-        <button class="btn btn--ghost" id="csample">Namuna CSV yuklab olish</button>
+        <button class="btn btn--ghost" id="csample">${t('tp.csvSample')}</button>
       </details>
       ${keys.length ? keys.map((k, i) => `<section class="ct-sec">
-        <div class="ct-sh"><i style="background:${COLORS[i % 5]}"></i><h2>${esc(k)}</h2><span>${g[k].length} ta to'plam</span></div>
+        <div class="ct-sh"><i style="background:${COLORS[i % 5]}"></i><h2>${esc(k)}</h2><span>${t('tp.nSets', { n: g[k].length })}</span></div>
         <div class="ct-grid">${g[k].map((s) => `<button class="ct-card" data-open="${esc(s.id)}">
           <span class="ct-ic" style="background:${COLORS[i % 5]}">${ic('doc', 22)}</span>
           <span class="ct-txt"><b>${esc(s.title)}</b><span class="ct-meta">
-            <span>${esc(s.level || 1)}-daraja · ${(s.data?.questions || []).length} ta savol</span>
-            <span class="ct-badge ${s.is_published ? 'is-pub' : ''}">${s.is_published ? ic('ok', 14) + 'Nashr etilgan' : ic('clock', 14) + 'Nashr qilinmagan'}</span>
+            <span>${s.language === 'ru' ? 'RU · ' : ''}${t('app.level', { n: esc(s.level || 1) })} · ${t('tp.nQ', { n: (s.data?.questions || []).length })}</span>
+            <span class="ct-badge ${s.is_published ? 'is-pub' : ''}">${s.is_published ? ic('ok', 14) + t('tp.pub') : ic('clock', 14) + t('tp.unpub')}</span>
           </span></span></button>`).join('')}</div></section>`).join('')
-      : `<p class="ct-empty">Hali savollar to'plami yo'q. «Yangi to'plam» yoki «CSV yuklash» bilan boshlang.</p>`}`;
+      : `<p class="ct-empty">${t('tp.noSets')}</p>`}`;
     box.querySelectorAll('[data-open]').forEach((el) => { el.onclick = () => showSet(sets.find((x) => x.id === el.dataset.open)); });
     $('#cnew').onclick = () => showSet(null);
     $('#cbulk').onclick = bulkForm;
@@ -167,22 +171,24 @@ async function contents(box) {
 
   function bulkForm() {
     $('#cform').innerHTML = `<div class="ct-bulk">
-      <label><span>To'plam sarlavhasi</span><input id="bt" placeholder="Kamida 3 belgi"></label>
-      <label><span>Mavzu</span><input id="bg" placeholder="Masalan: Matematika"></label>
-      <label><span>Daraja</span><select id="bl">${[1, 2, 3, 4].map((n) => `<option value="${n}">${n}-daraja</option>`).join('')}</select></label>
-      <label><span>CSV fayl</span><input id="bf" type="file" accept=".csv"></label>
-      <div class="ct-bulk-b"><button class="btn" id="bsave">Yuklash</button><button class="btn btn--ghost" id="bx">Bekor qilish</button></div>
+      <label><span>${t('tp.setTitle')}</span><input id="bt" placeholder="${t('tp.min3')}"></label>
+      <label><span>${t('tp.topic')}</span><input id="bg" placeholder="${t('tp.topicPh')}"></label>
+      <label><span>${t('tp.level')}</span><select id="bl">${[1, 2, 3, 4].map((n) => `<option value="${n}">${t('app.level', { n })}</option>`).join('')}</select></label>
+      <label><span>${t('tp.lang')}</span>${langSel('bln', getLang())}</label>
+      <label><span>${t('tp.csvFile')}</span><input id="bf" type="file" accept=".csv"></label>
+      <div class="ct-bulk-b"><button class="btn" id="bsave">${t('tp.upload')}</button><button class="btn btn--ghost" id="bx">${t('app.cancel')}</button></div>
     </div>`;
     $('#bx').onclick = () => { $('#cform').innerHTML = ''; };
     $('#bsave').onclick = async () => {
       const f = $('#bf').files[0];
-      if (!f) return toast('CSV fayl tanlang', 'error');
+      if (!f) return toast(t('tp.pickCsv'), 'error');
       const fd = new FormData();
       fd.append('file', f);
       fd.append('title', $('#bt').value.trim());
-      fd.append('topic', $('#bg').value.trim() || 'Mavzusiz');
+      fd.append('topic', $('#bg').value.trim() || t('tp.noTopic'));
+      fd.append('language', $('#bln').value);
       fd.append('level', $('#bl').value);
-      try { await api.post('/contents/bulk-upload', fd); toast('Yuklandi. Endi nashr qiling.', 'success'); await load(); }
+      try { await api.post('/contents/bulk-upload', fd); toast(t('tp.uploaded'), 'success'); await load(); }
       catch (e) { showError(e); }
     };
   }
@@ -201,9 +207,9 @@ async function contents(box) {
     let qs = isNew ? [blank()] : (s.data?.questions || []).map((q) => ({
       text: q.text || '', raw: [0, 1, 2, 3].map((j) => (q.options || [])[j] || ''), pick: q.answer ?? -1,
     }));
-    const meta = { title: s?.title || '', topic: s?.topic || '', level: Number(s?.level) || 1 };
+    const meta = { title: s?.title || '', topic: s?.topic || '', level: Number(s?.level) || 1, language: s?.language || getLang() };
     const collect = () => {
-      meta.title = $('#et').value.trim(); meta.topic = $('#eg').value.trim(); meta.level = Number($('#el').value);
+      meta.title = $('#et').value.trim(); meta.topic = $('#eg').value.trim(); meta.level = Number($('#el').value); meta.language = $('#eln').value;
       qs = [...box.querySelectorAll('.qe')].map((c) => {
         const r = c.querySelector('input[type=radio]:checked');
         return { text: c.querySelector('textarea').value.trim(), raw: [...c.querySelectorAll('[data-o]')].map((i) => i.value.trim()), pick: r ? Number(r.value) : -1 };
@@ -215,32 +221,33 @@ async function contents(box) {
         const r = qs[k];
         const filled = r.raw.map((v, j) => ({ v, j })).filter((o) => o.v);
         const ans = filled.findIndex((o) => o.j === r.pick);
-        if (!r.text || filled.length < 2 || ans < 0) return { error: `${k + 1}-savol: matn, kamida 2 variant va to'g'ri javob kerak` };
+        if (!r.text || filled.length < 2 || ans < 0) return { error: t('tp.qInvalid', { n: k + 1 }) };
         out.push({ text: r.text, options: filled.map((o) => o.v), answer: ans });
       }
       return { questions: out };
     };
     const qhtml = (q, i) => `<div class="qe">
       <div class="qe-h"><span class="qe-n">${i + 1}</span>
-        <textarea rows="2" placeholder="Savol matni" aria-label="${i + 1}-savol matni">${esc(q.text)}</textarea>
-        <button class="qe-del" data-qdel="${i}" aria-label="${i + 1}-savolni o'chirish">${ic('x')}</button></div>
-      ${q.raw.map((v, j) => `<label class="qe-o${q.pick === j ? ' is-ok' : ''}"><input type="radio" name="ans${i}" value="${j}"${q.pick === j ? ' checked' : ''} aria-label="${'ABCD'[j]} to'g'ri javob"><span>${'ABCD'[j]}</span><input data-o value="${esc(v)}" placeholder="Variant ${'ABCD'[j]}${j > 1 ? ' (ixtiyoriy)' : ''}"></label>`).join('')}
-      ${q.pick < 0 ? `<div class="qe-hint">To'g'ri javobni belgilang</div>` : ''}
+        <textarea rows="2" placeholder="${t('tp.qText')}" aria-label="${t('tp.qTextN', { n: i + 1 })}">${esc(q.text)}</textarea>
+        <button class="qe-del" data-qdel="${i}" aria-label="${t('tp.qDel', { n: i + 1 })}">${ic('x')}</button></div>
+      ${q.raw.map((v, j) => `<label class="qe-o${q.pick === j ? ' is-ok' : ''}"><input type="radio" name="ans${i}" value="${j}"${q.pick === j ? ' checked' : ''} aria-label="${t('tp.correctOpt', { x: 'ABCD'[j] })}"><span>${'ABCD'[j]}</span><input data-o value="${esc(v)}" placeholder="${t('tp.opt')} ${'ABCD'[j]}${j > 1 ? ` (${t('au.optional').toLowerCase()})` : ''}"></label>`).join('')}
+      ${q.pick < 0 ? `<div class="qe-hint">${t('tp.markCorrect')}</div>` : ''}
     </div>`;
     const draw = () => {
       const pub = s?.is_published;
       box.innerHTML = `
-        <div class="qe-top"><button class="qe-back" id="back" aria-label="Kontentlarga qaytish">${ic('back', 20)}</button>
-          <div><b>${isNew ? "Yangi to'plam" : "To'plamni tahrirlash"}</b><small>${qs.length} ta savol${isNew ? '' : ` · <span class="${pub ? 'ok' : 'wait'}">${pub ? 'nashr etilgan' : 'nashr qilinmagan'}</span>`}</small></div></div>
+        <div class="qe-top"><button class="qe-back" id="back" aria-label="${t('tp.backToContents')}">${ic('back', 20)}</button>
+          <div><b>${isNew ? t('tp.newSet') : t('tp.editSet')}</b><small>${t('tp.nQ', { n: qs.length })}${isNew ? '' : ` · <span class="${pub ? 'ok' : 'wait'}">${(pub ? t('tp.pub') : t('tp.unpub')).toLowerCase()}</span>`}</small></div></div>
         <div class="qe-meta">
-          <label><span>Sarlavha</span><input id="et" value="${esc(meta.title)}" placeholder="Masalan: Kompyuter qismlari"></label>
-          <label><span>Mavzu</span><input id="eg" value="${esc(meta.topic)}" placeholder="Masalan: Informatika"></label>
-          <label><span>Daraja</span><select id="el">${[1, 2, 3, 4].map((n) => `<option value="${n}"${meta.level === n ? ' selected' : ''}>${n}-daraja</option>`).join('')}</select></label>
+          <label><span>${t('tp.title')}</span><input id="et" value="${esc(meta.title)}" placeholder="${t('tp.titlePh')}"></label>
+          <label><span>${t('tp.topic')}</span><input id="eg" value="${esc(meta.topic)}" placeholder="${t('tp.topicPh2')}"></label>
+          <label><span>${t('tp.level')}</span><select id="el">${[1, 2, 3, 4].map((n) => `<option value="${n}"${meta.level === n ? ' selected' : ''}>${t('app.level', { n })}</option>`).join('')}</select></label>
+          <label><span>${t('tp.lang')}</span>${langSel('eln', meta.language)}</label>
         </div>
         <div id="qlist">${qs.map(qhtml).join('')}</div>
-        <button class="btn btn--ghost qe-add" id="qadd">${ic('plus')}Savol qo'shish</button>
-        <div class="qe-bar"><button class="btn" id="qsave">Saqlash</button>${!isNew && !pub ? '<button class="btn qe-pub" id="qpub">Nashr qilish</button>' : ''}</div>
-        ${isNew ? '' : `<button class="qe-rm" id="qrm">To'plamni o'chirish</button>`}`;
+        <button class="btn btn--ghost qe-add" id="qadd">${ic('plus')}${t('tp.addQ')}</button>
+        <div class="qe-bar"><button class="btn" id="qsave">${t('app.save')}</button>${!isNew && !pub ? `<button class="btn qe-pub" id="qpub">${t('tp.publish')}</button>` : ''}</div>
+        ${isNew ? '' : `<button class="qe-rm" id="qrm">${t('tp.delSet')}</button>`}`;
       $('#back').onclick = showList;
       $('#qadd').onclick = () => { collect(); qs.push(blank()); draw(); };
       $('#qlist').addEventListener('click', (e) => {
@@ -256,23 +263,23 @@ async function contents(box) {
       });
       $('#qsave').onclick = async () => {
         collect();
-        if (meta.title.length < 3) return toast('Sarlavha kamida 3 belgi', 'error');
-        if (!qs.length) return toast('Kamida bitta savol kerak', 'error');
+        if (meta.title.length < 3) return toast(t('tp.titleMin'), 'error');
+        if (!qs.length) return toast(t('tp.needQ'), 'error');
         const res = parse();
         if (res.error) return toast(res.error, 'error');
-        const body = { title: meta.title, topic: meta.topic || undefined, level: meta.level, data: { questions: res.questions } };
+        const body = { title: meta.title, topic: meta.topic || undefined, level: meta.level, language: meta.language, data: { questions: res.questions } };
         try {
           if (isNew) await api.post('/contents', { type: 'questions', ...body });
           else await api.put(`/contents/${s.id}`, body);
-          toast('Saqlandi', 'success'); await load();
+          toast(t('app.saved'), 'success'); await load();
         } catch (e) { showError(e); }
       };
       $('#qpub')?.addEventListener('click', async () => {
-        try { await api.post(`/contents/${s.id}/publish`, {}); toast('Nashr etildi', 'success'); await load(); } catch (e) { showError(e); }
+        try { await api.post(`/contents/${s.id}/publish`, {}); toast(t('tp.published'), 'success'); await load(); } catch (e) { showError(e); }
       });
       $('#qrm')?.addEventListener('click', async () => {
-        if (!confirm("To'plam o'chirilsinmi?")) return;
-        try { await api.del(`/contents/${s.id}`); toast("O'chirildi", 'success'); await load(); } catch (e) { showError(e); }
+        if (!confirm(t('tp.confirmDel'))) return;
+        try { await api.del(`/contents/${s.id}`); toast(t('tp.deleted'), 'success'); await load(); } catch (e) { showError(e); }
       });
     };
     draw();
@@ -282,8 +289,8 @@ async function contents(box) {
 }
 
 async function rooms(box) {
-  const GAME = { typing: 'Typing', labyrinth: 'Labirint' };
-  const ST = { waiting: 'Kutilmoqda', active: "O'yin ketmoqda", finished: 'Tugagan' };
+  const GAME = { typing: 'Typing', labyrinth: t('pf.lab') };
+  const ST = { waiting: t('hs.waiting'), active: t('hs.active'), finished: t('hs.finished') };
   const SV = (p) => `<svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
   const MAZE = SV('<path d="M3 3h18v18H3zM8 3v8h8M16 21v-6M3 14h5"/>');
   const KB = SV('<rect x="2" y="6" width="20" height="12" rx="3"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/>');
@@ -292,22 +299,22 @@ async function rooms(box) {
   const pills = (name, items, sel) => `<div class="rm-pills" role="radiogroup">${items.map(([v, l, s]) => `<label><input type="radio" name="${name}" value="${v}"${v === sel ? ' checked' : ''}><span>${l}${s ? `<small>${s}</small>` : ''}</span></label>`).join('')}</div>`;
   box.innerHTML = `
     <section class="rm-new" id="nr-form">
-      <h2>Yangi xona</h2>
-      <div class="rm-games" role="group" aria-label="O'yin">
-        <button type="button" data-game="labyrinth" aria-pressed="true"><span class="rm-gi" style="background:var(--mint);color:#1F5C41">${MAZE}</span><span><b>Labirint</b><small>savollar bilan</small></span></button>
-        <button type="button" data-game="typing" aria-pressed="false"><span class="rm-gi" style="background:var(--sky);color:#1F5C8A">${KB}</span><span><b>Typing</b><small>tez yozish</small></span></button>
+      <h2>${t('tp.newRoom')}</h2>
+      <div class="rm-games" role="group" aria-label="${t('tp.game')}">
+        <button type="button" data-game="labyrinth" aria-pressed="true"><span class="rm-gi" style="background:var(--mint);color:#1F5C41">${MAZE}</span><span><b>${t('pf.lab')}</b><small>${t('tp.withQ')}</small></span></button>
+        <button type="button" data-game="typing" aria-pressed="false"><span class="rm-gi" style="background:var(--sky);color:#1F5C8A">${KB}</span><span><b>Typing</b><small>${t('tp.fastType')}</small></span></button>
       </div>
-      <label class="rm-f lab-only"><span>Savollar to'plami</span><select id="nr-content"><option value="">yuklanmoqda…</option></select><small>Faqat nashr etilgan to'plamlar chiqadi</small></label>
-      <div class="rm-f lab-only"><span>Labirint o'lchami</span>${pills('sz', [['11', '11×11', 'kichik'], ['15', '15×15', "o'rta"], ['21', '21×21', 'katta']], '15')}</div>
-      <div class="rm-f lab-only"><span>Rejim</span>${pills('md', [['standard', 'Standart', '3 ta jon'], ['kids', 'Bolalar', 'jonsiz']], 'standard')}</div>
-      <div class="rm-f typ-only" hidden><span>Matn tili</span>${pills('lng', [['uz', "O'zbekcha", ''], ['ru', 'Русский', ''], ['en', 'English', '']], 'uz')}<small>Ustoz matn qo'shmaydi — matnni tizim tanlaydi</small></div>
-      <div class="rm-f"><span>Davomiyligi</span><div class="rm-step"><button type="button" id="mnm" aria-label="Kamaytirish">−</button><b id="mn">10 daqiqa</b><button type="button" id="mnp" aria-label="Ko'paytirish">+</button></div></div>
-      <button class="btn rm-go" id="nr-go">Xona yaratish</button>
+      <label class="rm-f lab-only"><span>${t('tp.qSet')}</span><select id="nr-content"><option value="">${t('tp.loading')}</option></select><small>${t('tp.onlyPub')}</small></label>
+      <div class="rm-f lab-only"><span>${t('tp.labSize')}</span>${pills('sz', [['11', '11×11', t('tp.small')], ['15', '15×15', t('tp.medium')], ['21', '21×21', t('tp.large')]], '15')}</div>
+      <div class="rm-f lab-only"><span>${t('tp.mode')}</span>${pills('md', [['standard', t('tp.standard'), t('tp.lives3')], ['kids', t('tp.kids'), t('tp.noLives')]], 'standard')}</div>
+      <div class="rm-f typ-only" hidden><span>${t('tp.textLang')}</span>${pills('lng', [['uz', "O'zbekcha", ''], ['ru', 'Русский', ''], ['en', 'English', '']], getLang())}<small>${t('tp.autoText')}</small></div>
+      <div class="rm-f"><span>${t('tp.duration')}</span><div class="rm-step"><button type="button" id="mnm" aria-label="${t('tp.less')}">−</button><b id="mn">${t('tp.min', { n: 10 })}</b><button type="button" id="mnp" aria-label="${t('tp.more')}">+</button></div></div>
+      <button class="btn rm-go" id="nr-go">${t('tp.createRoom')}</button>
     </section>
     <section class="rm-act">
-      <div class="rm-ah"><i></i><h2>Faol xonalar</h2><span id="nr-cnt">0</span></div>
+      <div class="rm-ah"><i></i><h2>${t('dash.active_rooms')}</h2><span id="nr-cnt">0</span></div>
       <div id="rooms-list"></div>
-      <small class="rm-note">Xona 2 soatdan keyin o'zi yopiladi</small>
+      <small class="rm-note">${t('tp.autoClose')}</small>
     </section>`;
   const $ = (s) => box.querySelector(s);
   const $list = $('#rooms-list');
@@ -317,21 +324,21 @@ async function rooms(box) {
     const t = x.game_type === 'typing';
     return `<div class="rm-card">
       <div class="rm-ch"><span class="rm-gi" style="background:var(${t ? '--sky' : '--mint'});color:${t ? '#1F5C8A' : '#1F5C41'}">${t ? KB : MAZE}</span>
-        <div><b>${esc(x.code)}</b><small>${esc(GAME[x.game_type] || x.game_type)} · ${esc(x.players ?? 0)} o'yinchi</small></div>
+        <div><b>${esc(x.code)}</b><small>${esc(GAME[x.game_type] || x.game_type)} · ${t('end.players', { n: x.players ?? 0 })}</small></div>
         <span class="rm-st ${x.status === 'active' ? 'is-on' : ''}"><i></i>${esc(ST[x.status] || x.status)}</span></div>
-      <div class="rm-cb"><button class="btn" data-open="${esc(x.code)}" data-game="${esc(x.game_type)}">Kuzatish</button><button class="btn btn--ghost" data-close="${esc(x.code)}">Yopish</button></div>
+      <div class="rm-cb"><button class="btn" data-open="${esc(x.code)}" data-game="${esc(x.game_type)}">${t('tp.watch')}</button><button class="btn btn--ghost" data-close="${esc(x.code)}">${t('app.close')}</button></div>
     </div>`;
   };
   async function load() {
     const r = await api.get('/rooms/mine');
     const live = (r.items || []).filter(isLive);
     $('#nr-cnt').textContent = live.length;
-    $list.innerHTML = live.map(card).join('') || `<p class="ct-empty">Faol xona yo'q</p>`;
+    $list.innerHTML = live.map(card).join('') || `<p class="ct-empty">${t('tp.noRooms')}</p>`;
   }
   const fillContent = async () => {
     const r = await api.get('/contents', { query: { type: 'questions', limit: 50 } });
     const items = (r.items || []).filter((c) => c.is_published);
-    $('#nr-content').innerHTML = items.length ? groupOpts(items) : `<option value="">Nashr etilgan to'plam yo'q</option>`;
+    $('#nr-content').innerHTML = items.length ? groupOpts(items) : `<option value="">${t('tp.noPubSets')}</option>`;
   };
   const sync = () => {
     box.querySelectorAll('[data-game]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.game === game)));
@@ -339,19 +346,19 @@ async function rooms(box) {
     box.querySelectorAll('.typ-only').forEach((el) => { el.hidden = game !== 'typing'; });
   };
   box.querySelectorAll('[data-game]').forEach((b) => { b.onclick = () => { game = b.dataset.game; sync(); }; });
-  const setMin = (d) => { minutes = Math.min(120, Math.max(1, minutes + d)); $('#mn').textContent = `${minutes} daqiqa`; };
+  const setMin = (d) => { minutes = Math.min(120, Math.max(1, minutes + d)); $('#mn').textContent = t('tp.min', { n: minutes }); };
   $('#mnm').onclick = () => setMin(minutes > 10 ? -5 : -1);
   $('#mnp').onclick = () => setMin(minutes >= 10 ? 5 : 1);
 
   $('#nr-go').onclick = async () => {
     const content_id = $('#nr-content').value;
-    if (game === 'labyrinth' && !content_id) { toast("Avval nashr etilgan savollar to'plamini tanlang", 'error'); return; }
+    if (game === 'labyrinth' && !content_id) { toast(t('tp.pickSet'), 'error'); return; }
     const body = { game_type: game, max_players: 30, duration_minutes: minutes };
     if (game === 'labyrinth') { body.content_id = content_id; body.mode = val('md'); body.labyrinth = { size: Number(val('sz')) }; }
     else body.language = val('lng');
     try {
       const r = await api.post('/rooms', body);
-      toast('Xona yaratildi: ' + r.room.code, 'success');
+      toast(t('tp.roomCreated', { code: r.room.code }), 'success');
       location.hash = `#/host/${r.room.code}?game=${game}`;
     } catch (e) { showError(e); }
   };
@@ -361,8 +368,8 @@ async function rooms(box) {
     const c = e.target.closest('[data-close]');
     if (o) location.hash = `#/host/${o.dataset.open}?game=${o.dataset.game || 'typing'}`;
     if (c) {
-      if (!confirm("Xonani yopasizmi? O'yin tugaydi.")) return;
-      try { await api.post(`/rooms/${c.dataset.close}/close`, {}); toast('Xona yopildi', 'success'); await load(); }
+      if (!confirm(t('host.confirmClose'))) return;
+      try { await api.post(`/rooms/${c.dataset.close}/close`, {}); toast(t('host.closedToast'), 'success'); await load(); }
       catch (err) { showError(err); }
     }
   });
@@ -373,6 +380,6 @@ async function rooms(box) {
 
 function groupOpts(items) {
   const g = {};
-  items.forEach((c) => { const k = c.topic || 'Mavzusiz'; (g[k] = g[k] || []).push(c); });
-  return Object.keys(g).sort().map((k) => '<optgroup label="' + esc(k) + '">' + g[k].map((c) => '<option value="' + esc(c.id) + '">' + esc(c.title) + '</option>').join('') + '</optgroup>').join('');
+  items.forEach((c) => { const k = c.topic || t('tp.noTopic'); (g[k] = g[k] || []).push(c); });
+  return Object.keys(g).sort().map((k) => '<optgroup label="' + esc(k) + '">' + g[k].map((c) => '<option value="' + esc(c.id) + '">' + (c.language === 'ru' ? '[RU] ' : '') + esc(c.title) + '</option>').join('') + '</optgroup>').join('');
 }

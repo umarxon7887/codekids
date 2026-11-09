@@ -3,6 +3,7 @@
  * JSON va multipart (FormData) qo'llab-quvvatlanadi.
  */
 import { API_BASE } from './config.js';
+import { t, langHeader } from '../i18n/index.js';
 import { getAccessToken, setAccessToken, setUser } from './state.js';
 
 /** Backend standart xato formati uchun Error. */
@@ -23,7 +24,7 @@ async function toApiError(res) {
     const { error } = await res.json();
     return new ApiError(error?.code || 'UNKNOWN', error?.message || res.statusText, res.status, error?.details);
   } catch {
-    return new ApiError('UNKNOWN', res.statusText || 'Server xatosi', res.status);
+    return new ApiError('UNKNOWN', res.statusText || t('err.server'), res.status);
   }
 }
 
@@ -47,7 +48,7 @@ export function refreshAccessToken({ silent = false } = {}) {
         setAccessToken(null);
         setUser(null);
         if (!silent) window.dispatchEvent(new CustomEvent('auth:expired'));
-        throw err instanceof ApiError ? err : new ApiError('NETWORK_ERROR', "Internetga ulanib bo'lmadi", 0);
+        throw err instanceof ApiError ? err : new ApiError('NETWORK_ERROR', t('err.network'), 0);
       })
       .finally(() => { refreshing = null; });
   }
@@ -60,7 +61,7 @@ export function refreshAccessToken({ silent = false } = {}) {
  * @returns {Promise<any>}
  */
 export async function request(path, { method = 'GET', body, auth = true, query } = {}, _retried = false) {
-  const headers = { Accept: 'application/json' };
+  const headers = { Accept: 'application/json', 'Accept-Language': langHeader() };
   const isForm = body instanceof FormData;
   if (body !== undefined && !isForm) headers['Content-Type'] = 'application/json';
   const token = getAccessToken();
@@ -81,7 +82,7 @@ export async function request(path, { method = 'GET', body, auth = true, query }
       body: body === undefined ? undefined : isForm ? body : JSON.stringify(body),
     });
   } catch {
-    throw new ApiError('NETWORK_ERROR', "Internetga ulanib bo'lmadi", 0);
+    throw new ApiError('NETWORK_ERROR', t('err.network'), 0);
   }
 
   if (res.status === 401 && auth && !_retried && !path.startsWith('/auth/')) {

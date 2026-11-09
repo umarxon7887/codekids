@@ -292,6 +292,8 @@ ALTER TABLE game_players ADD COLUMN IF NOT EXISTS rank SMALLINT;
 ALTER TABLE contents ADD COLUMN IF NOT EXISTS language VARCHAR(5);
 UPDATE contents SET language = CASE WHEN title LIKE '%(RU)%' THEN 'ru' ELSE 'uz' END
  WHERE type = 'typing_text' AND language IS NULL;
+-- Savollar to'plamlari ham tilga ega (uz/ru); eskilari o'zbekcha
+UPDATE contents SET language = 'uz' WHERE type = 'questions' AND language IS NULL;
 
 -- =====================================================================
 -- IT darslari: bo'limlar -> qasrlar (darslar), fikrlash qurollari, progress
@@ -443,3 +445,9 @@ CREATE TABLE IF NOT EXISTS it_images (
 -- O'quvchining haqiqiy ismi: IT darslarida qahramon (Kibi) so'raydi va shu ism bilan murojaat qiladi.
 -- Nikneymdan farqli: boshqalarga ko'rinmaydi, faqat darsda ishlatiladi.
 ALTER TABLE users ADD COLUMN IF NOT EXISTS real_name VARCHAR(20);
+
+-- IT darslari: ruscha qasrlar alohida yo'l (bo'lim tili). Eski bo'limlar o'zbekcha.
+ALTER TABLE it_sections ADD COLUMN IF NOT EXISTS lang VARCHAR(2) NOT NULL DEFAULT 'uz';
+DO $$ BEGIN
+  ALTER TABLE it_sections ADD CONSTRAINT it_sections_lang_chk CHECK (lang IN ('uz', 'ru'));
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;

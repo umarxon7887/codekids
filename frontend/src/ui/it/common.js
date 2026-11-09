@@ -1,6 +1,7 @@
 /** @file IT darslari: umumiy ikonkalar va yordamchilar. */
 import { BASE_URL, API_BASE } from '../../core/config.js';
 import { esc } from '../../utils/dom.js';
+import { t } from '../../i18n/index.js';
 
 const P = {
   left: '<path d="M15 5l-7 7 7 7"/>',
@@ -87,12 +88,8 @@ export function sectionStatus(s) {
 
 /** Savol turi yorlig'i (mashq tepasida). */
 export function kindLabel(e) {
-  if (e.type === 'order') return 'Tartibla';
-  if (e.type === 'match') return 'Moslashtir';
-  if (e.type === 'sort') return 'Saralash';
-  if (e.type === 'typing') return "Yozib ko'r";
-  if (e.type === 'maze') return 'Labirint';
-  return { predict: "Nima bo'ladi?", error: 'Xatoni top', odd: 'Ortiqchasini top', analogy: "Hayotdan o'xshatish" }[e.kind] || 'Savol';
+  if (['order', 'match', 'sort', 'typing', 'maze'].includes(e.type)) return t(`it.k.${e.type}`);
+  return ['predict', 'error', 'odd', 'analogy'].includes(e.kind) ? t(`it.k.${e.kind}`) : t('it.k.q');
 }
 
 /** Fisher-Yates; tartib o'zgarmay qolsa (2+ element bo'lsa) yana aralashtiradi. */

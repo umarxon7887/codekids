@@ -1,6 +1,7 @@
 /** @file Labirint ekranlari uchun umumiy bo'laklar: ikonkalar, reyting tartibi va qatorlari, yakuniy ekranlar. */
 import { esc } from '../../utils/dom.js';
 import { heroOf, heroHappyUrl, avatarHtml } from './heroes.js';
+import { t } from '../../i18n/index.js';
 
 const svg = (d, { w = 20, sw = 2.2, fill = 'none' } = {}) =>
   `<svg aria-hidden="true" width="${w}" height="${w}" viewBox="0 0 24 24" fill="${fill}" stroke="${fill === 'none' ? 'currentColor' : 'none'}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
@@ -42,7 +43,7 @@ export function sortPlayers(list) {
 
 /** Qator ostidagi belgi: finish / jon tugadi. */
 export function badgeHtml(p) {
-  if (p.eliminated) return `<span class="lb-badge is-out">${I.broken}jon tugadi</span>`;
+  if (p.eliminated) return `<span class="lb-badge is-out">${I.broken}${t('lb.out')}</span>`;
   if (p.finished && p.rank) return `<span class="lb-badge">${I.flag}finish</span>`;
   return '';
 }
@@ -54,8 +55,8 @@ export function rankRows(sorted, { meId = null, sub } = {}) {
     const extra = sub ? sub(p) : badgeHtml(p);
     return `<li class="lb-row${me ? ' is-me' : ''}">
       <span class="lb-rn" data-m="${i < 3 ? i + 1 : 0}">${i + 1}</span>${avatarHtml(heroOf(p, me))}
-      <span class="lb-rnm"><span class="lb-nm">${esc(p.nickname)}${me ? ' <small>(Sen)</small>' : ''}</span>${extra ? `<span>${extra}</span>` : ''}</span>
-      <b class="lb-rsc">${esc(p.score ?? 0)} <small>ball</small></b></li>`;
+      <span class="lb-rnm"><span class="lb-nm">${esc(p.nickname)}${me ? ` <small>(${t('lb.you')})</small>` : ''}</span>${extra ? `<span>${extra}</span>` : ''}</span>
+      <b class="lb-rsc">${esc(p.score ?? 0)} <small>${t('score.points')}</small></b></li>`;
   }).join('');
 }
 
@@ -72,27 +73,27 @@ export function renderStudentEnd(el, { players, meId, levels = 5, reason = 'time
   const idx = sorted.findIndex((p) => String(p.id) === String(meId));
   const me = sorted[idx] || players.find((p) => String(p.id) === String(meId)) || { score: 0, level: 1 };
   const place = idx >= 0 ? idx + 1 : null;
-  const placeTxt = place ? `${place}-o'rin` : '—';
-  let sub = place ? `${place}-o'rinni olding` : "O'yin yakunlandi";
-  if (me.finished && me.rank && !me.eliminated) sub = `Qasrga yetding va ${place}-o'rinni olding`;
-  else if (me.eliminated) sub = `Jonlaring tugadi. ${placeTxt}`;
-  else if (reason === 'closed') sub = `Ustoz o'yinni yakunladi. ${placeTxt}`;
-  else if (place && reason === 'time') sub = `Vaqt tugadi. ${placeTxt}`;
+  const placeTxt = place ? t('pf.place', { n: place }) : '—';
+  let sub = place ? t('lb.e.took', { n: place }) : t('lb.e.over');
+  if (me.finished && me.rank && !me.eliminated) sub = t('lb.e.castle', { n: place });
+  else if (me.eliminated) sub = `${t('lb.e.lives')} ${placeTxt}`;
+  else if (reason === 'closed') sub = `${t('lb.e.closed')} ${placeTxt}`;
+  else if (place && reason === 'time') sub = `${t('lb.e.time')} ${placeTxt}`;
   const lvl = me.finished && me.rank ? levels : Math.min(me.level || 1, levels);
   el.className = 'lb-end';
   el.hidden = false;
   el.innerHTML = `<section class="lb-endc" role="dialog" aria-modal="true" aria-labelledby="lb-endt">
     <div class="lb-endh">${CONFETTI.map(([x, y, c, r]) => `<i style="left:${x}%;top:${y}%;background:${c};transform:rotate(${r}deg)"></i>`).join('')}
       <img src="${heroHappyUrl(heroOf(me, true))}" alt="">
-      <h2 id="lb-endt">O'yin tugadi!</h2><p>${esc(sub)}</p></div>
+      <h2 id="lb-endt">${t('lb.gameOver')}!</h2><p>${esc(sub)}</p></div>
     <div class="lb-estats">
-      <div><b>${esc(placeTxt)}</b><small>Sening o'rning</small></div>
-      <div><b>${I.star(18)}${esc(me.score ?? 0)}</b><small>ball</small></div>
-      <div><b>${lvl} / ${levels}</b><small>daraja</small></div>
+      <div><b>${esc(placeTxt)}</b><small>${t('lb.yourPlace')}</small></div>
+      <div><b>${I.star(18)}${esc(me.score ?? 0)}</b><small>${t('score.points')}</small></div>
+      <div><b>${lvl} / ${levels}</b><small>${t('lb.levelW')}</small></div>
     </div>
-    <div class="lb-rkh"><b>Reyting</b><small>${sorted.length} ta o'yinchi${sorted.length > 5 ? ' · suring ↓' : ''}</small></div>
-    <ol class="lb-rk" tabindex="0" aria-label="O'yinchilar o'rni">${rankRows(sorted, { meId })}</ol>
-    <a class="btn lb-endb" href="#/">Asosiy ekranga qaytish</a>
+    <div class="lb-rkh"><b>${t('lb.rating')}</b><small>${t('end.players', { n: sorted.length })}${sorted.length > 5 ? ` · ${t('lb.swipeDown')}` : ''}</small></div>
+    <ol class="lb-rk" tabindex="0" aria-label="${t('lb.places')}">${rankRows(sorted, { meId })}</ol>
+    <a class="btn lb-endb" href="#/">${t('app.back')}</a>
   </section>`;
   const list = el.querySelector('.lb-rk'), row = el.querySelector('.is-me');
   if (list && row) list.scrollTop = Math.max(0, row.offsetTop - list.offsetTop - list.clientHeight / 2 + row.clientHeight / 2);
@@ -111,23 +112,23 @@ export function renderHostEnd(el, { players, code, info = null, reason = 'time' 
   const answered = sorted.reduce((s, p) => s + (p.answered || 0), 0);
   const right = sorted.reduce((s, p) => s + (p.right || 0), 0);
   const pct = answered ? `${Math.round((right / answered) * 100)}%` : '—';
-  const meta = ['Labirint', `xona ${code}`, info?.title, info?.minutes ? `${info.minutes} daqiqa` : ''].filter(Boolean).map(esc).join(' · ');
+  const meta = [t('pf.lab'), t('lb.roomN', { code }), info?.title, info?.minutes ? t('tp.min', { n: info.minutes }) : ''].filter(Boolean).map(esc).join(' · ');
   // shohsupa tartibi: 2-o'rin, 1-o'rin, 3-o'rin — [indeks, avatar o'lchami, ustun balandligi]
   const order = [[1, 44, 86], [0, 52, 110], [2, 44, 66]].filter(([i]) => sorted[i]).map(([i, a, h]) => [sorted[i], i, a, h]);
   el.hidden = false;
   el.className = 'lb-hend';
   el.innerHTML = `
-    <div class="lb-hendt"><div><h1>O'yin tugadi</h1><p>${meta}</p></div><span class="lb-hclosed">${{ closed: 'Xona yopildi', all_done: 'Hamma tugatdi' }[reason] || 'Vaqt tugadi'}</span></div>
+    <div class="lb-hendt"><div><h1>${t('lb.gameOver')}</h1><p>${meta}</p></div><span class="lb-hclosed">${{ closed: t('end.closed'), all_done: t('lb.allDone') }[reason] || t('lb.timeUp')}</span></div>
     ${order.length ? `<div class="lb-podium">${order.map(([p, i, a, h]) => `<div class="lb-pod">
       ${avatarHtml(heroOf(p), `lb-av--${a}`)}<b class="lb-podn">${esc(p.nickname)}</b>
-      <div class="lb-podb" data-m="${i + 1}" style="height:${h}px"><b>${i + 1}</b><small>${esc(p.score ?? 0)} ball</small></div></div>`).join('')}</div>` : ''}
+      <div class="lb-podb" data-m="${i + 1}" style="height:${h}px"><b>${i + 1}</b><small>${esc(p.score ?? 0)} ${t('score.points')}</small></div></div>`).join('')}</div>` : ''}
     <div class="lb-hstats">
-      <div><b>${sorted.length}</b><small>o'quvchi</small></div>
-      <div><b>${fin}</b><small>qasrga yetdi</small></div>
-      <div><b>${out}</b><small>jon tugadi</small></div>
-      <div><b>${pct}</b><small>to'g'ri javob</small></div>
+      <div><b>${sorted.length}</b><small>${t('lb.st.students')}</small></div>
+      <div><b>${fin}</b><small>${t('lb.st.castle')}</small></div>
+      <div><b>${out}</b><small>${t('lb.out')}</small></div>
+      <div><b>${pct}</b><small>${t('lb.st.right')}</small></div>
     </div>
-    <div class="lb-rkh"><b>To'liq reyting</b><small>${sorted.length} ta o'quvchi</small></div>
-    <ol class="lb-rk lb-rk--host" aria-label="O'quvchilar o'rni">${sorted.length ? rankRows(sorted) : '<li class="lb-empty">O\'quvchilar qatnashmadi</li>'}</ol>
-    <a class="btn lb-endb" href="#/teacher">Panelga qaytish</a>`;
+    <div class="lb-rkh"><b>${t('lb.fullRating')}</b><small>${t('hs.students', { n: sorted.length })}</small></div>
+    <ol class="lb-rk lb-rk--host" aria-label="${t('lb.places')}">${sorted.length ? rankRows(sorted) : `<li class="lb-empty">${t('lb.noOne')}</li>`}</ol>
+    <a class="btn lb-endb" href="#/teacher">${t('lb.toPanel')}</a>`;
 }

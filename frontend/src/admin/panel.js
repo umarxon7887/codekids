@@ -87,7 +87,7 @@ export async function mountAdmin(root, sub = '/') {
           <div class="ad-sec-row">
             <button type="button" class="ad-sec-tg" data-side-tg="${s.id}" aria-expanded="${isOpen(s)}" aria-label="${esc(s.title)}: mavzular ro'yxati">${ic('down', 14)}</button>
             <a class="ad-sec-a${on(`/section/${s.id}`)}" href="#/admin/section/${s.id}" data-go="/section/${s.id}">
-              ${dot(s.is_published)}<span class="ad-t">${i + 1}. ${esc(s.title)}</span><small>${s.lessons.length}</small></a>
+              ${dot(s.is_published)}<span class="ad-t">${i + 1}. ${esc(s.title)}</span>${s.lang === 'ru' ? '<em class="ad-crown" title="Ruscha qasr">RU</em>' : ''}<small>${s.lessons.length}</small></a>
           </div>
           <ol class="ad-les">${s.lessons.map((l) => `
             <li><a class="ad-les-a${on(`/lesson/${l.id}`)}" href="#/admin/lesson/${l.id}" data-go="/lesson/${l.id}">
@@ -129,6 +129,7 @@ export async function mountAdmin(root, sub = '/') {
       fields: [
         { name: 'title', label: "Bo'lim nomi", placeholder: 'Masalan: Takrorlash', max: 120, required: true },
         { name: 'method', label: 'Fikrlash usuli', placeholder: 'Masalan: Naqsh ko\'rish', max: 120, hint: "Bo'limdagi har mavzu shu usul orqali o'rgatiladi" },
+        { name: 'lang', label: 'Til (qaysi yo\'lda chiqadi)', type: 'radio', value: 'uz', options: [['uz', "O'zbekcha"], ['ru', 'Ruscha']] },
       ],
       ok: 'Yaratish',
     });
@@ -266,7 +267,7 @@ async function sectionView(main, id, ctx) {
   main.innerHTML = `
     <div class="ad-page">
       <header class="ad-ph">
-        <div><span class="ad-kicker">${idx + 1}-BO'LIM</span><h1>${esc(s.title)}</h1></div>
+        <div><span class="ad-kicker">${idx + 1}-BO'LIM${s.lang === 'ru' ? ' · RUSCHA' : ''}</span><h1>${esc(s.title)}</h1></div>
         <span class="ad-status ${s.is_published ? 'is-pub' : ''}">${s.is_published ? "E'lon qilingan" : 'Qoralama'}</span>
       </header>
       <form class="ad-card ad-form" novalidate>
@@ -276,6 +277,8 @@ async function sectionView(main, id, ctx) {
           <input name="method" maxlength="120" value="${esc(s.method)}" placeholder="Masalan: Ketma-ketlik"></label>
         <label class="ad-f"><span>Tavsif <small>ixtiyoriy, o'zingiz uchun eslatma</small></span>
           <textarea name="description" rows="3" maxlength="1000">${esc(s.description)}</textarea></label>
+        <label class="ad-f"><span>Til <small>o'quvchi shu tilni tanlaganda yo'lida chiqadi</small></span>
+          <select name="lang"><option value="uz"${s.lang !== 'ru' ? ' selected' : ''}>O'zbekcha</option><option value="ru"${s.lang === 'ru' ? ' selected' : ''}>Ruscha</option></select></label>
         <div class="ad-actions"><button type="submit" class="btn">Saqlash</button></div>
       </form>
       <section class="ad-card">

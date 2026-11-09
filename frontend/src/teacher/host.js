@@ -9,7 +9,7 @@ import { renderBoard } from '../games/typing/board.js';
 import { renderEndScreen, fromPlayers } from '../ui/endscreen.js';
 
 const BACK = '<svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>';
-const ST = { waiting: 'Kutilmoqda', active: "O'yin ketmoqda", finished: 'Tugadi' };
+const ST = { waiting: t('hs.waiting'), active: t('hs.active'), finished: t('hs.finished') };
 
 /**
  * @param {HTMLElement} root
@@ -22,15 +22,15 @@ export async function mountHost(root, { code, game }) {
   }
   root.replaceChildren(html(`
     <section class="hs">
-      <div class="hs-top"><a href="#/teacher" class="qe-back" aria-label="Orqaga">${BACK}</a>
-        <div><b>Typing xonasi</b><small id="hs-st">Kutilmoqda</small></div></div>
+      <div class="hs-top"><a href="#/teacher" class="qe-back" aria-label="${t('app.backShort')}">${BACK}</a>
+        <div><b>${t('hs.typingRoom')}</b><small id="hs-st">${t('hs.waiting')}</small></div></div>
       <div class="hs-code">
-        <span class="hs-lbl">XONA KODI</span>
+        <span class="hs-lbl">${t('home.codeLabel').toUpperCase()}</span>
         <div class="hs-digits">${esc(code)}</div>
-        <small>O'quvchilar bosh sahifada shu kodni yozib kiradi</small>
-        <div class="hs-cbtn"><button class="btn" id="hs-copy">Nusxa olish</button><button class="btn" id="hs-board">Doskaga</button></div>
+        <small>${t('hs.codeHint')}</small>
+        <div class="hs-cbtn"><button class="btn" id="hs-copy">${t('hs.copy')}</button><button class="btn" id="hs-board">${t('hs.toBoard')}</button></div>
       </div>
-      <div class="hs-acts"><button id="start" class="btn hs-go">▶ O'yinni boshlash</button><button id="close" class="hs-end">Xonani yopish</button></div>
+      <div class="hs-acts"><button id="start" class="btn hs-go">▶ ${t('hs.start')}</button><button id="close" class="hs-end">${t('hs.close')}</button></div>
       <div id="board" class="board"></div>
       <div id="h-end" hidden></div>
     </section>`));
@@ -38,19 +38,19 @@ export async function mountHost(root, { code, game }) {
   const setSt = (txt) => { const e = $('#hs-st'); if (e) e.textContent = txt; };
 
   $('#hs-copy').onclick = async () => {
-    try { await navigator.clipboard.writeText(code); toast('Kod nusxalandi', 'success'); } catch { toast(`Kod: ${code}`); }
+    try { await navigator.clipboard.writeText(code); toast(t('hs.copied'), 'success'); } catch { toast(`${t('hs.code')}: ${code}`); }
   };
   $('#hs-board').onclick = () => {
-    const o = html(`<div class="hs-full" role="dialog" aria-label="Xona kodi"><span>Xona kodi</span><b>${esc(code)}</b><small>Bosh sahifa → «Xonaga kirish»</small><button class="btn">Yopish</button></div>`);
+    const o = html(`<div class="hs-full" role="dialog" aria-label="${t('home.codeLabel')}"><span>${t('home.codeLabel')}</span><b>${esc(code)}</b><small>${t('hs.path')}</small><button class="btn">${t('app.close')}</button></div>`);
     document.body.appendChild(o);
     o.requestFullscreen?.().catch(() => {});
     o.querySelector('button').onclick = () => { if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); o.remove(); };
   };
 
   const socket = connectSocket();
-  if (!socket.connected) setSt('Serverga ulanmoqda…');
-  const onConn = () => setSt("Ulandi · o'quvchilarni kutyapmiz");
-  const onConnErr = (e) => setSt(`Ulanish xatosi: ${e?.message || "noma'lum"}`);
+  if (!socket.connected) setSt(t('hs.connecting'));
+  const onConn = () => setSt(t('hs.connected'));
+  const onConnErr = (e) => setSt(`${t('hs.connErr')}: ${e?.message || '?'}`);
   socket.on('connect', onConn);
   socket.on('connect_error', onConnErr);
   let lastSnap = null, ended = false;
@@ -60,14 +60,14 @@ export async function mountHost(root, { code, game }) {
     ended = true;
     // Yakuniy ekranda kod kartasi va boshqaruv tugmalari kerak emas: faqat reyting qoladi
     $('.hs').classList.add('is-ended');
-    setSt(`Yakunlandi · ${players.length} o'quvchi`);
+    setSt(`${t('hs.ended')} · ${t('hs.students', { n: players.length })}`);
     $('#board').hidden = true; $('.hs-code').hidden = true; $('.hs-acts').hidden = true;
     renderEndScreen($('#h-end'), { title, players: fromPlayers(players, 'correct'), backHref: '#/teacher', scoreLabel: t('score.letters') });
   }
 
   const onSnap = (snap) => {
     lastSnap = snap;
-    setSt(`${ST[snap.status] || ''} · ${(snap.players || []).length} o'quvchi`);
+    setSt(`${ST[snap.status] || ''} · ${t('hs.students', { n: (snap.players || []).length })}`);
     if (ended) return;
     renderBoard($('#board'), snap, { kickable: true });
     $('#start').hidden = snap.status !== 'waiting';
@@ -79,9 +79,9 @@ export async function mountHost(root, { code, game }) {
 
   $('#start').onclick = async () => {
     const b = $('#start'); const t0 = b.textContent;
-    b.disabled = true; b.textContent = 'Boshlanmoqda…';
+    b.disabled = true; b.textContent = t('hs.starting');
     try { await emitAck('room:start', { code }); }
-    catch (e) { showError(e); setSt(e.code === 'NO_PLAYERS' ? "Hali o'quvchi yo'q — avval kod bilan kirsin" : `Xato: ${e.message} (${e.code || '?'})`); }
+    catch (e) { showError(e); setSt(e.code === 'NO_PLAYERS' ? t('hs.noPlayers') : `${t('hs.error')}: ${e.message} (${e.code || '?'})`); }
     finally { b.disabled = false; b.textContent = t0; }
   };
   $('#close').onclick = async () => {

@@ -1,4 +1,5 @@
 /** @file Typing darslari: ikonkalar, yulduzlar, ekrandagi klaviatura. */
+import { t } from '../../i18n/index.js';
 
 const P = {
   left: '<path d="M15 5l-7 7 7 7"/>',
@@ -20,7 +21,7 @@ export function starsRow(n, s = 18, cls = '') {
   for (let i = 0; i < 3; i++) {
     out += `<svg class="tl-star${i < n ? ' is-on' : ''}" aria-hidden="true" width="${s}" height="${s}" viewBox="0 0 24 24">${P.star}</svg>`;
   }
-  return `<span class="tl-stars ${cls}" role="img" aria-label="${n} yulduz">${out}</span>`;
+  return `<span class="tl-stars ${cls}" role="img" aria-label="${t('app.stars', { n })}">${out}</span>`;
 }
 
 // Klaviatura tartiblari (pastki registr). Ruscha: ЙЦУКЕН. Barmoqlar tugma joyiga qarab belgilanadi.
@@ -63,7 +64,7 @@ for (const [lang, L] of Object.entries(LAYOUTS)) {
   });
   FINGERS[lang] = f;
 }
-const FINGER_NAME = { l5: "chap jimjiloq", l4: 'chap nomsiz', l3: "chap o'rta", l2: "chap ko'rsatkich", r2: "o'ng ko'rsatkich", r3: "o'ng o'rta", r4: "o'ng nomsiz", r5: "o'ng jimjiloq" };
+const FINGER_NAME = { l5: t('tl.f.l5'), l4: t('tl.f.l4'), l3: t('tl.f.l3'), l2: t('tl.f.l2'), r2: t('tl.f.r2'), r3: t('tl.f.r3'), r4: t('tl.f.r4'), r5: t('tl.f.r5') };
 const layout = (lang) => LAYOUTS[lang] || LAYOUTS.uz;
 
 /** Belgi uchun tugma va Shift kerakmi. */
@@ -77,15 +78,15 @@ export function keyFor(ch, lang = 'uz') {
 
 /** Qaysi barmoq bilan bosiladi (maslahat matni). */
 export function fingerHint(ch, lang = 'uz') {
-  if (ch === ' ') return 'Bosh barmoq';
+  if (ch === ' ') return t('tl.thumb');
   const { key, shift } = keyFor(ch, lang);
   const f = (FINGERS[lang] || FINGERS.uz)[key];
   if (!f) return '';
   const name = FINGER_NAME[f];
   const label = name[0].toUpperCase() + name.slice(1);
-  if (!shift) return `${label} barmoq`;
+  if (!shift) return t('tl.finger', { f: label });
   // Shift boshqa qo'l bilan bosiladi
-  return `${label} barmoq + ${f[0] === 'l' ? "o'ng" : 'chap'} Shift`;
+  return t(f[0] === 'l' ? 'tl.fingerShiftR' : 'tl.fingerShiftL', { f: label });
 }
 
 const dataKey = (k) => (k === "'" ? 'apos' : k);

@@ -4,6 +4,7 @@ import { api } from '../../core/api.js';
 import { showError, toast } from '../../core/toast.js';
 import { html, esc } from '../../utils/dom.js';
 import { ic, asset, castleSrc, sectionStatus } from './common.js';
+import { t } from '../../i18n/index.js';
 
 const reduced = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
@@ -21,14 +22,14 @@ export async function mountItHall(root, sectionId, query = {}) {
     data = await api.get('/it/path');
   } catch (e) {
     showError(e);
-    view.innerHTML = `<div class="it-empty"><p>Bo'limni yuklab bo'lmadi.</p><a class="btn btn--ghost" href="#/it">Qasrlar yo'liga</a></div>`;
+    view.innerHTML = `<div class="it-empty"><p>${t('it.secLoadFail')}</p><a class="btn btn--ghost" href="#/it">${t('it.toPath')}</a></div>`;
     return () => {};
   }
   const idx = data.sections.findIndex((s) => s.id === sectionId);
   const sec = data.sections[idx];
   if (!sec || sectionStatus(sec) === 'locked') {
     view.innerHTML = `<div class="it-empty"><img src="${castleSrc('locked')}" alt="" width="96" height="96">
-      <p>${sec ? 'Bu qasr hali yopiq. Avval oldingi qasrni zabt et.' : 'Bo\'lim topilmadi.'}</p><a class="btn" href="#/it">Qasrlar yo'liga</a></div>`;
+      <p>${sec ? t('it.castleLocked') : t('it.secNotFound')}</p><a class="btn" href="#/it">${t('it.toPath')}</a></div>`;
     return () => {};
   }
 
@@ -40,13 +41,13 @@ export async function mountItHall(root, sectionId, query = {}) {
   const unlockId = query.unlock && sec.lessons.some((l) => l.id === query.unlock && l.status !== 'locked') ? query.unlock : null;
   view.innerHTML = `
     <header class="hl-head">
-      <a class="it-back" href="#/it" aria-label="Qasrlar yo'liga">${ic('left', 20)}</a>
-      <div class="hl-t"><span>${idx + 1}-BO'LIM${sec.method ? ` · ${esc(sec.method.toUpperCase())}` : ''}</span><h1>${esc(sec.title)}</h1></div>
-      <span class="hl-count" aria-label="${sec.done} ta mavzu tugatilgan, jami ${n} ta">${sec.done} / ${n}</span>
+      <a class="it-back" href="#/it" aria-label="${t('it.toPath')}">${ic('left', 20)}</a>
+      <div class="hl-t"><span>${t('it.secN', { n: idx + 1 }).toUpperCase()}${sec.method ? ` · ${esc(sec.method.toUpperCase())}` : ''}</span><h1>${esc(sec.title)}</h1></div>
+      <span class="hl-count" aria-label="${t('it.doneOf', { d: sec.done, n })}">${sec.done} / ${n}</span>
     </header>
     <div class="hl-wrap">
       <div class="hl-hall" style="${bg}">
-        <ul class="hl-doors" style="--cols:${cols}" aria-label="Mavzular eshiklari">${sec.lessons.map((l, i) => door(l, i, l.id === unlockId)).join('')}</ul>
+        <ul class="hl-doors" style="--cols:${cols}" aria-label="${t('it.doors')}">${sec.lessons.map((l, i) => door(l, i, l.id === unlockId)).join('')}</ul>
       </div>
     </div>`;
 
@@ -56,7 +57,7 @@ export async function mountItHall(root, sectionId, query = {}) {
       b.classList.remove('is-shake');
       void b.offsetWidth; // animatsiyani qayta boshlash uchun
       b.classList.add('is-shake');
-      toast('Bu eshik hali qulf. Avval oldingi eshikni och.');
+      toast(t('it.doorLocked'));
     };
   });
   // Ochiq eshik bosilsa: eshik "ochiladi", keyin dars boshlanadi
@@ -77,11 +78,11 @@ function door(l, i, unlocking) {
   const test = l.kind === 'test';
   const st = unlocking ? 'current' : l.status;
   const base = test ? (st === 'locked' ? 'boss-locked' : 'boss-ready') : st === 'locked' ? 'door-locked' : st === 'done' ? 'door-done' : 'door-ready';
-  const meta = st === 'done' ? 'Tugatildi' : st === 'locked' ? 'Qulf'
-    : test ? `${l.exercises} savol` : `${l.minutes} daqiqa · ${l.exercises} savol`;
+  const meta = st === 'done' ? t('it.finished') : st === 'locked' ? t('it.lock')
+    : test ? t('tp.nQ', { n: l.exercises }) : `${t('tp.min', { n: l.minutes })} · ${t('tp.nQ', { n: l.exercises })}`;
   // Nomida "test" so'zi bo'lmasa, bu bo'lim testi ekani yozib qo'yiladi
-  const tag = test && !/test/i.test(l.title) ? "Bo'lim testi · " : '';
-  const label = `${i + 1}-mavzu: ${esc(l.title)}${st === 'done' ? ', tugatilgan' : st === 'locked' ? ', qulflangan' : ''}`;
+  const tag = test && !/test|тест/i.test(l.title) ? `${t('it.secTest')} · ` : '';
+  const label = `${t('it.topicN', { n: i + 1 })}: ${esc(l.title)}${st === 'done' ? `, ${t('it.isDone')}` : st === 'locked' ? `, ${t('it.isLocked')}` : ''}`;
   const badge = st === 'done' ? `<span class="it-badge is-ok" aria-hidden="true">${ic('check', 16)}</span>` : '';
   // Ochilayotgan eshik: tagida tayyor eshik, ustida qulflangan eshik + zanjir + qulf (keyin tushib ketadi)
   const layers = unlocking
@@ -91,12 +92,12 @@ function door(l, i, unlocking) {
        <img class="hd-img hd-lock" src="${asset('door-padlock')}" alt="" draggable="false">`
     : `<img class="hd-img" src="${asset(base)}" alt="" draggable="false">`;
   const inner = `<span class="hd-pic">${layers}${badge}</span>
-    ${st === 'current' ? '<span class="hd-now">Kirish</span>' : ''}
+    ${st === 'current' ? `<span class="hd-now">${t('home.enter')}</span>` : ''}
     <b>${esc(l.title)}</b><small>${tag}${meta}</small>`;
   const cls = `hd is-${st}${test ? ' is-test' : ''}${unlocking ? ' is-unlocking' : ''}`;
   return `<li>${st === 'locked'
     ? `<button type="button" class="${cls}" data-id="${l.id}" aria-label="${label}">${inner}</button>`
-    : `<a class="${cls}" data-id="${l.id}" href="#/it/lesson/${l.id}" aria-label="${label} — boshlash">${inner}</a>`}</li>`;
+    : `<a class="${cls}" data-id="${l.id}" href="#/it/lesson/${l.id}" aria-label="${label} — ${t('home.start').toLowerCase()}">${inner}</a>`}</li>`;
 }
 
 /** Zanjirlar tushadi, qulf ochilib yiqiladi, eshik yorishadi. */

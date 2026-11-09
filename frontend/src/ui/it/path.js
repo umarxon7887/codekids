@@ -4,6 +4,7 @@ import { api } from '../../core/api.js';
 import { showError } from '../../core/toast.js';
 import { html, esc } from '../../utils/dom.js';
 import { ic, castleSrc, sectionStatus } from './common.js';
+import { t } from '../../i18n/index.js';
 
 // Qasrlar tepa-past betartib turadi (dizayndagi naqsh), ro'yxat bo'ylab takrorlanadi
 const OFFSETS = [8, 62, 22, 70, 4, 48, 14, 56];
@@ -24,7 +25,7 @@ export async function mountItPath(root, query = {}) {
     data = await api.get('/it/path');
   } catch (e) {
     showError(e);
-    view.innerHTML = `<div class="it-empty"><p>Darslarni yuklab bo'lmadi.</p><a class="btn btn--ghost" href="#/">Orqaga</a></div>`;
+    view.innerHTML = `<div class="it-empty"><p>${t('tl.loadFail')}</p><a class="btn btn--ghost" href="#/">${t('app.backShort')}</a></div>`;
     return () => {};
   }
   render(view, data, query.opened);
@@ -34,7 +35,7 @@ export async function mountItPath(root, query = {}) {
 function render(view, { sections, stats }, opened) {
   if (!sections.length) {
     view.innerHTML = `${head(stats)}<div class="it-empty"><img src="${castleSrc('locked')}" alt="" width="96" height="96">
-      <p>Darslar tez orada qo'shiladi.</p><a class="btn btn--ghost" href="#/">Bosh sahifaga</a></div>`;
+      <p>${t('it.soon')}</p><a class="btn btn--ghost" href="#/">${t('ty.home')}</a></div>`;
     return;
   }
   const st = sections.map(sectionStatus);
@@ -49,31 +50,31 @@ function render(view, { sections, stats }, opened) {
     <div class="it-main">
       ${head(stats)}
       <div class="it-sec">
-        <div class="it-sec-t"><span>${secIdx + 1}-BO'LIM${sec.method ? ` · ${esc(sec.method.toUpperCase())}` : ''}</span><b>${esc(sec.title)}</b></div>
+        <div class="it-sec-t"><span>${t('it.secN', { n: secIdx + 1 }).toUpperCase()}${sec.method ? ` · ${esc(sec.method.toUpperCase())}` : ''}</span><b>${esc(sec.title)}</b></div>
         <div class="it-prog"><div class="it-bar"><i style="width:${Math.round((sec.done / sec.lessons.length) * 100)}%"></i></div>
           <span>${sec.done} / ${sec.lessons.length}</span></div>
       </div>
-      <div class="it-road" role="list" aria-label="Qasrlar yo'li, yon tomonga suring">${road(sections, st, opened)}</div>
-      ${sections.length > 3 ? `<div class="it-swipe" aria-hidden="true">${ic('left', 16)}Suring${ic('right', 16)}</div>` : ''}
+      <div class="it-road" role="list" aria-label="${t('it.road')}">${road(sections, st, opened)}</div>
+      ${sections.length > 3 ? `<div class="it-swipe" aria-hidden="true">${ic('left', 16)}${t('it.swipe')}${ic('right', 16)}</div>` : ''}
     </div>
     <aside class="it-side">
       <div class="it-tiles">
-        <div class="it-tile is-fire"><b>${stats.streak}</b><span>kun ketma-ket</span></div>
+        <div class="it-tile is-fire"><b>${stats.streak}</b><span>${t('it.streak')}</span></div>
         <div class="it-tile is-xp"><b>${stats.xp}</b><span>XP</span></div>
       </div>
       <div class="it-card it-goal">
-        <h2>Bugungi maqsad</h2>
-        <div class="it-prog"><div class="it-bar is-ink"><i style="width:${goalPct}%"></i></div><span>${Math.min(stats.today, stats.goal)} / ${stats.goal} mavzu</span></div>
-        ${stats.today >= stats.goal ? '<p class="it-done">Barakalla! Bugungi maqsad bajarildi.</p>' : ''}
+        <h2>${t('it.goal')}</h2>
+        <div class="it-prog"><div class="it-bar is-ink"><i style="width:${goalPct}%"></i></div><span>${Math.min(stats.today, stats.goal)} / ${stats.goal} ${t('it.topics')}</span></div>
+        ${stats.today >= stats.goal ? `<p class="it-done">${t('it.goalDone')}</p>` : ''}
       </div>
       <div class="it-card it-secs">
-        <h2>Bo'limlar</h2>
+        <h2>${t('tp.sections')}</h2>
         <ul>${sections.map((s, i) => (st[i] === 'locked'
-          ? `<li class="is-off"><span>${i + 1}. ${esc(s.title)}</span><span class="it-lock" aria-label="Yopiq">${ic('lock', 18)}</span></li>`
+          ? `<li class="is-off"><span>${i + 1}. ${esc(s.title)}</span><span class="it-lock" aria-label="${t('tl.locked')}">${ic('lock', 18)}</span></li>`
           : `<li><a href="#/it/section/${s.id}">${i + 1}. ${esc(s.title)}</a><b>${s.done} / ${s.lessons.length}</b></li>`)).join('')}</ul>
       </div>
-      ${allDone ? '<p class="it-alldone">Hamma qasrlar zabt etildi! Yangi bo\'limlar tez orada.</p>'
-        : `<a class="btn it-go" href="#/it/section/${sec.id}">${anyDone ? 'Davom ettirish' : 'Boshlash'}</a>`}
+      ${allDone ? `<p class="it-alldone">${t('it.allDone')}</p>`
+        : `<a class="btn it-go" href="#/it/section/${sec.id}">${anyDone ? t('tl.continue') : t('home.start')}</a>`}
     </aside>`;
 
   // Hozirgi (yoki yangi ochilgan) qasrni yo'lning o'rtasiga olib kelamiz (sahifani tik surmasdan)
@@ -84,10 +85,10 @@ function render(view, { sections, stats }, opened) {
 
 function head(stats) {
   return `<div class="it-head">
-    <a class="it-back" href="#/" aria-label="Orqaga">${ic('left', 20)}</a>
-    <h1>IT darslari</h1>
+    <a class="it-back" href="#/" aria-label="${t('app.backShort')}">${ic('left', 20)}</a>
+    <h1>${t('home.it')}</h1>
     <div class="it-pills">
-      <span class="it-pill is-fire" title="Ketma-ket kunlar">${ic('fire', 16)}<b>${stats.streak}</b><span class="sr">kun ketma-ket</span></span>
+      <span class="it-pill is-fire" title="${t('pf.streak')}">${ic('fire', 16)}<b>${stats.streak}</b><span class="sr">${t('it.streak')}</span></span>
       <span class="it-pill is-xp" title="XP">${ic('star', 16)}<b>${stats.xp}</b><span class="sr">XP</span></span>
     </div>
   </div>`;
@@ -108,19 +109,19 @@ function road(sections, st, opened) {
 
 function castle(s, i, status, top, opening) {
   const sz = size(status);
-  const meta = status === 'done' ? 'Zabt etildi'
-    : status === 'locked' ? `${s.lessons.length} mavzu` : `${s.done} / ${s.lessons.length} mavzu`;
+  const meta = status === 'done' ? t('it.conquered')
+    : status === 'locked' ? `${s.lessons.length} ${t('it.topics')}` : `${s.done} / ${s.lessons.length} ${t('it.topics')}`;
   const badge = status === 'done' ? `<span class="it-badge is-ok" aria-hidden="true">${ic('check', 16)}</span>`
     : status === 'locked' ? `<span class="it-badge is-lock" aria-hidden="true">${ic('lock', 14)}</span>` : '';
   // Yangi ochilgan qasr: qulflangan rasm ustida turadi va eriydi
   const pic = `<img src="${castleSrc('open')}" alt="" width="${sz}" height="${sz}" draggable="false">
     ${opening ? `<img class="it-was" src="${castleSrc('locked')}" alt="" width="${sz}" height="${sz}" draggable="false">` : ''}${badge}`;
-  const label = `${i + 1}-bo'lim: ${esc(s.title)}${status === 'done' ? ' (zabt etilgan)' : status === 'locked' ? ' (yopiq)' : ''}`;
+  const label = `${t('it.secN', { n: i + 1 })}: ${esc(s.title)}${status === 'done' ? ` (${t('it.conquered').toLowerCase()})` : status === 'locked' ? ` (${t('tl.locked')})` : ''}`;
   const art = status === 'locked'
     ? `<span class="it-art" style="width:${sz}px;height:${sz}px" role="img" aria-label="${label}"><img src="${castleSrc('locked')}" alt="" width="${sz}" height="${sz}" draggable="false">${badge}</span>`
-    : `<a class="it-art" style="width:${sz}px;height:${sz}px" href="#/it/section/${s.id}" aria-label="${label} — kirish">${pic}</a>`;
+    : `<a class="it-art" style="width:${sz}px;height:${sz}px" href="#/it/section/${s.id}" aria-label="${label} — ${t('home.enter').toLowerCase()}">${pic}</a>`;
   return `<div class="it-c is-${status}${opening ? ' is-opening' : ''}" role="listitem" style="padding-top:${top}px">
-    ${status === 'current' ? '<span class="it-now">Hozirgi bo\'lim</span>' : '<span class="it-now is-empty"></span>'}
+    ${status === 'current' ? `<span class="it-now">${t('it.current')}</span>` : '<span class="it-now is-empty"></span>'}
     <div class="it-box">${art}</div>
     <b>${esc(s.title)}</b><small>${meta}</small>
   </div>`;

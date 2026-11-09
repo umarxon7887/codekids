@@ -17,6 +17,7 @@ const PATH_SQL = `
     JOIN it_lessons l ON l.section_id = s.id AND l.is_published = true
     LEFT JOIN it_progress p ON p.lesson_id = l.id AND p.user_id = $1
    WHERE s.is_published = true
+     AND s.lang = $2
      AND (s.is_global = true
           OR s.author_id = $1
           OR s.author_id IN (SELECT c.teacher_id
@@ -43,14 +44,19 @@ const LESSON_SQL = `
     LEFT JOIN it_tools tl ON tl.id = l.tool_id
    WHERE l.id = $1`;
 
+/** Ilova tili bo'yicha qasrlar yo'li tili ('uz' yoki 'ru'). */
+export const pathLang = (l) => (String(l || '').toLowerCase().startsWith('ru') ? 'ru' : 'uz');
+
 /**
  * Qasrlar yo'li: bo'limlar, har qasr holati va statistika.
  * O'quvchi uchun qasrlar ketma-ket ochiladi; ustoz va admin hammasini ko'ra oladi.
+ * Ruscha va o'zbekcha qasrlar alohida yo'l: har birida o'z tartibi va progressi bor (XP va kunlar umumiy).
  * @param {Function} run db.query
  * @param {{id:string, role:string}} user
+ * @param {'uz'|'ru'} [lang]
  */
-export async function getPath(run, user) {
-  const [{ rows }, stats] = await Promise.all([run(PATH_SQL, [user.id]), getStats(run, user.id)]);
+export async function getPath(run, user, lang = 'uz') {
+  const [{ rows }, stats] = await Promise.all([run(PATH_SQL, [user.id, lang]), getStats(run, user.id)]);
   const free = user.role !== 'student';
   const sections = [];
   let current = null;
@@ -67,7 +73,7 @@ export async function getPath(run, user) {
     if (r.done) s.done += 1;
     s.lessons.push({ id: r.id, kind: r.kind, title: r.title, minutes: r.minutes, xp: r.xp, exercises: r.exercises, status });
   }
-  return { sections, stats: { ...stats, goal: DAILY_GOAL, current_lesson_id: current } };
+  return { lang, sections, stats: { ...stats, goal: DAILY_GOAL, current_lesson_id: current } };
 }
 
 export async function getStats(run, userId) {
@@ -77,7 +83,12 @@ export async function getStats(run, userId) {
 
 /** Yo'ldan qasr holatini topadi: ko'rinmasa 404, qulflangan bo'lsa 403. */
 async function lessonStatus(run, user, lessonId) {
-  const path = await getPath(run, user);
+  // Qasr qaysi tildagi yo'lda bo'lsa, o'sha yo'l bo'yicha tekshiriladi
+  const { rows: [own] } = await run(
+    'SELECT s.lang FROM it_lessons l JOIN it_sections s ON s.id = l.section_id WHERE l.id = $1', [lessonId]
+  );
+  if (!own) throw new AppError(404, 'LESSON_NOT_FOUND', 'Dars topilmadi');
+  const path = await getPath(run, user, own.lang);
   for (const s of path.sections) {
     const l = s.lessons.find((x) => x.id === lessonId);
     if (l) {
@@ -128,7 +139,7 @@ export async function setRealName(run, userId, name) {
  * @param {(fn:(client:{query:Function})=>Promise<any>)=>Promise<any>} tx tranzaksiya
  */
 export async function completeLesson(run, tx, user, lessonId, { mistakes = 0 } = {}) {
-  await lessonStatus(run, user, lessonId);
+  const { path: before } = await lessonStatus(run, user, lessonId);
   const { rows } = await run(LESSON_SQL, [lessonId]);
   const l = rows[0];
 
@@ -156,7 +167,7 @@ export async function completeLesson(run, tx, user, lessonId, { mistakes = 0 } =
     return { inserted: res.rows[0].inserted, newTool: !toolBefore };
   });
 
-  const path = await getPath(run, user);
+  const path = await getPath(run, user, before.lang);
   const next = path.stats.current_lesson_id;
   const nextSection = next ? path.sections.find((x) => x.lessons.some((y) => y.id === next)) : null;
   return {

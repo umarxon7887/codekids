@@ -121,9 +121,9 @@ router.post(
     const d = req.validated.body;
 
     const { rows } = await query(
-      `INSERT INTO contents (author_id, type, title, description, topic, level, data)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
-       RETURNING id, type, title, description, topic, level, is_published, created_at`,
+      `INSERT INTO contents (author_id, type, title, description, topic, level, data, language)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       RETURNING id, type, title, description, topic, level, language, is_published, created_at`,
       [
         req.user.id,
         d.type,
@@ -132,6 +132,7 @@ router.post(
         d.topic ?? null,
         d.level,
         JSON.stringify(d.data),
+        d.language,
       ]
     );
 
@@ -213,10 +214,10 @@ router.post(
     const data = questionsDataSchema.parse({ questions });
 
     const { rows } = await query(
-      `INSERT INTO contents (author_id, type, title, topic, level, data)
-       VALUES ($1, 'questions', $2, $3, $4, $5)
-       RETURNING id, type, title, topic, level, is_published, created_at`,
-      [req.user.id, meta.title, meta.topic ?? null, meta.level, JSON.stringify(data)]
+      `INSERT INTO contents (author_id, type, title, topic, level, data, language)
+       VALUES ($1, 'questions', $2, $3, $4, $5, $6)
+       RETURNING id, type, title, topic, level, language, is_published, created_at`,
+      [req.user.id, meta.title, meta.topic ?? null, meta.level, JSON.stringify(data), meta.language]
     );
 
     res.status(201).json({ content: rows[0], imported: questions.length });
@@ -248,10 +249,11 @@ router.put(
               description = COALESCE($3, description),
               topic       = COALESCE($4, topic),
               level       = COALESCE($5, level),
-              data        = COALESCE($6::jsonb, data)
+              data        = COALESCE($6::jsonb, data),
+              language    = COALESCE($7, language)
         WHERE id = $1
-        RETURNING id, type, title, description, topic, level, is_published, updated_at`,
-      [id, d.title ?? null, d.description ?? null, d.topic ?? null, d.level ?? null, dataJson]
+        RETURNING id, type, title, description, topic, level, language, is_published, updated_at`,
+      [id, d.title ?? null, d.description ?? null, d.topic ?? null, d.level ?? null, dataJson, d.language ?? null]
     );
 
     res.json({ content: rows[0] });

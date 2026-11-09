@@ -9,9 +9,10 @@ import { showError } from '../../core/toast.js';
 import { html, esc } from '../../utils/dom.js';
 import { coinSvg, coinPill } from './coin.js';
 import { ic, starsRow, keyboardHtml, highlightKey, fingerHint } from './common.js';
+import { t } from '../../i18n/index.js';
 
-const STEP_NAME = { keys: 'Tugmalar', words: "So'zlar", text: 'Gaplar' };
-const COIN_REASON = { lesson: "Dars o'tildi", exam: "Imtihon o'tildi", star: 'Yangi yulduzlar', daily: 'Kunlik bonus' };
+const STEP_NAME = { keys: t('tl.s.keys'), words: t('tl.s.words'), text: t('tl.s.text') };
+const COIN_REASON = { lesson: t('tl.c.lesson'), exam: t('tl.c.exam'), star: t('tl.c.star'), daily: t('tl.c.daily') };
 // Turli klaviaturalardagi apostrof va qo'shtirnoq turlari oddiy belgiga keltiriladi
 const NORMALIZE = { '’': "'", '‘': "'", 'ʻ': "'", 'ʼ': "'", '`': "'", '“': '"', '”': '"', '«': '"', '»': '"' };
 const norm = (c) => NORMALIZE[c] || c;
@@ -43,8 +44,8 @@ export async function mountTypingLesson(root, lessonId) {
       a = await api.post('/typing-lessons/attempts', { lesson_id: lessonId });
     } catch (e) {
       showError(e);
-      view.innerHTML = `<div class="tl-empty"><p>${e.code === 'LESSON_LOCKED' ? 'Bu dars hali yopiq. Avval oldingi darslarni tugat.' : "Darsni ochib bo'lmadi."}</p>
-        <a class="btn btn--ghost" href="${mapHref()}">Darslar xaritasi</a></div>`;
+      view.innerHTML = `<div class="tl-empty"><p>${e.code === 'LESSON_LOCKED' ? t('tl.lockedMsg') : t('tl.openFail')}</p>
+        <a class="btn btn--ghost" href="${mapHref()}">${t('tl.map')}</a></div>`;
       return;
     }
     if (alive) intro(a);
@@ -57,22 +58,20 @@ export async function mountTypingLesson(root, lessonId) {
     view.innerHTML = `
       ${top(l, null, a.steps.length)}
       <div class="tlx-intro">
-        <span class="tlx-tag">${l.lang === 'ru' ? 'Ruscha · ' : ''}${l.level}-daraja · ${esc(l.level_title)}</span>
-        <h1>${exam ? `${l.level}-daraja imtihoni` : esc(l.title)}</h1>
+        <span class="tlx-tag">${l.lang === 'ru' ? `${t('pf.ruShort')} · ` : ''}${t('app.level', { n: l.level })} · ${esc(l.level_title)}</span>
+        <h1>${exam ? t('tl.examOf', { n: l.level }) : esc(l.title)}</h1>
         ${keys.length ? `<div class="tlx-keys">${keys.map((k) => `<span>${esc(k.toUpperCase())}</span>`).join('')}</div>` : ''}
         <ul class="tlx-rules">
           ${exam
-            ? `<li>Bitta uzun matn. O'tish uchun kamida <b>${l.wpm} so'z/daq</b> va <b>${a.rules.pass_accuracy}%</b> aniqlik kerak.</li>
-               <li>O'tsang keyingi daraja ochiladi va <b>50</b> coin olasan.</li>`
-            : `<li>${a.steps.length} ta mashq: ${a.steps.map((s) => STEP_NAME[s.kind]).join(', ').toLowerCase()}.</li>
-               <li>O'tish uchun aniqlik kamida <b>${a.rules.pass_accuracy}%</b>. 3 yulduz: 98% va ${l.wpm} so'z/daq.</li>`}
-          <li>Xato harf bossang kursor joyida turadi. To'g'ri harfni topib bos.</li>
-          ${l.lang === 'ru'
-            ? "<li>Kompyuterda <b>rus klaviaturasini</b> yoqing (Alt+Shift yoki Win+Probel). Barmoqlar: chap qo'l <b>Ф Ы В А</b>, o'ng qo'l <b>О Л Д Ж</b></li>"
-            : "<li>Barmoqlar asosiy qatorda: chap qo'l <b>A S D F</b>, o'ng qo'l <b>J K L ;</b></li>"}
+            ? `<li>${t('tl.r.exam1', { w: l.wpm, a: a.rules.pass_accuracy })}</li>
+               <li>${t('tl.r.exam2')}</li>`
+            : `<li>${t('tl.r.steps', { n: a.steps.length, list: a.steps.map((s) => STEP_NAME[s.kind]).join(', ').toLowerCase() })}</li>
+               <li>${t('tl.r.pass', { w: l.wpm, a: a.rules.pass_accuracy })}</li>`}
+          <li>${t('tl.r.cursor')}</li>
+          <li>${t(l.lang === 'ru' ? 'tl.r.homeRu' : 'tl.r.homeUz')}</li>
         </ul>
-        ${l.stars ? `<p class="tlx-best">Oldingi natija: ${starsRow(l.stars, 16)} · ${l.best_wpm} so'z/daq</p>` : ''}
-        <button class="btn btn--big tlx-start" type="button">Boshlash</button>
+        ${l.stars ? `<p class="tlx-best">${t('tl.prev')}: ${starsRow(l.stars, 16)} · ${l.best_wpm} ${t('app.wpm')}</p>` : ''}
+        <button class="btn btn--big tlx-start" type="button">${t('home.start')}</button>
       </div>`;
     view.querySelector('.tlx-start').onclick = () => step(a, 0);
     view.querySelector('.tlx-start').focus();
@@ -86,17 +85,17 @@ export async function mountTypingLesson(root, lessonId) {
       ${top(l, i, a.steps.length)}
       <div class="tlx-play">
         <div class="tlx-live">
-          <span><b data-wpm>0</b> so'z/daq</span>
-          <span><b data-acc>100</b>% aniqlik</span>
-          <span><b data-err>0</b> xato</span>
+          <span><b data-wpm>0</b> ${t('app.wpm')}</span>
+          <span><b data-acc>100</b>% ${t('tl.acc')}</span>
+          <span><b data-err>0</b> ${t('tl.err')}</span>
         </div>
         <div class="tlx-text" tabindex="-1">
           <div class="tlx-chars">${[...text].map((c) => `<span${c === ' ' ? ' class="sp"' : ''}>${esc(c)}</span>`).join('')}</div>
-          <input class="tlx-input" type="text" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" enterkeyhint="next" aria-label="Matnni shu yerga yozing">
+          <input class="tlx-input" type="text" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" enterkeyhint="next" aria-label="${t('tl.typeHere')}">
         </div>
         <p class="tlx-hint" aria-live="polite"><span data-hint></span></p>
         ${keyboardHtml(l.keys, l.lang)}
-        <p class="tlx-tap">Telefonda yozish uchun matnga bosing</p>
+        <p class="tlx-tap">${t('tl.tap')}</p>
       </div>`;
     const chars = [...view.querySelectorAll('.tlx-chars span')];
     const input = view.querySelector('.tlx-input');
@@ -172,7 +171,7 @@ export async function mountTypingLesson(root, lessonId) {
         showError(e);
         if (!alive) return;
         view.querySelector('.tlx-play').insertAdjacentHTML('beforeend',
-          `<div class="tlx-fail"><p>Natijani yuborib bo'lmadi.</p><button class="btn" type="button" data-restart>${ic('redo', 18)}Darsni qayta boshlash</button></div>`);
+          `<div class="tlx-fail"><p>${t('tl.sendFail')}</p><button class="btn" type="button" data-restart>${ic('redo', 18)}${t('tl.restart')}</button></div>`);
         view.querySelector('[data-restart]').onclick = start;
       }
     }
@@ -220,14 +219,14 @@ export async function mountTypingLesson(root, lessonId) {
     view.innerHTML = `
       ${top(a.lesson, i, a.steps.length, true)}
       <div class="tlx-between">
-        <h2>${s.accuracy >= 95 ? "Zo'r!" : s.accuracy >= 90 ? 'Yaxshi!' : 'Davom et!'}</h2>
+        <h2>${s.accuracy >= 95 ? t('tl.great') : s.accuracy >= 90 ? t('tl.good') : t('tl.keepOn')}</h2>
         <div class="tlx-nums">
-          <div><b>${Math.round(s.wpm)}</b><span>so'z/daq</span></div>
-          <div><b>${Math.floor(s.accuracy)}%</b><span>aniqlik</span></div>
-          <div><b>${s.errors}</b><span>xato</span></div>
+          <div><b>${Math.round(s.wpm)}</b><span>${t('app.wpm')}</span></div>
+          <div><b>${Math.floor(s.accuracy)}%</b><span>${t('tl.acc')}</span></div>
+          <div><b>${s.errors}</b><span>${t('tl.err')}</span></div>
         </div>
-        ${s.accuracy < 90 ? '<p class="tlx-warn">Aniqlik 90% dan past. Shoshilma, to\'g\'ri bosishga harakat qil.</p>' : ''}
-        <button class="btn btn--big" type="button">${next + 1}-mashq: ${STEP_NAME[a.steps[next].kind]}</button>
+        ${s.accuracy < 90 ? `<p class="tlx-warn">${t('tl.low90')}</p>` : ''}
+        <button class="btn btn--big" type="button">${t('tl.stepN', { n: next + 1 })}: ${STEP_NAME[a.steps[next].kind]}</button>
       </div>`;
     const btn = view.querySelector('.tlx-between .btn');
     btn.onclick = () => step(a, next);
@@ -241,32 +240,32 @@ export async function mountTypingLesson(root, lessonId) {
     const nextHref = r.next_lesson_id ? `#/typing-lessons/${r.next_lesson_id}` : mapHref();
     const coinRows = r.coins.map((c) => `<li><span>${COIN_REASON[c.reason] || c.reason}</span><b>+${c.amount}</b></li>`).join('');
     let title;
-    if (r.flagged) title = 'Juda tez! Natija hisobga olinmadi';
-    else if (!r.passed) title = exam && r.accuracy >= 90 ? 'Tezlik yetmadi' : 'Yana bir urinish!';
-    else if (r.level_unlocked) title = `${r.level_unlocked}-daraja ochildi!`;
-    else title = r.stars === 3 ? 'Mukammal!' : 'Dars o\'tildi!';
-    const why = r.flagged ? 'Bunday tezlik odatda xato bilan bog\'liq. Qaytadan oddiy yozib ko\'r.'
-      : !r.passed ? (exam && r.accuracy >= 90 ? `Imtihon uchun ${l.wpm} so'z/daq kerak. Darslarni takrorlab, qayta urin.` : `O'tish uchun aniqlik kamida ${a.rules.pass_accuracy}% bo'lishi kerak. Shoshilmay yoz.`)
-        : r.stars < 3 ? (r.accuracy < 98 ? '3 yulduz uchun aniqlik 98% bo\'lsin.' : `3 yulduz uchun ${exam ? l.wpm + 5 : l.wpm} so'z/daq kerak.`) : '';
+    if (r.flagged) title = t('tl.t.flagged');
+    else if (!r.passed) title = exam && r.accuracy >= 90 ? t('tl.t.slow') : t('tl.t.again');
+    else if (r.level_unlocked) title = t('tl.t.unlocked', { n: r.level_unlocked });
+    else title = r.stars === 3 ? t('tl.t.perfect') : t('tl.t.passed');
+    const why = r.flagged ? t('tl.w.flagged')
+      : !r.passed ? (exam && r.accuracy >= 90 ? t('tl.w.slow', { w: l.wpm }) : t('tl.w.acc', { a: a.rules.pass_accuracy }))
+        : r.stars < 3 ? (r.accuracy < 98 ? t('tl.w.star98') : t('tl.w.starWpm', { w: exam ? l.wpm + 5 : l.wpm })) : '';
     view.innerHTML = `
-      <div class="tlx-top"><a class="tl-back" href="${mapHref()}" aria-label="Darslar xaritasi">${ic('x', 20)}</a><b>${esc(exam ? 'Imtihon' : l.title)}</b>${coinPill(r.coins_total)}</div>
+      <div class="tlx-top"><a class="tl-back" href="${mapHref()}" aria-label="${t('tl.map')}">${ic('x', 20)}</a><b>${esc(exam ? t('tl.exam') : l.title)}</b>${coinPill(r.coins_total)}</div>
       <div class="tlx-res ${r.passed ? 'is-pass' : 'is-fail'}">
         ${starsRow(r.stars, 46, 'tlx-bigstars')}
         <h1>${title}</h1>
         ${why ? `<p class="tlx-why">${why}</p>` : ''}
         <div class="tlx-nums">
-          <div><b>${Math.round(r.wpm)}</b><span>so'z/daq</span></div>
-          <div><b>${Math.floor(r.accuracy)}%</b><span>aniqlik</span></div>
-          <div><b>${fmtTime(r.time_sec)}</b><span>vaqt</span></div>
+          <div><b>${Math.round(r.wpm)}</b><span>${t('app.wpm')}</span></div>
+          <div><b>${Math.floor(r.accuracy)}%</b><span>${t('tl.acc')}</span></div>
+          <div><b>${fmtTime(r.time_sec)}</b><span>${t('tl.time')}</span></div>
         </div>
         ${r.coins_earned ? `<div class="tlx-coins">
             <div class="tlx-coin-big">${coinSvg(64, 'is-pop')}<b>+${r.coins_earned}</b></div>
             <ul>${coinRows}</ul>
-          </div>` : r.passed ? '<p class="tlx-why">Bu dars uchun coin avval olingan. Yangi yulduz olsang yana coin beriladi.</p>' : ''}
+          </div>` : r.passed ? `<p class="tlx-why">${t('tl.coinTaken')}</p>` : ''}
         <div class="tlx-acts">
-          ${r.passed && r.next_lesson_id ? `<a class="btn btn--big" href="${nextHref}">Keyingi dars</a>` : ''}
-          <button class="btn ${r.passed ? 'btn--ghost' : 'btn--big'}" type="button" data-again>${ic('redo', 18)}Qayta urinish</button>
-          <a class="btn btn--ghost" href="${mapHref(r.level_unlocked)}">${ic('map', 18)}Darslar xaritasi</a>
+          ${r.passed && r.next_lesson_id ? `<a class="btn btn--big" href="${nextHref}">${t('tl.next')}</a>` : ''}
+          <button class="btn ${r.passed ? 'btn--ghost' : 'btn--big'}" type="button" data-again>${ic('redo', 18)}${t('app.retry')}</button>
+          <a class="btn btn--ghost" href="${mapHref(r.level_unlocked)}">${ic('map', 18)}${t('tl.map')}</a>
         </div>
       </div>`;
     view.querySelector('[data-again]').onclick = start;
@@ -284,14 +283,14 @@ function top(l, i, total, doneCur = false) {
     return `<i class="${st.trim()}"></i>`;
   }).join('');
   return `<div class="tlx-top">
-    <a class="tl-back" href="${href}" aria-label="Darsdan chiqish">${ic('x', 20)}</a>
-    <b>${esc(l.kind === 'exam' ? `${l.level}-daraja imtihoni` : l.title)}</b>
-    <span class="tlx-dots" aria-label="${i == null ? total : i + 1} / ${total} mashq">${dots}</span>
+    <a class="tl-back" href="${href}" aria-label="${t('tl.exit')}">${ic('x', 20)}</a>
+    <b>${esc(l.kind === 'exam' ? t('tl.examOf', { n: l.level }) : l.title)}</b>
+    <span class="tlx-dots" aria-label="${i == null ? total : i + 1} / ${total} ${t('tl.steps')}">${dots}</span>
   </div>`;
 }
 
 function fmtTime(sec) {
   const m = Math.floor(sec / 60);
   const s = sec % 60;
-  return m ? `${m}:${String(s).padStart(2, '0')}` : `${s} s`;
+  return m ? `${m}:${String(s).padStart(2, '0')}` : `${s} ${t('tl.sec')}`;
 }

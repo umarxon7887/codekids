@@ -316,7 +316,7 @@ export function mountLessonEditor(box, ctx) {
       body = `<fieldset class="ad-rows"><legend>Guruhlar <small>2 yoki 3 ta, masalan: Ichida / Tashqarida</small></legend>
           ${e.groups.map((_, j) => `
             <div class="ad-rowf">
-              <span class="ad-num">${j + 1}</span>
+              ${rowImg(`${p}.group_images.${j}`, `${j + 1}-guruhga rasm`)}
               <input maxlength="40" data-f="${p}.groups.${j}" placeholder="${j + 1}-guruh" aria-label="${i + 1}-mashq, ${j + 1}-guruh">
               <button type="button" class="ad-ib" data-act="del-grp:${i}:${j}" ${e.groups.length <= 2 ? 'disabled' : ''} aria-label="${j + 1}-guruhni o'chirish">${ic('x', 16)}</button>
             </div>`).join('')}
@@ -621,7 +621,7 @@ export function mountLessonEditor(box, ctx) {
       if (e.type === 'sort') e.item_groups = e.items.map((_, k) => Number(e.item_groups?.[k]) || 0);
       if (e.type === 'typing') { e.min_accuracy = clampInt(e.min_accuracy, 50, 100, 90); e.case_sensitive = Boolean(e.case_sensitive); }
       if (e.type === 'maze') e.max_commands = clampInt(e.max_commands, 1, 40, null);
-      for (const k of ['option_images', 'item_images', 'pair_images']) {
+      for (const k of ['option_images', 'item_images', 'group_images', 'pair_images']) {
         if (!e[k]) continue;
         e[k] = Array.from(e[k], (x) => (k === 'pair_images' ? [x?.[0] || null, x?.[1] || null] : x || null));
       }
@@ -804,6 +804,7 @@ export function mountLessonEditor(box, ctx) {
       } else if (act === 'add-grp') ex[i].groups.push('');
       else if (act === 'del-grp') {
         ex[i].groups.splice(j, 1);
+        imgs(ex[i], 'group_images', ex[i].groups.length + 1)?.splice(j, 1);
         ex[i].item_groups = ex[i].item_groups.map((g) => (g === j ? 0 : g > j ? g - 1 : g));
       } else if (act === 'add-sitem') { ex[i].items.push(''); ex[i].item_groups.push(0); }
       else if (act === 'del-sitem') {

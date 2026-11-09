@@ -24,7 +24,7 @@ function ownTool(user, n) {
   throw new AppError(403, 'FORBIDDEN', "Bu amal uchun ruxsat yo'q");
 }
 
-const SECTION_COLS = 's.id, s.title, s.method, s.description, s.position, s.is_published, s.updated_at';
+const SECTION_COLS = 's.id, s.title, s.method, s.description, s.lang, s.position, s.is_published, s.updated_at';
 const LESSON_COLS = `l.id, l.section_id, l.position, l.kind, l.title, l.term, l.tool_id, l.minutes, l.xp,
   l.content, l.is_published, l.updated_at`;
 const TOOL_COLS = 't.id, t.name, t.short, t.body';
@@ -85,15 +85,15 @@ export async function createSection(run, user, data) {
     `SELECT coalesce(max(s.position), 0) + 1 AS next FROM it_sections s WHERE ${c.sql}`, c.args
   );
   const { rows } = await run(
-    `INSERT INTO it_sections AS s (author_id, is_global, position, title, method, description, is_published)
-     VALUES ($1, $2, $3, $4, $5, $6, false)
+    `INSERT INTO it_sections AS s (author_id, is_global, position, title, method, description, lang, is_published)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, false)
      RETURNING ${SECTION_COLS}`,
-    [user.id, user.role === 'admin', next, data.title, data.method, data.description]
+    [user.id, user.role === 'admin', next, data.title, data.method, data.description, data.lang || 'uz']
   );
   return rows[0];
 }
 
-const SECTION_FIELDS = ['title', 'method', 'description', 'is_published'];
+const SECTION_FIELDS = ['title', 'method', 'description', 'lang', 'is_published'];
 
 export async function updateSection(run, user, id, data) {
   const keys = SECTION_FIELDS.filter((k) => data[k] !== undefined);
@@ -269,7 +269,7 @@ export function publishIssues({ title, content }) {
 export function contentImages(c) {
   const ids = [c.story_image, c.helper?.image, c.term_image];
   for (const e of c.exercises || []) {
-    ids.push(e.image, ...(e.option_images || []), ...(e.item_images || []), ...(e.pair_images || []).flat());
+    ids.push(e.image, ...(e.option_images || []), ...(e.item_images || []), ...(e.group_images || []), ...(e.pair_images || []).flat());
   }
   return [...new Set(ids.filter(Boolean))];
 }
@@ -310,7 +310,7 @@ function tidy(content) {
     const set = (k, v) => { if (v) x[k] = v; else delete x[k]; };
     if (x.type === 'choice') set('option_images', fit(x.option_images, x.options.length));
     if (x.type === 'order' || x.type === 'sort') set('item_images', fit(x.item_images, x.items.length));
-    if (x.type === 'sort') x.item_groups = x.item_groups.slice(0, x.items.length);
+    if (x.type === 'sort') { x.item_groups = x.item_groups.slice(0, x.items.length); set('group_images', fit(x.group_images, x.groups.length)); }
     if (x.type === 'match') set('pair_images', fit(x.pair_images, x.pairs.length, true));
     return x;
   });
