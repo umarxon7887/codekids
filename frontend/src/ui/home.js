@@ -5,7 +5,7 @@ import { disconnectSocket } from '../core/socket.js';
 import { toast } from '../core/toast.js';
 import { html, esc } from '../utils/dom.js';
 import { coinSvg } from './tl/coin.js';
-import { t, langButton } from '../i18n/index.js';
+import { t, langButton, getLang } from '../i18n/index.js';
 
 const P = {
   logo: '<path d="M8 7l-5 5 5 5M16 7l5 5-5 5M14 4l-4 16"/>',
@@ -78,7 +78,7 @@ export function mountHome(root, user, reroute) {
   };
   root.replaceChildren(view);
   // Coinlar va darslar holati (sahifa yuklanishini kutmasdan)
-  api.get('/typing-lessons').then(({ stats }) => {
+  api.get('/typing-lessons', { query: { lang: getLang() } }).then(({ stats }) => {
     const pill = $('.hm-coins');
     pill.querySelector('b').textContent = String(stats.coins);
     pill.hidden = false;

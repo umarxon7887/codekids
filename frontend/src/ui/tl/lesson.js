@@ -10,6 +10,7 @@ import { html, esc } from '../../utils/dom.js';
 import { coinSvg, coinPill } from './coin.js';
 import { ic, starsRow, keyboardHtml, highlightKey, fingerHint } from './common.js';
 import { t } from '../../i18n/index.js';
+import { BASE_URL } from '../../core/config.js';
 
 const STEP_NAME = { keys: t('tl.s.keys'), words: t('tl.s.words'), text: t('tl.s.text') };
 const COIN_REASON = { lesson: t('tl.c.lesson'), exam: t('tl.c.exam'), star: t('tl.c.star'), daily: t('tl.c.daily') };
@@ -23,14 +24,8 @@ const norm = (c) => NORMALIZE[c] || c;
  * @returns {Promise<()=>void>}
  */
 export async function mountTypingLesson(root, lessonId) {
-  const ru = lessonId.startsWith('r');
-  /** Xarita manzili (shu dars tilida). */
-  const mapHref = (opened) => {
-    const q = new URLSearchParams();
-    if (ru) q.set('lang', 'ru');
-    if (opened) q.set('opened', opened);
-    return `#/typing-lessons${[...q].length ? `?${q}` : ''}`;
-  };
+  /** Xarita manzili (kurs tili = sayt tili). */
+  const mapHref = (opened) => `#/typing-lessons${opened ? `?opened=${opened}` : ''}`;
   const view = html('<section class="tlx"><div class="skeleton tl-skel" aria-busy="true"></div></section>');
   root.replaceChildren(view);
   let off = () => {}; // joriy mashq tinglovchilarini olib tashlash
@@ -55,26 +50,34 @@ export async function mountTypingLesson(root, lessonId) {
     const l = a.lesson;
     const exam = l.kind === 'exam';
     const keys = l.keys.filter((k) => k !== 'shift');
+    const keyList = keys.map((k) => `<b>${esc(k.toUpperCase())}</b>`).join(', ');
+    const say = exam ? t('tl.i.exam', { w: l.wpm, a: a.rules.pass_accuracy })
+      : keys.length ? t('tl.i.keys', { keys: keyList })
+        : l.keys.includes('shift') ? t('tl.i.shift') : t('tl.i.words');
+    const starWpm = exam ? l.wpm + 5 : l.wpm;
     view.innerHTML = `
       ${top(l, null, a.steps.length)}
       <div class="tlx-intro">
-        <span class="tlx-tag">${l.lang === 'ru' ? `${t('pf.ruShort')} · ` : ''}${t('app.level', { n: l.level })} · ${esc(l.level_title)}</span>
-        <h1>${exam ? t('tl.examOf', { n: l.level }) : esc(l.title)}</h1>
-        ${keys.length ? `<div class="tlx-keys">${keys.map((k) => `<span>${esc(k.toUpperCase())}</span>`).join('')}</div>` : ''}
-        <ul class="tlx-rules">
-          ${exam
-            ? `<li>${t('tl.r.exam1', { w: l.wpm, a: a.rules.pass_accuracy })}</li>
-               <li>${t('tl.r.exam2')}</li>`
-            : `<li>${t('tl.r.steps', { n: a.steps.length, list: a.steps.map((s) => STEP_NAME[s.kind]).join(', ').toLowerCase() })}</li>
-               <li>${t('tl.r.pass', { w: l.wpm, a: a.rules.pass_accuracy })}</li>`}
-          <li>${t('tl.r.cursor')}</li>
-          <li>${t(l.lang === 'ru' ? 'tl.r.homeRu' : 'tl.r.homeUz')}</li>
-        </ul>
-        ${l.stars ? `<p class="tlx-best">${t('tl.prev')}: ${starsRow(l.stars, 16)} · ${l.best_wpm} ${t('app.wpm')}</p>` : ''}
-        <button class="btn btn--big tlx-start" type="button">${t('home.start')}</button>
+        <span class="tlx-tag">${t('app.level', { n: l.level })} · ${esc(l.level_title)}</span>
+        <div class="tlx-kibi">
+          <img src="${BASE_URL}it/kibi/${exam ? 'usta' : 'tushuntirish'}.webp" alt="" draggable="false">
+          <p class="tl-bubble">${say}</p>
+        </div>
+        ${l.keys.length ? `<div class="tlx-card"><h3>${t('tl.i.kbTitle')}</h3>${keyboardHtml(l.keys, l.lang)}</div>` : ''}
+        <div class="tlx-card"><h3>${exam ? t('tl.i.examTitle') : t('tl.i.steps', { n: a.steps.length })}</h3>
+          <div class="tlx-steps">${a.steps.map((s, k) => `<div><em>${k + 1}</em><b>${exam ? t('tl.i.examText') : STEP_NAME[s.kind]}</b></div>`).join('')}</div>
+        </div>
+        <div class="tlx-card"><h3>${t('tl.i.goal')}</h3>
+          <div class="tlx-goal"><span class="is-pass">${ic('target', 22)}</span><div><b>${exam ? t('tl.i.passExam', { w: l.wpm, a: a.rules.pass_accuracy }) : t('tl.i.pass', { a: a.rules.pass_accuracy })}</b><small>${exam ? t('tl.i.passExamS') : t('tl.i.passS')}</small></div></div>
+          <div class="tlx-goal"><span class="is-star">${ic('star', 22)}</span><div><b>${t('tl.i.stars', { w: starWpm })}</b><small>${exam ? t('tl.i.coinsExam') : t('tl.i.coins')}</small></div></div>
+          ${l.stars ? `<p class="tlx-best">${t('tl.prev')}: ${starsRow(l.stars, 16)} · ${l.best_wpm} ${t('app.wpm')}</p>` : ''}
+        </div>
+        <p class="tl-tip">${ic('bulb', 20)}<span>${t('tl.r.cursor')}</span></p>
+        <p class="tl-tip is-sky">${ic('kb', 20)}<span>${t(l.lang === 'ru' ? 'tl.r.homeRu' : 'tl.r.homeUz')}</span></p>
+        <div class="tlx-startbar"><button class="tl-chunky tlx-start" type="button">${t('home.start')}</button></div>
       </div>`;
     view.querySelector('.tlx-start').onclick = () => step(a, 0);
-    view.querySelector('.tlx-start').focus();
+    view.querySelector('.tlx-start').focus({ preventScroll: true });
   }
 
   function step(a, i) {
@@ -277,7 +280,7 @@ export async function mountTypingLesson(root, lessonId) {
 }
 
 function top(l, i, total, doneCur = false) {
-  const href = `#/typing-lessons${l.lang === 'ru' ? '?lang=ru' : ''}`;
+  const href = '#/typing-lessons';
   const dots = Array.from({ length: total }, (_, k) => {
     const st = i == null ? '' : k < i || (k === i && doneCur) ? ' is-done' : k === i ? ' is-cur' : '';
     return `<i class="${st.trim()}"></i>`;
