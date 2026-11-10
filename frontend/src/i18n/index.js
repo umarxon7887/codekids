@@ -10,10 +10,11 @@ import tl from './s/tl.js';
 import teacher from './s/teacher.js';
 import games from './s/games.js';
 import it from './s/it.js';
+import kl from './s/kl.js';
 
 const LANGS = ['uz', 'ru'];
 const IDX = { uz: 0, ru: 1 };
-const dict = Object.assign({}, common, errors, app, tl, teacher, games, it);
+const dict = Object.assign({}, common, errors, app, tl, teacher, games, it, kl);
 
 let lang = 'uz';
 try { lang = localStorage.getItem('ck_lang') || 'uz'; } catch { /* yashirin rejim */ }

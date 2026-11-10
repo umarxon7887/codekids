@@ -451,3 +451,16 @@ ALTER TABLE it_sections ADD COLUMN IF NOT EXISTS lang VARCHAR(2) NOT NULL DEFAUL
 DO $$ BEGIN
   ALTER TABLE it_sections ADD CONSTRAINT it_sections_lang_chk CHECK (lang IN ('uz', 'ru'));
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+-- Kibi labirinti (blokli dasturlash o'yini): har daraja bo'yicha eng yaxshi natija.
+-- level: 0 dan boshlanadigan indeks (backend/src/data/kodlabLevels.js). Yechim serverda tekshiriladi.
+CREATE TABLE IF NOT EXISTS kodlab_progress (
+  user_id      UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  level        SMALLINT NOT NULL CHECK (level >= 0),
+  stars        SMALLINT NOT NULL CHECK (stars BETWEEN 1 AND 3),
+  best_blocks  SMALLINT NOT NULL,
+  attempts     INTEGER NOT NULL DEFAULT 1,
+  solved_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (user_id, level)
+);

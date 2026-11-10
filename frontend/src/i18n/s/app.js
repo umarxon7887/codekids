@@ -34,6 +34,9 @@ export default {
   'home.toLessons': ['Darslarga', 'К урокам'],
   'home.it': ['IT darslari', 'IT-уроки'],
   'home.itD': ['Qisqa darslar va testlar', 'Короткие уроки и тесты'],
+  'home.kl': ['Kibi labirinti', 'Лабиринт Киби'],
+  'home.klD': ['Bloklar bilan kod yoz, 50 daraja', 'Собери код из блоков, 50 уровней'],
+  'home.klProgress': ['{done}/50 daraja · {stars} yulduz', 'Уровней: {done}/50 · звёзд: {stars}'],
   'home.code6': ['Kod 6 ta belgidan iborat', 'Код состоит из 6 символов'],
 
   'au.tag': ["O'yin orqali mantiqiy fikrlashni o'rgan", 'Учись логически мыслить через игру'],

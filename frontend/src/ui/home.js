@@ -1,4 +1,4 @@
-/** @file O'quvchi bosh sahifasi: Typing Race, Typing darslari, xonaga kirish, IT darslari. */
+/** @file O'quvchi bosh sahifasi: Typing Race, Typing darslari, xonaga kirish, IT darslari, Kibi labirinti. */
 import '../styles/home.css';
 import { auth, api } from '../core/api.js';
 import { disconnectSocket } from '../core/socket.js';
@@ -12,8 +12,18 @@ const P = {
   kb: '<rect x="2" y="6" width="20" height="12" rx="3"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/>',
   maze: '<path d="M3 3h18v18H3zM8 3v8h8M16 21v-6M3 14h5"/>',
   term: '<path d="M4 17l6-5-6-5M12 19h8"/>',
+  blocks: '<rect x="3" y="4" width="11" height="6" rx="2"/><rect x="7" y="14" width="14" height="6" rx="2"/><path d="M8 10v4"/>',
 };
 const svg = (k, s = 26, w = 2) => `<svg aria-hidden="true" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round">${P[k]}</svg>`;
+
+/** Kibi labirinti progressi: serverdan kelgan nusxa (kalit games/kodlab/game.js bilan bir xil). */
+function klText(user) {
+  let best = {};
+  try { best = JSON.parse(localStorage.getItem(`ck_kl_${user?.id ?? 'guest'}`) || '{}') || {}; } catch { /* */ }
+  const done = Object.keys(best).length;
+  const stars = Object.values(best).reduce((a, b) => a + (Number(b) || 0), 0);
+  return done ? t('home.klProgress', { done, stars }) : t('home.klD');
+}
 
 export function mountHome(root, user, reroute) {
   const name = user.nickname || t('app.friend');
@@ -48,6 +58,11 @@ export function mountHome(root, user, reroute) {
             <button class="btn" type="submit">${t('home.enter')}</button>
           </div>
         </form>
+        <a class="hm-card" href="#/kod-labirint" style="background:var(--peach)">
+          <span class="hm-row"><span class="hm-ic" style="color:#2F63C9">${svg('blocks')}</span><span class="hm-new" style="color:#2F63C9">${t('home.new')}</span></span>
+          <b>${t('home.kl')}</b><span class="d" data-kl style="color:#3F5566">${klText(user)}</span>
+          <span class="hm-go">${t('home.start')}</span>
+        </a>
         <button class="hm-card" id="it" style="background:var(--lav)">
           <span class="hm-row"><span class="hm-ic" style="color:#5B45B0">${svg('term')}</span><span class="hm-new">${t('home.new')}</span></span>
           <b>${t('home.it')}</b><span class="d" style="color:#4A3D80">${t('home.itD')}</span>
@@ -83,6 +98,11 @@ export function mountHome(root, user, reroute) {
     pill.querySelector('b').textContent = String(stats.coins);
     pill.hidden = false;
     $('[data-tl]').textContent = stats.done ? t('home.tlProgress', stats) : t('home.tlD');
+  }).catch(() => {});
+  // Kibi labirinti progressi serverdan (o'yin ichidagi nusxa ham yangilanadi)
+  api.get('/kodlab').then(({ progress }) => {
+    try { localStorage.setItem(`ck_kl_${user?.id ?? 'guest'}`, JSON.stringify(progress)); } catch { /* */ }
+    $('[data-kl]').textContent = klText(user);
   }).catch(() => {});
   return () => {};
 }

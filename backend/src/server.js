@@ -16,6 +16,7 @@ import guestRouter from './routes/guest.js';
 import profileRouter from './routes/profile.js';
 import itRouter from './routes/it.js';
 import typingLessonsRouter from './routes/typingLessons.js';
+import kodlabRouter from './routes/kodlab.js';
 import itManageRouter from './routes/itManage.js';
 import itImagesRouter from './routes/itImages.js';
 import { createSocketServer } from './socket/index.js';
@@ -59,6 +60,7 @@ app.use(`${API}/profile`, profileRouter);
 app.use(`${API}/it/manage`, itManageRouter); // muharrir (admin); o'quvchi yo'llaridan oldin
 app.use(`${API}/it`, itRouter);
 app.use(`${API}/typing-lessons`, typingLessonsRouter);
+app.use(`${API}/kodlab`, kodlabRouter);
 // Keyingi bosqichlarda bu yerga route'lar ulanadi:
 // app.use(`${API}/auth`, authRouter);
 // app.use(`${API}/contents`, contentsRouter);
