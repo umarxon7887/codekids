@@ -25,7 +25,7 @@ export default {
   'home.coins': ['Coinlar', 'Монеты'],
   'home.hi': ['Salom, {name}!', 'Привет, {name}!'],
   'home.today': ["Bugun nima o'ynaymiz?", 'Во что сегодня поиграем?'],
-  'home.raceD': ["Do'stlar bilan tezlikda poyga", 'Гонка на скорость с друзьями'],
+  'home.raceD': ["Botlar va do'stlar bilan poyga", 'Гонка с ботами и друзьями'],
   'home.start': ['Boshlash', 'Начать'],
   'home.new': ['Yangi', 'Новое'],
   'home.tl': ['Typing darslari', 'Уроки печати'],

@@ -16,7 +16,8 @@ import { html, esc } from '../../utils/dom.js';
 import { formatTime, round } from '../../utils/format.js';
 import { t } from '../../i18n/index.js';
 import { renderBoard } from './board.js';
-import { ensurePicker } from './cars.js';
+import { ensurePicker, getMyCar } from './cars.js';
+import { makeBots, botPos, raceResultHtml, levelName } from './botrace.js';
 import { renderEndScreen, renderKicked, fromPlayers } from '../../ui/endscreen.js';
 
 const RUN_KEY = 'ck_typing_run';
@@ -43,14 +44,15 @@ export function findResumable(mode) {
 
 /**
  * @param {HTMLElement} root
- * @param {{mode?:'solo'|'guest'|'room', contentId?:string, language?:string, code?:string}} [opts]
+ * @param {{mode?:'solo'|'guest'|'room', contentId?:string, language?:string, code?:string, race?:{level:number, again:(lv:number)=>void}}} [opts]
+ *   race: botlar bilan poyga (mode 'solo'): 3-2-1 hisoblash, botlar, o'rin va coin (server hisoblaydi). Saqlanmaydi/tiklanmaydi.
  * @returns {Promise<()=>void>} cleanup
  */
-export async function mountTyping(root, { mode = 'solo', contentId, language = 'uz', code, fresh = false } = {}) {
+export async function mountTyping(root, { mode = 'solo', contentId, language = 'uz', code, fresh = false, race = null } = {}) {
   root.replaceChildren(html(`
     <section class="game">
       <div class="game__bar"><a href="#/" class="btn btn--ghost" aria-label="${t('app.backShort')}">←</a><h2>Typing Race</h2></div>
-      <div id="t-board" class="board" ${mode === 'room' ? '' : 'hidden'}></div>
+      <div class="br-stage"><div id="t-board" class="board${race ? ' br-board' : ''}" ${mode === 'room' || race ? '' : 'hidden'}></div><div id="t-count" class="br-count" hidden></div></div>
       <div class="stats"><a href="#/" class="ty-back" aria-label="${t('app.backShort')}"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></a><span id="t-time">00:00</span><span id="t-wpm">0 WPM</span></div>
       <div id="t-msg" class="banner" hidden></div>
       <div id="t-pick" hidden></div>
@@ -64,6 +66,12 @@ export async function mountTyping(root, { mode = 'solo', contentId, language = '
     </section>`));
   const $ = (s) => root.querySelector(s);
   if (mode === 'room') { const h = root.querySelector('.game__bar h2'); if (h) h.textContent = t('ty.raceRoom', { code }); }
+  if (race) {
+    window.scrollTo(0, 0); // lobbidan pastga surilgan bo'lsa, trek ko'rinsin
+    const h = root.querySelector('.game__bar h2'); if (h) h.textContent = t('br.title');
+    const st = root.querySelector('.stats');
+    st.insertBefore(html(`<span class="br-lvchip">${levelName(race.level)}</span>`), st.children[1]);
+  }
   const textEl = $('#t-text'), input = $('#t-input'), timeEl = $('#t-time'), wpmEl = $('#t-wpm'), msg = $('#t-msg'), resEl = $('#t-result');
   let serverCorrect = 0;
   let meId = null;
@@ -135,14 +143,14 @@ export async function mountTyping(root, { mode = 'solo', contentId, language = '
   cleanups.push(() => wrap.removeEventListener('click', focusInput));
 
   // mode/language/contentId/code ham saqlanadi: yangilangandan keyin lobbi mashqni shulardan tiklaydi
-  const persist = () => saveRun({ key: runKey, mode, language, contentId, code, session, guestToken, target, typed: input.value, startWall, expiresAt });
+  const persist = () => race || saveRun({ key: runKey, mode, language, contentId, code, session, guestToken, target, typed: input.value, startWall, expiresAt });
 
   async function createRound() {
     if (mode === 'guest') {
       const g = await api.post('/guest/session', { ...(contentId ? { content_id: contentId } : {}), language }, { auth: false });
       guestToken = g.guest_token; target = g.target_text; expiresAt = Date.now() + (g.expires_in || 900) * 1000;
     } else {
-      session = await api.post('/typing/sessions', { content_id: contentId, language, ...(code ? { room_code: code } : {}) });
+      session = await api.post('/typing/sessions', { content_id: contentId, language, ...(code ? { room_code: code } : {}), ...(race ? { game_mode: 'race', level: race.level } : {}) });
       target = session.target_text; expiresAt = ts(session.expires_at);
     }
   }
@@ -176,12 +184,44 @@ export async function mountTyping(root, { mode = 'solo', contentId, language = '
     if (mode === 'room') progressTimer = setInterval(sendProgress, PROGRESS_INTERVAL_MS);
   }
 
+  // --- Botlar bilan poyga ---
+  let bots = [], raceGo = false, raceTimer = 0, botMsgTimer = 0;
+  const me4race = { id: 'me', nickname: me?.nickname || t('br.you'), car_id: getMyCar() || 1 };
+  function raceSnap() {
+    const now = performance.now(), sec = raceGo ? (now - startTs) / 1000 : 0, len = target.length;
+    bots.forEach((b) => {
+      if (b.finished) return;
+      b.correct = botPos(b, sec, len);
+      if (b.correct >= len) {
+        b.finished = true;
+        b.rank = 1 + bots.filter((x) => x.finished && x !== b).length + (done ? 1 : 0);
+        if (!done) {
+          msg.hidden = false; msg.textContent = t('br.botDone', { name: b.nickname, n: b.rank });
+          clearTimeout(botMsgTimer); botMsgTimer = setTimeout(() => { msg.hidden = true; }, 1800);
+        }
+      }
+    });
+    const mine = { ...me4race, correct: correctCount(), finished: done, rank: done ? 1 + bots.filter((b) => b.finished && b.rank).length : undefined };
+    renderBoard($('#t-board'), { targetLength: len, players: [mine, ...bots] }, { meId: 'me', compact: false });
+  }
+  async function countdown() {
+    const box = $('#t-count');
+    box.hidden = false;
+    for (const n of ['3', '2', '1']) {
+      box.innerHTML = `<b>${n}</b>`;
+      await new Promise((r) => setTimeout(r, 1000));
+      if (!box.isConnected) return;
+    }
+    box.innerHTML = `<b class="br-go">${t('br.go')}</b>`;
+    setTimeout(() => { box.hidden = true; }, 600);
+  }
+
   async function beginRound() {
     if (roundStarted) return;
     roundStarted = true;
     try {
       const saved = loadRun();
-      const resume = !fresh && saved && saved.key === runKey && saved.target && (!saved.expiresAt || Date.now() < saved.expiresAt) ? saved : null;
+      const resume = !fresh && !race && saved && saved.key === runKey && saved.target && (!saved.expiresAt || Date.now() < saved.expiresAt) ? saved : null;
       if (resume) {
         target = resume.target; session = resume.session; guestToken = resume.guestToken; expiresAt = resume.expiresAt;
       } else {
@@ -194,6 +234,16 @@ export async function mountTyping(root, { mode = 'solo', contentId, language = '
       paint(input.value);
       persist();
       input.focus({ preventScroll: true });
+      if (race) {
+        bots = makeBots(session.bots || [], target.length, race.level, me4race.car_id);
+        raceSnap();
+        await countdown();
+        if (!wrap.isConnected) return;
+        raceGo = true;
+        startTimers();
+        raceTimer = setInterval(raceSnap, 150);
+        input.focus({ preventScroll: true });
+      }
       // Oxirgi belgi yozilgan zahoti sahifa yangilangan bo'lsa, natija yuborilmay qolgan bo'ladi: yakunlaymiz
       if (resume && target && input.value.length >= target.length) finish();
     } catch (e) { roundStarted = false; showError(e); textEl.textContent = t('ty.startFail'); }
@@ -204,11 +254,17 @@ export async function mountTyping(root, { mode = 'solo', contentId, language = '
     done = true;
     clearInterval(timer); clearInterval(progressTimer);
     input.disabled = true;
+    if (race) { clearInterval(raceTimer); raceSnap(); }
     try {
       const r = await submit();
       clearRun();
       resEl.hidden = false;
-      resEl.innerHTML = resultHtml(r, mode);
+      resEl.innerHTML = race && r.race ? raceResultHtml(r, { lv: race.level, me: me4race, bots, unlockedNext: true }) : resultHtml(r, mode);
+      if (race) {
+        msg.hidden = true;
+        root.querySelector('.br-stage').hidden = true;
+        resEl.querySelectorAll('[data-lv]').forEach((b) => { b.onclick = () => race.again(Number(b.dataset.lv)); });
+      }
       if (mode !== 'room') {
         root.querySelector('.stats').hidden = true; wrap.hidden = true;
         root.querySelector('.game__bar').hidden = true; window.scrollTo(0, 0);
@@ -250,6 +306,7 @@ export async function mountTyping(root, { mode = 'solo', contentId, language = '
     textEl.classList.add('shake');
   };
   const onInput = () => {
+    if (race && !raceGo) { input.value = ''; return; } // 3-2-1 tugaguncha yozib bo'lmaydi
     const v = input.value;
     let m = 0;
     while (m < v.length && m < target.length && v[m] === target[m]) m++;
@@ -302,7 +359,7 @@ export async function mountTyping(root, { mode = 'solo', contentId, language = '
   // Solo/guest mashqidan ataylab chiqilsa, eskisini tozalaymiz (lobbi qayta tiklab yubormasligi uchun).
   // Xona rejimida saqlanadi: o'quvchi xonaga qaytsa davom etadi.
   return () => {
-    clearInterval(timer); clearInterval(progressTimer); kickStop();
+    clearInterval(timer); clearInterval(progressTimer); clearInterval(raceTimer); clearTimeout(botMsgTimer); kickStop();
     input.removeEventListener('input', onInput); cleanups.forEach((f) => f());
     if (mode !== 'room') clearRun();
   };

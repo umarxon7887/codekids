@@ -4,6 +4,7 @@ import { AppError } from '../errors.js';
 import { validate } from '../middleware/validate.js';
 import { requireAuth } from '../middleware/auth.js';
 import { createSessionSchema, submitResultSchema } from '../schemas/typing.js';
+import { botsFor, raceStats, settleRace, RACE_COUNTDOWN_SEC } from '../services/botRace.js';
 
 const router = Router();
 
@@ -30,6 +31,11 @@ export function computeMetrics(target, typed, elapsedSec) {
   };
 }
 
+// GET /api/v1/typing/race-stats: botlar bilan poyga — har daraja g'alabalari va ochiq darajalar
+router.get('/race-stats', requireAuth, async (req, res) => {
+  res.json(await raceStats(query, req.user.id));
+});
+
 // POST /api/v1/typing/sessions: o'yin boshlanadi, matn serverda tanlanadi
 router.post(
   '/sessions',
@@ -37,6 +43,11 @@ router.post(
   validate({ body: createSessionSchema }),
   async (req, res) => {
     const d = { ...req.validated.body };
+    const botRace = d.game_mode === 'race' && !d.room_code;
+    if (botRace && d.level === 4) {
+      const { unlocked } = await raceStats(query, req.user.id);
+      if (!unlocked.includes(4)) throw new AppError(403, 'LEVEL_LOCKED', "Bu daraja hali yopiq");
+    }
     if (!d.content_id) {
       const { rows: pick } = await query(
         `SELECT id FROM contents WHERE type = 'typing_text' AND is_published = true
@@ -108,6 +119,7 @@ router.post(
       started_at: rows[0].started_at,
       expires_at: rows[0].expires_at,
       target_text: targetText,
+      ...(botRace ? { bots: botsFor(rows[0].id, d.level), countdown_sec: RACE_COUNTDOWN_SEC } : {}),
     });
   }
 );
@@ -144,7 +156,9 @@ router.post(
         throw new AppError(400, 'SESSION_EXPIRED', "O'yin sessiyasi muddati tugagan");
       }
 
-      const elapsedSec = (now - new Date(session.started_at).getTime()) / 1000;
+      const botRace = session.game_mode === 'race' && !session.room_id;
+      // Botlar bilan poygada 3-2-1 hisoblash vaqti yozish vaqtiga kirmaydi
+      const elapsedSec = (now - new Date(session.started_at).getTime()) / 1000 - (botRace ? RACE_COUNTDOWN_SEC : 0);
       if (elapsedSec < MIN_TIME_SEC) {
         throw new AppError(400, 'TOO_FAST', "Natija juda tez yuborildi");
       }
@@ -187,11 +201,13 @@ router.post(
       }
 
       const row = inserted[0];
+      const race = botRace ? await settleRace(client, req.user.id, session, m, flagged) : undefined;
       return {
         ...row,
         wpm: Number(row.wpm),
         accuracy: Number(row.accuracy),
-       };
+        ...(race ? { race } : {}),
+      };
     });
 
     res.status(201).json({ result });

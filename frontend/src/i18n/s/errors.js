@@ -50,6 +50,7 @@ export default {
   'err.LESSON_NOT_READY': ["Mavzu hali e'lon qilinmagan", "Тема ещё не опубликована"],
   'err.NOT_A_STUDENT': ["Faqat o'quvchilar uchun", "Только для учеников"],
   'err.NOT_FOUND': ["Topilmadi", "Не найдено"],
+  'err.LEVEL_LOCKED': ['Bu daraja hali yopiq', 'Этот уровень пока закрыт'],
   'err.NO_TEXT': ["Bu tilda nashr etilgan matn yo'q", "На этом языке нет опубликованного текста"],
   'err.PAYLOAD_TOO_LARGE': ["So'rov hajmi juda katta", "Слишком большой запрос"],
   'err.PLAYER_NOT_FOUND': ["O'yinchi topilmadi", "Игрок не найден"],
