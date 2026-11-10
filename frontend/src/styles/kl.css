@@ -154,3 +154,96 @@ body:has(.kl) #settings { display: none; }
 .kl-earn b { font-size: 24px; }
 @media (max-width: 440px) { .kl-coins { height: 40px; padding: 0 10px 0 6px; } .kl-coins .ck-coin { width: 20px; height: 20px; } }
 .kl .kl-card .kl-earn .ck-coin { width: 28px; height: 28px; margin: 0; animation: none; filter: none; }
+
+/* ===== 2-dizayn (2026-11-11): Gemini sprite bloklari (public/kl/blk-*.webp, border-image bilan cho'ziladi),
+   sahifa skroll bo'lmaydi (faqat Dastur ro'yxati), "plastik" panellar. Rasm manzillari game.js da --kl-b* o'zgaruvchilarga yoziladi. ===== */
+.kl { height: 100vh; height: 100dvh; min-height: 0; overflow: hidden; padding-bottom: 0; padding-top: max(12px, env(safe-area-inset-top)); }
+.kl-wrap { height: 100%; gap: 10px; padding-bottom: 112px; }
+.kl-top, .kl-levels { flex: none; }
+.kl-levels { padding: 12px 14px 8px; scroll-behavior: smooth;
+  -webkit-mask: linear-gradient(90deg, transparent, #000 22px, #000 calc(100% - 22px), transparent); mask: linear-gradient(90deg, transparent, #000 22px, #000 calc(100% - 22px), transparent); }
+.kl-main { flex: 1; min-height: 0; align-items: stretch; }
+.kl-stage { min-height: 0; }
+@media (max-width: 780px) { .kl-main { display: flex; flex-direction: column; gap: 10px; } .kl-stage { flex: none; } .kl-editor { flex: 1; border-radius: 22px; } }
+
+/* Kibi kartasi */
+.kl-say { align-items: center; gap: 12px; border-radius: 22px; padding: 10px 16px 10px 6px; max-width: 560px; position: relative;
+  background: linear-gradient(180deg, #fdfbff, #f1ebff); border: 3px solid #fff; box-shadow: 0 5px 0 #c5b8ef, 0 12px 24px rgba(90, 70, 170, .16); }
+.kl-say img { width: 70px; height: 62px; margin: -14px 0 -6px; border: 0; border-radius: 0; background: none; box-shadow: none; object-fit: contain; filter: drop-shadow(0 4px 6px rgba(90, 70, 170, .25)); }
+.kl-saytx { min-width: 0; line-height: 1.38; display: flex; flex-direction: column; }
+.kl-saytx b { color: var(--kl-move-d); }
+.kl-sayname { align-self: flex-start; position: relative; isolation: isolate; display: inline-flex; gap: 6px; padding: 1px 12px 1px 10px; margin-bottom: 3px; font-size: 11.5px; font-weight: 900; color: #fff; }
+.kl-sayname::before { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, #39a4ff, #1f7df0); clip-path: polygon(7px 0, calc(100% - 7px) 0, 100% 50%, calc(100% - 7px) 100%, 7px 100%, 0 50%); }
+.kl-sayname span { color: #d8e8ff; font-weight: 800; }
+.kl-sayname span::before { content: "·"; margin-right: 6px; }
+.kl-say.in { animation: kl-sayin .45s cubic-bezier(.3, 1.4, .6, 1); }
+.kl-say.in img { animation: kl-wave 1s ease-in-out .2s; }
+@keyframes kl-sayin { from { opacity: 0; transform: translateY(-8px) scale(.97); } }
+@keyframes kl-wave { 30% { transform: rotate(-8deg); } 60% { transform: rotate(6deg); } }
+
+/* Dastur paneli */
+.kl-editor { min-height: 0; overflow: hidden; padding: 14px 10px 10px 14px; gap: 8px;
+  background: linear-gradient(180deg, #fdfbff, #efe8ff); -webkit-backdrop-filter: none; backdrop-filter: none; border: 3px solid #fff; box-shadow: 0 6px 0 #c5b8ef, 0 16px 30px rgba(90, 70, 170, .2); }
+.kl-edhead h2 { position: relative; isolation: isolate; height: 38px; padding: 0 22px 0 40px; color: #fff; font-size: 16px; text-shadow: 0 1px 0 rgba(0, 0, 0, .2); }
+.kl-edhead h2::before { content: ""; position: absolute; inset: -5px 0; z-index: -1; border-style: solid; border-width: 0 13px 0 37px; border-image: var(--kl-bF) 0 27 0 78 fill / 0 13px 0 37px stretch; }
+.kl-edhead h2 svg { position: absolute; left: 10px; top: 9px; width: 20px; height: 20px; color: #fff; }
+.kl-prog { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; gap: 0; padding: 16px 8px 16px 12px; border-radius: 18px; scrollbar-width: none;
+  background: #e9e1fb; box-shadow: inset 0 3px 0 rgba(120, 100, 200, .22), inset 0 0 0 2px rgba(255, 255, 255, .6); }
+.kl-prog::-webkit-scrollbar, .kl-code pre::-webkit-scrollbar, .kl-blocks::-webkit-scrollbar { display: none; }
+.kl-code { flex: none; }
+.kl-code pre { max-height: 140px; overflow: auto; scrollbar-width: none; }
+.kl-empty { font-size: 13px; margin-bottom: 6px; }
+
+/* bloklar */
+.kl-row { gap: 6px; margin-bottom: 6px; position: relative; }
+.kl .kl-blk { background: none; box-shadow: none; isolation: isolate; border-radius: 0; min-height: 34px; padding: 4px 20px 4px 5px; gap: 8px; font-size: 15px; color: #fff; text-shadow: 0 1px 1px rgba(0, 0, 40, .28); }
+.kl-blk::before { display: none; }
+.kl-blk::after { content: ""; position: absolute; left: 0; right: 0; top: -6px; bottom: -6px; z-index: -1; border-style: solid; border-width: 0 13px 0 37px;
+  border-image: var(--img) 0 27 0 78 fill / 0 13px 0 37px stretch; filter: drop-shadow(0 2px 2px rgba(60, 40, 120, .22)); }
+.kl-blk.F { --img: var(--kl-bF); --hex: var(--kl-hF); }
+.kl-blk.L { --img: var(--kl-bL); --hex: var(--kl-hL); }
+.kl-blk.R { --img: var(--kl-bR); --hex: var(--kl-hR); }
+.kl .kl-blk.REP { --img: var(--kl-bREP); --hex: var(--kl-hREP); color: #5a2c00; text-shadow: 0 1px 0 rgba(255, 255, 255, .35); }
+.kl-blk .kl-ic { width: 30px; height: 26px; border-radius: 0; box-shadow: none; background: var(--hex) center / 100% 100% no-repeat; color: #fff; }
+.kl-ic svg { width: 14px; height: 14px; }
+.kl .kl-blk.active { transform: none; box-shadow: none; filter: brightness(1.12) drop-shadow(0 0 2px #fff) drop-shadow(0 0 7px rgba(255, 214, 70, 1)); }
+.kl-prog .kl-blk { max-width: none; }
+.kl-stepper { background: none; padding: 0; gap: 3px; margin: 0 1px; }
+.kl .kl-stepper button { width: 22px; height: 22px; border-radius: 50%; background: rgba(140, 60, 0, .2); color: #5a2c00; font-size: 15px; line-height: 1; padding: 0; }
+.kl-stepper span { min-width: 32px; height: 28px; display: grid; place-items: center; font-size: 16px; color: #3a2a55; text-shadow: none; background: var(--kl-chip) center / 100% 100% no-repeat; }
+.kl-x { width: 22px; height: 22px; font-size: 14px; margin-left: 2px; padding: 0; background: #fff; box-shadow: 0 2px 0 #d6ccf5; color: #9a93c2; }
+
+/* Takrorla: C shakli */
+.kl-loop { position: relative; isolation: isolate; width: fit-content; min-width: 176px; padding: 0 0 21px 22px; margin: 0 30px 6px 0; }
+.kl-loop::before { content: ""; position: absolute; inset: -2px 0 0 0; z-index: -1; border-style: solid; border-width: 38px 16px 21px 22px;
+  border-image: var(--kl-bC) 112 52 100 122 / 38px 16px 21px 22px stretch; filter: drop-shadow(0 2px 2px rgba(60, 40, 120, .22)); }
+.kl-head { margin: 0 0 0 -22px; height: 36px; }
+.kl-head .kl-blk { padding: 2px 16px 2px 8px; min-height: 36px; }
+.kl-head .kl-blk::after { display: none; }
+.kl-head .kl-x { position: absolute; right: -28px; top: 7px; }
+.kl-body { border: 0; border-radius: 0; box-shadow: none; gap: 0; padding: 5px 6px 0 0; min-height: 34px; position: static; }
+.kl-body::after { display: none; }
+.kl-body > .kl-loop { margin-bottom: 6px; }
+/* kursor joylari */
+.kl-slot { height: 6px; margin: -3px 0; position: relative; z-index: 4; }
+.kl-slot:hover { background: rgba(79, 141, 247, .25); }
+.kl-slot.on { height: 26px; margin: 6px 0 8px; font-size: 12px; padding: 0 10px; animation: none; background: rgba(79, 141, 247, .12); }
+.kl-slot.end { height: 24px; margin: 8px 0 0; font-size: 12px; }
+.kl-body > .kl-slot.end { height: 17px; align-self: flex-start; padding: 0 8px; font-size: 10.5px; margin: -2px 0 3px 4px; border-radius: 999px; background: rgba(255, 255, 255, .55); }
+.kl-body > .kl-slot.on { margin: 2px 0 8px 4px; min-width: 150px; }
+
+/* blok qutisi */
+.kl-dock { background: linear-gradient(180deg, #fdfbff, #efe8ff); -webkit-backdrop-filter: none; backdrop-filter: none; border: 3px solid #fff; box-shadow: 0 6px 0 #c5b8ef, 0 -6px 24px rgba(90, 70, 170, .14); }
+.kl-blocks { gap: 12px; padding: 16px 4px 18px; scrollbar-width: none;
+  -webkit-mask: linear-gradient(90deg, #000 calc(100% - 26px), transparent); mask: linear-gradient(90deg, #000 calc(100% - 26px), transparent); }
+.kl-blocks .kl-blk { padding: 4px 22px 4px 5px; font-size: 15px; }
+.kl-blocks .kl-blk:active { transform: translateY(3px); }
+.kl-blocks .kl-blk:disabled { filter: grayscale(.8); opacity: .5; }
+.kl-play { width: 60px; height: 60px; margin-top: -16px; }
+@media (max-width: 440px) {
+  .kl .kl-blk { font-size: 14px; gap: 6px; padding-right: 16px; }
+  .kl-head .kl-blk { gap: 5px; padding: 2px 10px 2px 6px; }
+  .kl .kl-stepper button { width: 20px; height: 20px; } .kl-stepper span { min-width: 28px; height: 25px; font-size: 15px; }
+  .kl-loop { margin-right: 26px; min-width: 150px; } .kl-head .kl-x { right: -25px; }
+  .kl-prog { padding: 14px 4px 14px 8px; }
+}

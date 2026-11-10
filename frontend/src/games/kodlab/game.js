@@ -18,7 +18,7 @@ import { sfx, musicStart, musicStop, isMuted, isMusicOn, toggleMute, toggleMusic
 const A = (f) => `${BASE_URL}kl/${f}`;
 const IMG = {
   path: A('tile-path.webp'), start: A('tile-start.webp'), goal: A('goal.webp'),
-  back: A('kibi-back.webp'), front: A('kibi-front.webp'), head: A('kibi-head.webp'),
+  say: A('kibi-say.webp'), back: A('kibi-back.webp'), front: A('kibi-front.webp'), head: A('kibi-head.webp'),
   win: `${BASE_URL}it/kibi/galaba.webp`, oops: `${BASE_URL}it/kibi/dalda.webp`,
 };
 const SV = (d, w = 2.6) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
@@ -76,7 +76,7 @@ export function mountKodLab(root) {
         <nav class="kl-levels" data-levels aria-label="${t('kl.title')}"></nav>
         <div class="kl-main">
           <div class="kl-stage">
-            <div class="kl-say"><img src="${IMG.head}" alt="Kibi"><div class="kl-bubble kl-glass" data-say></div></div>
+            <div class="kl-say" data-saybox><img src="${IMG.say}" alt="Kibi"><div class="kl-saytx"><div class="kl-sayname">Kibi<span data-saylv></span></div><div data-say></div></div></div>
             <div class="kl-board" data-board></div>
           </div>
           <div class="kl-editor kl-glass">
@@ -108,6 +108,10 @@ export function mountKodLab(root) {
     saveLocal();
   }
   view.style.setProperty('--kl-sky', `url("${A('sky.webp')}")`);
+  // blok rasmlari (kl.css border-image va fonlarda ishlatadi)
+  for (const [k, f] of Object.entries({ bF: 'blk-f', bL: 'blk-l', bR: 'blk-r', bREP: 'blk-rep', bC: 'blk-loop', hF: 'hex-f', hL: 'hex-l', hR: 'hex-r', hREP: 'hex-rep', chip: 'hex-chip' })) {
+    view.style.setProperty(`--kl-${k}`, `url("${A(`${f}.webp`)}")`);
+  }
 
   /* ---------- dastur modeli ---------- */
   const countBlocks = (list = prog) => list.reduce((s, b) => s + 1 + (b.body ? countBlocks(b.body) : 0), 0);
@@ -129,6 +133,9 @@ export function mountKodLab(root) {
       if (cur && nav) nav.scrollLeft = cur.offsetLeft - nav.clientWidth / 2 + cur.offsetWidth / 2;
     });
     $('[data-say]').innerHTML = LEVELS[lv].hint[lang]; // matnlar levels.js dan (faqat <b> teglari)
+    $('[data-saylv]').textContent = t('kl.level', { n: lv + 1 });
+    const sb = $('[data-saybox]');
+    if (sb.dataset.lv !== String(lv)) { sb.dataset.lv = lv; sb.classList.remove('in'); void sb.offsetWidth; sb.classList.add('in'); }
     const run = $('[data-run]');
     run.innerHTML = running ? UI.stop : UI.play;
     run.classList.toggle('stop', running);
@@ -145,7 +152,8 @@ export function mountKodLab(root) {
     const us = P.map((p) => p.x - p.y), vs = P.map((p) => p.x + p.y);
     const umin = Math.min(...us), umax = Math.max(...us), vmin = Math.min(...vs), vmax = Math.max(...vs);
     const bw = b.clientWidth || 340, span = (umax - umin) / 2 + 1;
-    const maxH = Math.max(240, innerHeight - (innerWidth > 780 ? 300 : 400));
+    // taxta balandligi: noutbukda sahna bo'yi, telefonda ekranning uchdan biri (sahifa skroll bo'lmaydi)
+    const maxH = innerWidth > 780 ? Math.max(200, b.parentElement.clientHeight - $('[data-saybox]').offsetHeight - 12) : Math.max(170, innerHeight * 0.34);
     const W = Math.min(150, (bw / span) * 0.96, maxH / ((vmax - vmin) * RATIO / 2 + IMGH + 0.95)), H = W * RATIO, head = W * 0.95;
     GEO = { W, H, vmin, ox: (bw - span * W) / 2 - umin * W / 2, oy: head };
     b.style.height = `${(vmax - vmin) * H / 2 + W * IMGH + head + 6}px`;
@@ -209,6 +217,14 @@ export function mountKodLab(root) {
     $('[data-count]').innerHTML = `<span class="kl-bat ${n >= L.max ? 'full' : ''}" aria-hidden="true">${Array.from({ length: L.max }, (_, i) => `<i class="${i < n ? 'on' : ''}"></i>`).join('')}</span><span>${n}/${L.max}</span>`;
     $('[data-palette]').innerHTML = L.blocks.map((k) => `<button class="kl-blk ${k}" type="button" data-add="${k}" ${n >= L.max || running ? 'disabled' : ''}><span class="kl-ic">${ICON[k]}</span>${t(`kl.${k}`)}</button>`).join('');
     $('[data-code]').textContent = toCode(prog, '') || '// …';
+    if (!running) reveal($('.kl-slot.on'));
+  }
+  /** Dastur ro'yxati ichida elementni ko'rinadigan joyga suradi (sahifaning o'zi skroll bo'lmaydi). */
+  function reveal(el) {
+    const box = $('[data-prog]'); if (!el) return;
+    const a = el.getBoundingClientRect(), c = box.getBoundingClientRect();
+    if (a.top < c.top + 8) box.scrollTop -= c.top + 8 - a.top;
+    else if (a.bottom > c.bottom - 8) box.scrollTop += a.bottom - c.bottom + 8;
   }
 
   /* ---------- ishga tushirish ---------- */
@@ -231,7 +247,8 @@ export function mountKodLab(root) {
       if (n.done) return finish('short');
       if (++steps > MAX_STEPS) return finish('loop');
       const b = n.value;
-      view.querySelector(`[data-prog] [data-id="${b.id}"]`)?.classList.add('active');
+      const cur = view.querySelector(`[data-prog] [data-id="${b.id}"]`);
+      cur?.classList.add('active'); reveal(cur);
       if (b.type === 'L' || b.type === 'R') {
         K.d = (K.d + (b.type === 'L' ? 3 : 1)) % 4; anim('turn', 300); later(() => placeKibi(), 120); sfx.turn();
       } else {
@@ -317,6 +334,10 @@ export function mountKodLab(root) {
   $('[data-sheet]').addEventListener('click', (e) => { if (e.target === e.currentTarget) { e.currentTarget.hidden = true; resetPos(); } });
 
   const onResize = () => { if (!running) renderBoard(); };
+  // darajalar yo'lagi: sichqoncha g'ildiragi gorizontal suradi (skroll chizig'i yashirilgan)
+  $('[data-levels]').addEventListener('wheel', (e) => {
+    if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) { e.currentTarget.scrollLeft += e.deltaY; e.preventDefault(); }
+  }, { passive: false });
   const onPointer = () => { if (isMusicOn()) musicStart(); };
   const onVis = () => { if (document.hidden) musicStop(); };
   window.addEventListener('resize', onResize);
