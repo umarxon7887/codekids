@@ -10,9 +10,37 @@ import { html, esc } from '../../utils/dom.js';
 import { ic, castleSrc, asset, kindLabel, shuffle, youtubeEmbed, imgTag } from './common.js';
 import { typingUi, mazeUi } from './games.js';
 import { t } from '../../i18n/index.js';
+import { getUser } from '../../core/state.js';
 
 // To'g'ri javobdan keyin Kibining qisqa maqtovi
 const PRAISE = t('it.l.praise', { ism: '{ism}' }).split('|');
+
+// Sahifa yangilansa dars qolgan joyidan davom etishi uchun holat shu brauzerda saqlanadi
+const RUN_PREFIX = 'ck_it_run_';
+const RUN_TTL = 7 * 24 * 3600 * 1000;
+/** @param {string} id mavzu ID @returns {{load:()=>any, save:(s:object)=>void, clear:()=>void}} */
+function runStore(id) {
+  const key = `${RUN_PREFIX}${getUser()?.id ?? 'guest'}_${id}`;
+  try {
+    // Eski (muddati o'tgan) yozuvlarni tozalash
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const k = localStorage.key(i);
+      if (!k?.startsWith(RUN_PREFIX) || k === key) continue;
+      const at = JSON.parse(localStorage.getItem(k) || '{}')?.at || 0;
+      if (Date.now() - at > RUN_TTL) localStorage.removeItem(k);
+    }
+  } catch { /* xotira yopiq */ }
+  return {
+    load() {
+      try {
+        const v = JSON.parse(localStorage.getItem(key) || 'null');
+        return v && Date.now() - (v.at || 0) < RUN_TTL ? v : null;
+      } catch { return null; }
+    },
+    save(v) { try { localStorage.setItem(key, JSON.stringify({ ...v, at: Date.now() })); } catch { /* yashirin rejim */ } },
+    clear() { try { localStorage.removeItem(key); } catch { /* */ } },
+  };
+}
 
 /** @param {HTMLElement} root @param {string} id mavzu ID @returns {Promise<()=>void>} */
 export async function mountItLesson(root, id) {
@@ -33,6 +61,7 @@ export async function mountItLesson(root, id) {
     learner: data.learner,
     complete: (mistakes) => api.post(`/it/lessons/${id}/complete`, { mistakes }),
     saveName: (name) => api.put('/it/me/name', { name }),
+    store: runStore(id),
   });
   return () => {};
 }
@@ -42,7 +71,8 @@ export async function mountItLesson(root, id) {
  * @param {HTMLElement} view `.ls` elementi
  * @param {object} L mavzu (GET /it/lessons/:id dagi `lesson` shaklida)
  * @param {{complete?:(mistakes:number)=>Promise<any>, saveName?:(name:string)=>Promise<{name:string}>,
- *   learner?:{name:string|null}, preview?:boolean, start?:string|number, onRestart?:()=>void}} [opts]
+ *   learner?:{name:string|null}, preview?:boolean, start?:string|number, onRestart?:()=>void,
+ *   store?:{load:()=>any, save:(s:object)=>void, clear:()=>void}}} [opts]
  *   preview: serverga hech narsa yuborilmaydi; start: 'dialog'|'story'|'video'|'helper'|'tool'|'finish' yoki mashq raqami (0 dan)
  */
 export function runLesson(view, L, opts = {}) {
@@ -66,6 +96,38 @@ export function runLesson(view, L, opts = {}) {
   let finished = false;
   let combo = 0; // ketma-ket to'g'ri javoblar (yumshoq seriya: xatoda jim nolga tushadi)
   let best = 0;
+  let vidSeen = false; // video oxirigacha ko'rilgan («Davom» darhol ochiq)
+  let step = 0; // kirish kartalaridan qaysi biri
+
+  // ---------- Qolgan joyni saqlash (sahifa yangilansa davom etadi) ----------
+  const store = preview ? null : opts.store;
+  // Mavzu tarkibi o'zgargan bo'lsa (seed yangilangan), eski holat ishlatilmaydi
+  const sig = `${intro.join(',')}|${exercises.map((e) => e.type).join(',')}`;
+  const save = (phase) => store?.save({
+    sig, phase, step, videoNo, vidSeen, mistakes, combo, best,
+    queue: queue.map((e) => e.i), wrong: exercises.filter((e) => e.wrong).map((e) => e.i), solved: [...solved],
+  });
+  /** Saqlangan holatni tiklaydi. @returns {'intro'|'ex'|null} */
+  function restore() {
+    const v = store?.load();
+    if (!v || v.sig !== sig) return null;
+    const ok = (a) => Array.isArray(a) && a.every((k) => Number.isInteger(k) && exercises[k]);
+    if (!ok(v.queue) || !ok(v.wrong) || !ok(v.solved)) return null;
+    videoNo = Number(v.videoNo) || 0;
+    vidSeen = Boolean(v.vidSeen);
+    mistakes = Number(v.mistakes) || 0;
+    combo = Number(v.combo) || 0;
+    best = Number(v.best) || 0;
+    v.wrong.forEach((k) => { exercises[k].wrong = true; });
+    v.solved.forEach((k) => solved.add(k));
+    if (v.phase === 'ex') {
+      queue = v.queue.map((k) => exercises[k]);
+      step = intro.length;
+      return 'ex';
+    }
+    step = Math.max(0, Math.min(intro.length, Number(v.step) || 0));
+    return 'intro';
+  }
 
   view.innerHTML = `
     <header class="ls-top">
@@ -135,10 +197,11 @@ export function runLesson(view, L, opts = {}) {
   };
 
   // ---------- Kirish kartalari ----------
-  let step = 0;
   function nextIntro() {
-    const k = intro[step++];
+    const k = intro[step];
     if (!k) return nextExercise();
+    save('intro'); // yangilansa shu kartadan davom etadi (dialog boshidan)
+    step += 1;
     if (k === 'dialog') runDialog(nextIntro);
     else if (k === 'story') {
       show(`<div class="ls-card ls-story">
@@ -227,7 +290,7 @@ export function runLesson(view, L, opts = {}) {
       : `<iframe src="${video}" title="${esc(vt)}" loading="lazy"
           allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
           allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>`;
-    const free = !file || preview || L.status === 'done';
+    const free = !file || preview || L.status === 'done' || vidSeen;
     show(`<div class="ls-card ls-video"><span class="ls-chip">${ic('play', 16)}${t('it.l.video')}</span>
       ${c.video.title ? `<h2>${esc(c.video.title)}</h2>` : ''}
       <div class="ls-player${file ? ' is-file' : ''}">${player}</div>
@@ -237,6 +300,7 @@ export function runLesson(view, L, opts = {}) {
     if (!file) return;
     const el = stage.querySelector('video');
     const open = () => {
+      if (!vidSeen) { vidSeen = true; save('intro'); }
       if (!btn.disabled) return;
       btn.disabled = false;
       stage.querySelector('.ls-vid-note')?.remove();
@@ -254,6 +318,7 @@ export function runLesson(view, L, opts = {}) {
       } },
       { label: t('it.l.no'), ghost: true, onClick: () => {
         videoNo += 1;
+        save('intro');
         if (videoNo >= 2) {
           show(kibi('dalda', t('it.l.helpLater')));
           actions([{ label: t('it.l.next'), onClick: after }]);
@@ -273,6 +338,7 @@ export function runLesson(view, L, opts = {}) {
   // ---------- Mashqlar ----------
   function nextExercise() {
     progress();
+    save('ex');
     const ex = queue[0];
     if (!ex) return finish();
     const again = ex.wrong ? `<span class="ls-again">${t('it.l.again')}</span>` : '';
@@ -308,6 +374,7 @@ export function runLesson(view, L, opts = {}) {
       fb.innerHTML = `${kibiOn ? kibiImg('dalda', 'ls-fb-kibi') : ''}<div><b>${ic('undo', 18)}${t('it.l.notYet')}</b>
         ${tip}<p class="ls-later">${t('it.l.later')}</p></div>`;
     }
+    save('ex'); // javob hisobga olindi: yangilansa keyingi savoldan davom etadi
     fb.hidden = false;
     streakUi();
     progress();
@@ -633,6 +700,7 @@ export function runLesson(view, L, opts = {}) {
       return;
     }
     finished = true;
+    store?.clear();
     const done = () => {
       showWin(r);
       const next = nextOf(r);
@@ -686,6 +754,9 @@ export function runLesson(view, L, opts = {}) {
     for (let k = 0; k < s; k++) solved.add(k);
     queue = exercises.slice(s);
     step = intro.length;
+    nextExercise();
+  } else if (s == null && restore() === 'ex') {
+    streakUi();
     nextExercise();
   } else {
     if (typeof s === 'string' && intro.includes(s)) step = intro.indexOf(s);
