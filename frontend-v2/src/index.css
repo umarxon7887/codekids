@@ -1,0 +1,43 @@
+@import 'tailwindcss';
+@import '@fontsource-variable/fredoka';
+
+@theme {
+  --font-sans: 'Fredoka Variable', system-ui, sans-serif;
+
+  /* Asosiy ranglar */
+  --color-milk: #fff9f2;
+  --color-ink: #3b2f2f;
+  --color-ink-2: #6b5a4f;
+  --color-line: #f0e3d2;
+  --color-placeholder: #a8968a;
+
+  /* Pastel ranglar */
+  --color-peach: #ffdfcb;
+  --color-sky: #cfe6f7;
+  --color-mint: #cdebdd;
+  --color-lav: #dcd3f5;
+  --color-butter: #ffd98a;
+
+  /* Holat ranglari */
+  --color-ok: #2e9e6a;
+  --color-bad: #d9534f;
+
+  --radius-card: 30px;
+  --radius-field: 20px;
+
+  --shadow-soft: 0 6px 18px rgb(59 47 47 / 0.08);
+}
+
+@layer base {
+  html,
+  body {
+    @apply bg-milk text-ink;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-semibold;
+  }
+}
