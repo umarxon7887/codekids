@@ -2,8 +2,7 @@ import { Eye, Lock, Mail } from 'lucide-react'
 import AuthLayout from '@/components/layout/AuthLayout'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import IconField from '@/components/form/IconFields'
 
 function Login() {
   return (
@@ -15,47 +14,32 @@ function Login() {
           </CardHeader>
           <CardContent className="px-0">
             <form className="flex flex-col gap-4" onSubmit={(e) => e.preventDefault()}>
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="email" className="text-[15px] font-medium">
-                  Email
-                </Label>
-                <div className="relative">
-                  <Mail className="pointer-events-none absolute top-1/2 left-5 size-5 -translate-y-1/2 text-ink-2" />
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="Email manzilingiz"
-                    autoComplete="username"
-                    className="pl-13"
-                  />
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="password" className="text-[15px] font-medium">
-                  Parol
-                </Label>
-                <div className="relative">
-                  <Lock className="pointer-events-none absolute top-1/2 left-5 size-5 -translate-y-1/2 text-ink-2" />
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="Parolingizni yozing"
-                    autoComplete="current-password"
-                    className="pr-13 pl-13"
-                  />
+              <IconField
+                id="email"
+                label="Email"
+                icon={<Mail />}
+                type="email"
+                placeholder="Email manzilingiz"
+              />
+              <IconField
+                id="password"
+                label="Parol"
+                icon={<Lock />}
+                type="password"
+                placeholder="Parolingizni yozing"
+                autoComplete="current-password"
+                rightSlot={
                   <Button
                     type="button"
                     variant="ghost"
                     size="icon"
                     aria-label="Parolni ko'rsatish"
-                    className="absolute top-1/2 right-2 size-10 -translate-y-1/2 rounded-full text-ink-2"
+                    className="size-10 rounded-full text-ink-2"
                   >
                     <Eye className="size-5" />
                   </Button>
-                </div>
-              </div>
-
+                }
+              />
               <Button type="submit" size="xl" className="mt-1 w-full">
                 Kirish
               </Button>
