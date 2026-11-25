@@ -8,7 +8,7 @@ interface AuthLayoutProps {
 
 function AuthLayout({ children }: AuthLayoutProps) {
   return (
-    <div className="mx-auto grid min-h-dvh max-w-5xl items-center gap-12 px-5 py-10 md:grid-cols-2">
+    <div className="mx-auto grid min-h-dvh max-w-5xl gap-12 px-5 py-10 pt-32 md:grid-cols-2">
       {/* Chap tomon: brend */}
       <section>
         <div className="flex size-24 items-center justify-center rounded-card bg-butter">
